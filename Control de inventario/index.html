@@ -1,0 +1,3014 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAGO · Control de Inventario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=DM+Sans:wght@600;900&family=Open+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Paleta oficial TAGO */
+    --azul-oscuro: #0B1447;   /* primario */
+    --verde-tago: #49CEAB;
+    --azul-brillante: #4063F9;
+    --gris-claro: #EDEDED;
+    --lavanda: #8F9BFF;
+
+    /* blancos / negros utilitarios (no forman parte de la identidad, solo contraste) */
+    --blanco: #FFFFFF;
+    --error: #E15554;
+
+    /* Tipografia */
+    --font-title: 'Poppins', sans-serif;      /* ExtraBold - titulos principales */
+    --font-heading: 'DM Sans', sans-serif;    /* SemiBold/Black - encabezados, botones */
+    --font-body: 'Open Sans', sans-serif;     /* Light/Regular/Bold - texto y UI */
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-body);
+    font-weight: 400;
+    background: var(--gris-claro);
+    color: var(--azul-oscuro);
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+
+  /* -----------------------------------------------------------
+     Reserva para el logo oficial (aun no hay archivo cargado).
+     Reglas cuando se agregue: nunca cambiar su color, sin
+     degradados/texturas/bordes, no deformar, tamano minimo 65px,
+     espacio libre alrededor = ancho del isotipo.
+  ------------------------------------------------------------ */
+  .logo, .logo img {
+    min-height: 65px;
+    display: block;
+  }
+
+  /* ============ LOGIN SCREEN ============ */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--azul-oscuro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  #login-screen.hidden { display: none; }
+
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .login-logo {
+    height: 72px;
+    width: auto;
+    display: block;
+    margin: 0 auto 28px;
+  }
+
+  .login-tagline {
+    color: var(--lavanda);
+    font-family: var(--font-body);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+
+  .setup-banner {
+    background: rgba(225, 85, 84, 0.12);
+    border: 1px solid var(--error);
+    color: var(--blanco);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    line-height: 1.5;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .setup-banner strong {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    display: block;
+    margin-bottom: 4px;
+    color: var(--error);
+  }
+
+  .step-label {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--gris-claro);
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .user-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .user-btn {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--azul-oscuro);
+    background: var(--gris-claro);
+    border: none;
+    border-radius: 14px;
+    padding: 22px 12px;
+    transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+  }
+
+  .user-btn:hover, .user-btn:focus-visible {
+    background: var(--lavanda);
+    color: var(--blanco);
+    transform: translateY(-2px);
+  }
+
+  .user-btn.selected {
+    background: var(--azul-brillante);
+    color: var(--blanco);
+  }
+
+  .loading-note, .empty-note {
+    color: var(--gris-claro);
+    font-family: var(--font-body);
+    font-size: 14px;
+    opacity: 0.8;
+  }
+
+  /* --- PIN step --- */
+  #pin-step { display: none; }
+  #pin-step.active { display: block; }
+  #user-step.hidden { display: none; }
+
+  .pin-back {
+    background: none;
+    border: none;
+    color: var(--lavanda);
+    font-family: var(--font-body);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .pin-user-name {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    color: var(--blanco);
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+
+  .pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--lavanda);
+    background: transparent;
+    transition: background 0.1s ease;
+  }
+
+  .pin-dot.filled {
+    background: var(--verde-tago);
+    border-color: var(--verde-tago);
+  }
+
+  .pin-dots.error .pin-dot {
+    border-color: var(--error);
+    background: var(--error);
+  }
+
+  .pin-error-msg {
+    color: var(--error);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    min-height: 18px;
+    margin-bottom: 10px;
+  }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+
+  .key-btn {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--blanco);
+    background: rgba(237, 237, 237, 0.08);
+    border: 1px solid rgba(237, 237, 237, 0.18);
+    border-radius: 50%;
+    aspect-ratio: 1;
+    transition: background 0.12s ease;
+  }
+
+  .key-btn:hover, .key-btn:focus-visible {
+    background: var(--azul-brillante);
+    border-color: var(--azul-brillante);
+  }
+
+  .key-btn.key-clear {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+  }
+
+  .shake { animation: shake 0.32s; }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+  }
+
+  /* ============ APP SHELL ============ */
+  #app-shell { display: none; min-height: 100%; flex-direction: column; }
+  #app-shell.active { display: flex; }
+
+  .app-header {
+    background: var(--azul-oscuro);
+    color: var(--blanco);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+  }
+
+  .app-header-logo { height: 65px; width: auto; display: block; }
+
+  @media (max-width: 480px) {
+    .app-header { flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+    .app-header-logo { margin: 0 auto; }
+    .app-user { width: 100%; justify-content: center; }
+  }
+
+  .app-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--lavanda);
+    color: var(--gris-claro);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: background 0.12s ease;
+  }
+
+  .logout-btn:hover { background: rgba(143, 155, 255, 0.18); }
+
+  .icon-btn {
+    background: transparent;
+    border: 1px solid var(--lavanda);
+    color: var(--gris-claro);
+    font-size: 16px;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease;
+  }
+
+  .icon-btn:hover { background: rgba(143, 155, 255, 0.18); }
+
+  .app-nav {
+    display: flex;
+    background: var(--blanco);
+    border-bottom: 2px solid var(--gris-claro);
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--azul-oscuro);
+    opacity: 0.55;
+    padding: 16px 8px;
+    border-bottom: 3px solid transparent;
+    transition: opacity 0.12s ease, border-color 0.12s ease;
+  }
+
+  .nav-btn.active {
+    opacity: 1;
+    border-bottom-color: var(--azul-brillante);
+    color: var(--azul-brillante);
+  }
+
+  .nav-badge {
+    background: var(--error);
+    color: var(--blanco);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 11px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-badge.hidden { display: none; }
+
+  .app-content { flex: 1; padding: 32px 20px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .panel-placeholder {
+    max-width: 420px;
+    margin: 40px auto 0;
+    text-align: center;
+    background: var(--blanco);
+    border-radius: 16px;
+    padding: 40px 24px;
+    box-shadow: 0 2px 10px rgba(11, 20, 71, 0.06);
+  }
+
+  .panel-placeholder h2 {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    color: var(--azul-oscuro);
+    margin: 0 0 10px;
+  }
+
+  .panel-placeholder p {
+    font-family: var(--font-body);
+    font-weight: 300;
+    color: var(--azul-oscuro);
+    opacity: 0.7;
+    margin: 0;
+  }
+
+  /* ============ STOCK ACTUAL ============ */
+  .machine-section { margin-bottom: 32px; max-width: 760px; }
+
+  .section-title {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--azul-oscuro);
+    margin: 0 0 12px;
+  }
+
+  .subgroup { margin-bottom: 16px; }
+
+  .subgroup-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--azul-oscuro);
+    opacity: 0.55;
+    margin: 0 0 8px;
+  }
+
+  .item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--blanco);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 1px 4px rgba(11, 20, 71, 0.06);
+  }
+
+  .item-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .item-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--azul-oscuro);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 44px;
+  }
+
+  @media (max-width: 560px) {
+    .item-row { flex-wrap: wrap; row-gap: 10px; }
+    .item-main { flex: 1 1 100%; }
+    .item-qty { margin-left: auto; }
+  }
+
+  .badge-comprar {
+    flex-shrink: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--azul-brillante);
+    color: var(--blanco);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .item-qty {
+    flex-shrink: 0;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    color: var(--azul-oscuro);
+    opacity: 0.8;
+    min-width: 90px;
+    text-align: right;
+  }
+
+  .item-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-mov {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12.5px;
+    background: var(--gris-claro);
+    color: var(--azul-oscuro);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .btn-mov:hover { background: var(--azul-brillante); color: var(--blanco); }
+
+  .btn-edit {
+    background: var(--gris-claro);
+    border: none;
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease;
+  }
+
+  .btn-edit:hover { background: var(--lavanda); }
+
+  /* ============ MODALES ============ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 20, 71, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+  }
+
+  .modal-overlay.hidden { display: none; }
+
+  .modal-card {
+    background: var(--blanco);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .modal-card h3 {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    color: var(--azul-oscuro);
+    margin: 0 0 4px;
+  }
+
+  .modal-item-name {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    color: var(--azul-oscuro);
+    opacity: 0.7;
+    margin: 0 0 18px;
+  }
+
+  .modal-field { margin-bottom: 14px; }
+
+  .modal-field label {
+    display: block;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--azul-oscuro);
+    margin-bottom: 6px;
+  }
+
+  .modal-field input[type="number"],
+  .modal-field input[type="text"] {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--gris-claro);
+    border-radius: 8px;
+    background: var(--gris-claro);
+    color: var(--azul-oscuro);
+  }
+
+  .modal-field input:focus { outline: 2px solid var(--azul-brillante); }
+
+  .modal-field.checkbox-field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+
+  .modal-error {
+    color: var(--error);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12.5px;
+    min-height: 16px;
+    margin: -6px 0 10px;
+  }
+
+  .tipo-toggle { display: flex; gap: 8px; }
+
+  .tipo-btn {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    background: var(--gris-claro);
+    color: var(--azul-oscuro);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 0;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .tipo-btn.active { background: var(--azul-brillante); color: var(--blanco); }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .btn-primary {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13.5px;
+    background: var(--azul-brillante);
+    color: var(--blanco);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+  }
+
+  .btn-secondary {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13.5px;
+    background: var(--blanco);
+    color: var(--azul-oscuro);
+    border: 1px solid var(--gris-claro);
+    border-radius: 8px;
+    padding: 9px 16px;
+    box-shadow: 0 1px 3px rgba(11, 20, 71, 0.08);
+  }
+
+  /* ============ MOVIMIENTOS ============ */
+  .mov-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .mov-filters select,
+  .mov-filters input[type="date"] {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 8px 10px;
+    border: 1px solid var(--gris-claro);
+    border-radius: 8px;
+    background: var(--blanco);
+    color: var(--azul-oscuro);
+  }
+
+  .mov-table-wrap {
+    max-width: 900px;
+    overflow-x: auto;
+    background: var(--blanco);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(11, 20, 71, 0.06);
+  }
+
+  .mov-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+  .mov-table th {
+    text-align: left;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--azul-oscuro);
+    background: var(--gris-claro);
+    padding: 10px 14px;
+    white-space: nowrap;
+  }
+
+  .mov-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gris-claro);
+    color: var(--azul-oscuro);
+    white-space: nowrap;
+  }
+
+  .mov-table tbody tr:last-child td { border-bottom: none; }
+
+  .tipo-entrada { color: var(--verde-tago); font-family: var(--font-heading); font-weight: 700; }
+  .tipo-salida { color: var(--error); font-family: var(--font-heading); font-weight: 700; }
+
+  .mov-edited-tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--azul-brillante);
+    cursor: default;
+  }
+
+  /* ============ GESTION DE ITEMS ============ */
+  .stock-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+
+  .modal-field select {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--gris-claro);
+    border-radius: 8px;
+    background: var(--gris-claro);
+    color: var(--azul-oscuro);
+  }
+
+  .modal-field select:disabled { opacity: 0.55; }
+
+  .modal-card.item-modal-card { max-height: 88vh; overflow-y: auto; }
+
+  .modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .modal-actions-right { display: flex; gap: 10px; margin-left: auto; }
+
+  .btn-danger {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13.5px;
+    background: none;
+    color: var(--error);
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    padding: 9px 16px;
+  }
+
+  .btn-danger:hover { background: rgba(225, 85, 84, 0.1); }
+
+  /* ============ RESPONSIVE: TOUCH TARGETS EN MOVIL ============ */
+  @media (max-width: 768px) {
+    .btn-mov, .btn-primary, .btn-secondary, .btn-danger, .logout-btn, .tipo-btn {
+      min-height: 44px;
+    }
+    .btn-edit, .btn-delete-icon { width: 44px; height: 44px; }
+    .icon-btn { width: 44px; height: 44px; }
+    .nav-btn { min-height: 48px; }
+    .config-min-input { min-height: 44px; }
+    .modal-field input[type="number"],
+    .modal-field input[type="text"],
+    .modal-field select,
+    .mov-filters select,
+    .mov-filters input[type="date"] {
+      min-height: 44px;
+    }
+    .modal-field.checkbox-field label { min-height: 44px; }
+  }
+
+  /* ============ RESPONSIVE: ESCRITORIO ============ */
+  @media (min-width: 900px) {
+    .app-nav { max-width: 1100px; margin: 0 auto; }
+    .app-content { max-width: 1200px; margin: 0 auto; width: 100%; }
+
+    #stock-container { column-width: 480px; column-gap: 24px; }
+    .machine-section {
+      max-width: none;
+      display: inline-block;
+      width: 100%;
+      break-inside: avoid;
+      vertical-align: top;
+    }
+
+    .mov-table-wrap { max-width: 1100px; }
+  }
+
+  /* ============ STOCK HOME ============ */
+  .hidden { display: none !important; }
+
+  .stock-home-header {
+    background: var(--azul-oscuro);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 65px 24px;
+    margin: -32px -20px 32px;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .stock-home-logo {
+    height: 65px;
+    width: auto;
+    display: block;
+  }
+
+  @media (min-width: 600px) {
+    .stock-home-header { padding: 88px 24px; }
+    .stock-home-logo { height: 88px; }
+  }
+
+  .stock-tiles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .stock-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 130px;
+    background: var(--blanco);
+    border: none;
+    border-top: 4px solid var(--azul-brillante);
+    border-radius: 16px;
+    padding: 20px 12px;
+    box-shadow: 0 1px 4px rgba(11, 20, 71, 0.08);
+    text-align: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .stock-tile:hover, .stock-tile:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(11, 20, 71, 0.14);
+  }
+
+  .stock-tile.accent-verde { border-top-color: var(--verde-tago); }
+  .stock-tile.accent-azul { border-top-color: var(--azul-brillante); }
+  .stock-tile.accent-lavanda { border-top-color: var(--lavanda); }
+
+  .stock-tile-icon { font-size: 30px; line-height: 1; }
+
+  .stock-tile-label {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--azul-oscuro);
+  }
+
+  .stock-tile-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--error);
+    color: var(--blanco);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stock-detail-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stock-back-btn {
+    background: var(--gris-claro);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--azul-oscuro);
+    padding: 9px 14px;
+  }
+
+  .stock-back-btn:hover { background: var(--lavanda); color: var(--blanco); }
+
+  .stock-detail-title {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--azul-oscuro);
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .stock-back-btn { min-height: 44px; }
+  }
+
+  /* ============ REPORTES ============ */
+  .report-section { margin-bottom: 40px; max-width: 900px; }
+
+  .report-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .report-section-header .section-title { margin: 0; }
+
+  .report-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--blanco);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(11, 20, 71, 0.06);
+  }
+
+  .stat-number {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 32px;
+    color: var(--azul-oscuro);
+  }
+
+  .stat-card.stat-alert .stat-number { color: var(--error); }
+
+  .stat-label {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--azul-oscuro);
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  .report-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .category-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--blanco);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(11, 20, 71, 0.06);
+  }
+
+  .category-stat-icon { font-size: 22px; }
+
+  .category-stat-label {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--azul-oscuro);
+  }
+
+  .category-stat-count {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--azul-oscuro);
+    opacity: 0.35;
+    min-width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  .category-stat-card.has-alert .category-stat-count {
+    color: var(--blanco);
+    background: var(--error);
+    opacity: 1;
+  }
+
+  .buy-row-detail {
+    flex-shrink: 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--azul-oscuro);
+    opacity: 0.8;
+    text-align: right;
+  }
+
+  .export-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+
+  /* ============ DASHBOARD ============ */
+  .dashboard-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    max-width: 900px;
+  }
+
+  .dashboard-empty-state {
+    max-width: 420px;
+    margin: 24px auto 0;
+    text-align: center;
+    background: var(--blanco);
+    border-radius: 16px;
+    padding: 36px 24px;
+    box-shadow: 0 1px 4px rgba(11, 20, 71, 0.06);
+  }
+
+  .dashboard-empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+  .dashboard-empty-text {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--azul-oscuro);
+  }
+
+  /* ============ CONFIGURACION ============ */
+  .config-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .config-section-header .section-title { margin: 0; margin-right: auto; }
+
+  .config-bulk-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .config-bulk-form input[type="number"] {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 8px 10px;
+    border: 1px solid var(--gris-claro);
+    border-radius: 8px;
+    background: var(--blanco);
+    color: var(--azul-oscuro);
+    width: 200px;
+    max-width: 100%;
+  }
+
+  .config-row { flex-wrap: wrap; gap: 10px 16px; }
+
+  .config-qty-info {
+    flex-shrink: 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--azul-oscuro);
+    opacity: 0.7;
+    min-width: 80px;
+    text-align: right;
+  }
+
+  .config-min-input {
+    flex-shrink: 0;
+    width: 120px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--gris-claro);
+    border-radius: 8px;
+    background: var(--gris-claro);
+    color: var(--azul-oscuro);
+  }
+
+  .config-force-label {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--azul-oscuro);
+  }
+
+  @media (max-width: 900px) {
+    #config-container { max-width: 100%; }
+  }
+
+  @media (min-width: 900px) {
+    #config-container { column-width: 480px; column-gap: 24px; }
+    #config-container .machine-section {
+      max-width: none;
+      display: inline-block;
+      width: 100%;
+      break-inside: avoid;
+      vertical-align: top;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <img src="assets/tago_logo_blanco.png" alt="TAGO" class="login-logo">
+    <div class="login-tagline">Control de Inventario</div>
+
+    <div id="setup-banner" class="setup-banner" style="display:none;">
+      <strong>Falta configurar Firebase</strong>
+      Completa los pasos de <code>SETUP.md</code> y pega tu <code>firebaseConfig</code> real
+      en <code>index.html</code> para activar el login.
+    </div>
+
+    <div id="user-step">
+      <div class="step-label">¿Quién eres?</div>
+      <div id="user-grid" class="user-grid"></div>
+      <div id="user-loading" class="loading-note">Cargando usuarios…</div>
+    </div>
+
+    <div id="pin-step">
+      <button type="button" class="pin-back" id="pin-back-btn">&larr; Cambiar usuario</button>
+      <div class="pin-user-name" id="pin-user-name"></div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+      <div class="pin-error-msg" id="pin-error-msg"></div>
+      <div class="keypad" id="keypad">
+        <button type="button" class="key-btn" data-key="1">1</button>
+        <button type="button" class="key-btn" data-key="2">2</button>
+        <button type="button" class="key-btn" data-key="3">3</button>
+        <button type="button" class="key-btn" data-key="4">4</button>
+        <button type="button" class="key-btn" data-key="5">5</button>
+        <button type="button" class="key-btn" data-key="6">6</button>
+        <button type="button" class="key-btn" data-key="7">7</button>
+        <button type="button" class="key-btn" data-key="8">8</button>
+        <button type="button" class="key-btn" data-key="9">9</button>
+        <button type="button" class="key-btn key-clear" data-key="clear">Borrar</button>
+        <button type="button" class="key-btn" data-key="0">0</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="app-shell">
+  <header class="app-header">
+    <img src="assets/tago_logo_blanco.png" alt="TAGO" class="app-header-logo">
+    <div class="app-user">
+      <a href="/" class="logout-btn" id="home-btn" title="Volver al inicio" style="text-decoration:none;">&larr; Inicio</a>
+      <span id="current-user-name"></span>
+      <button type="button" class="icon-btn" id="changelog-btn" title="Control de cambios" aria-label="Control de cambios">🕓</button>
+      <button type="button" class="icon-btn" id="config-btn" title="Configuración" aria-label="Configuración">⚙</button>
+      <button type="button" class="logout-btn" id="logout-btn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <nav class="app-nav">
+    <button type="button" class="nav-btn active" data-panel="dashboard">Dashboard</button>
+    <button type="button" class="nav-btn" data-panel="stock">Stock actual</button>
+    <button type="button" class="nav-btn" data-panel="movimientos">Movimientos</button>
+    <button type="button" class="nav-btn" data-panel="reportes">Reportes<span class="nav-badge hidden" id="reportes-nav-badge">0</span></button>
+  </nav>
+
+  <main class="app-content">
+    <section class="panel active" id="panel-dashboard">
+      <div class="stock-home-header">
+        <img src="assets/tago_logo_blanco.png" alt="TAGO" class="stock-home-logo">
+      </div>
+
+      <div class="report-section">
+        <h3 class="section-title">Alertas de stock</h3>
+        <div id="dashboard-alerts-container">
+          <div class="empty-note">Cargando alertas…</div>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h3 class="section-title">Accesos rápidos</h3>
+        <div class="dashboard-quick-grid" id="dashboard-quick-grid">
+          <button type="button" class="stock-tile accent-verde" data-goto="stock">
+            <span class="stock-tile-icon">📦</span>
+            <span class="stock-tile-label">Stock actual</span>
+          </button>
+          <button type="button" class="stock-tile accent-azul" data-goto="movimientos">
+            <span class="stock-tile-icon">🔄</span>
+            <span class="stock-tile-label">Movimientos</span>
+          </button>
+          <button type="button" class="stock-tile accent-lavanda" data-goto="reportes">
+            <span class="stock-tile-icon">📊</span>
+            <span class="stock-tile-label">Reportes</span>
+          </button>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="panel-stock">
+      <div id="stock-home">
+        <div class="stock-home-header">
+          <img src="assets/tago_logo_blanco.png" alt="TAGO" class="stock-home-logo">
+        </div>
+        <div class="stock-tiles-grid" id="stock-tiles-grid">
+          <div class="empty-note">Cargando categorías…</div>
+        </div>
+      </div>
+
+      <div id="stock-detail" class="hidden">
+        <div class="stock-detail-header">
+          <button type="button" class="stock-back-btn" id="stock-back-btn">&larr; Volver</button>
+          <h2 class="stock-detail-title" id="stock-detail-title"></h2>
+          <button type="button" class="btn-primary" id="add-item-btn">+ Agregar ítem nuevo</button>
+        </div>
+        <div id="stock-container">
+          <div class="empty-note" id="stock-loading">Cargando inventario…</div>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="panel-movimientos">
+      <div class="mov-filters">
+        <select id="mov-filter-item"><option value="">Todos los ítems</option></select>
+        <input type="date" id="mov-filter-from">
+        <input type="date" id="mov-filter-to">
+        <button type="button" class="btn-secondary" id="mov-filter-clear">Limpiar filtros</button>
+      </div>
+      <div class="mov-table-wrap">
+        <table class="mov-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Ítem</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Usuario</th>
+              <th>Nota</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="mov-tbody"></tbody>
+        </table>
+        <div class="empty-note" id="mov-empty" style="display:none; padding: 16px;">No hay movimientos que coincidan con el filtro.</div>
+      </div>
+    </section>
+    <section class="panel" id="panel-reportes">
+      <div class="report-section">
+        <h3 class="section-title">Resumen general</h3>
+        <div class="report-stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="report-total-items">0</div>
+            <div class="stat-label">Ítems en inventario</div>
+          </div>
+          <div class="stat-card stat-alert">
+            <div class="stat-number" id="report-total-comprar">0</div>
+            <div class="stat-label">Marcados "Comprar"</div>
+          </div>
+        </div>
+        <div class="report-category-grid" id="report-category-grid"></div>
+      </div>
+
+      <div class="report-section">
+        <div class="report-section-header">
+          <h3 class="section-title">Lista consolidada de compra</h3>
+          <button type="button" class="btn-secondary" id="export-buy-list-btn">Exportar CSV</button>
+        </div>
+        <div id="buy-list-container"></div>
+      </div>
+
+      <div class="report-section">
+        <h3 class="section-title">Historial de consumo (últimos 30 días)</h3>
+        <div class="mov-table-wrap">
+          <table class="mov-table">
+            <thead>
+              <tr>
+                <th>Ítem</th>
+                <th>Categoría</th>
+                <th>Salidas (30 días)</th>
+                <th>Unidad</th>
+              </tr>
+            </thead>
+            <tbody id="consumption-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h3 class="section-title">Exportar</h3>
+        <div class="export-buttons">
+          <button type="button" class="btn-secondary" id="export-stock-btn">Exportar Stock actual (CSV)</button>
+          <button type="button" class="btn-secondary" id="export-movs-btn">Exportar Movimientos (CSV)</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="panel-config">
+      <div class="stock-detail-header">
+        <button type="button" class="stock-back-btn" id="config-back-btn">&larr; Volver</button>
+        <h2 class="stock-detail-title">Configuración</h2>
+      </div>
+      <div id="config-container">
+        <div class="empty-note">Cargando ítems…</div>
+      </div>
+    </section>
+    <section class="panel" id="panel-changelog">
+      <div class="stock-detail-header">
+        <button type="button" class="stock-back-btn" id="changelog-back-btn">&larr; Volver</button>
+        <h2 class="stock-detail-title">Control de cambios</h2>
+      </div>
+      <div class="mov-filters">
+        <select id="changelog-filter-user"><option value="">Todos los usuarios</option></select>
+        <input type="date" id="changelog-filter-from">
+        <input type="date" id="changelog-filter-to">
+        <button type="button" class="btn-secondary" id="changelog-filter-clear">Limpiar filtros</button>
+      </div>
+      <div class="mov-table-wrap">
+        <table class="mov-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Fecha</th>
+              <th>Acción</th>
+              <th>Ítem afectado</th>
+              <th>Cambio</th>
+            </tr>
+          </thead>
+          <tbody id="changelog-tbody"></tbody>
+        </table>
+        <div class="empty-note" id="changelog-empty" style="display:none; padding: 16px;">No hay registros que coincidan con el filtro.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ MODAL: REGISTRAR MOVIMIENTO ============ -->
+<div id="mov-overlay" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3>Registrar movimiento</h3>
+    <p class="modal-item-name" id="mov-item-name"></p>
+    <div class="modal-field">
+      <label>Tipo</label>
+      <div class="tipo-toggle" id="mov-tipo-toggle">
+        <button type="button" class="tipo-btn active" data-tipo="entrada">Entrada</button>
+        <button type="button" class="tipo-btn" data-tipo="salida">Salida</button>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Cantidad</label>
+      <input type="number" id="mov-cantidad" min="0" step="any" inputmode="decimal">
+    </div>
+    <div class="modal-field">
+      <label>Nota (opcional)</label>
+      <input type="text" id="mov-nota" maxlength="200">
+    </div>
+    <div class="modal-error" id="mov-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="mov-cancel">Cancelar</button>
+      <button type="button" class="btn-primary" id="mov-submit">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: EDITAR MOVIMIENTO ============ -->
+<div id="edit-mov-overlay" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3>Editar movimiento</h3>
+    <p class="modal-item-name" id="edit-mov-item-name"></p>
+    <div class="modal-field">
+      <label>Tipo</label>
+      <div class="tipo-toggle" id="edit-mov-tipo-toggle">
+        <button type="button" class="tipo-btn" data-tipo="entrada">Entrada</button>
+        <button type="button" class="tipo-btn" data-tipo="salida">Salida</button>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Cantidad</label>
+      <input type="number" id="edit-mov-cantidad" min="0" step="any" inputmode="decimal">
+    </div>
+    <div class="modal-field">
+      <label>Nota (opcional)</label>
+      <input type="text" id="edit-mov-nota" maxlength="200">
+    </div>
+    <div class="modal-error" id="edit-mov-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-danger" id="edit-mov-delete">Eliminar</button>
+      <div class="modal-actions-right">
+        <button type="button" class="btn-secondary" id="edit-mov-cancel">Cancelar</button>
+        <button type="button" class="btn-primary" id="edit-mov-submit">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: AGREGAR / EDITAR ITEM ============ -->
+<div id="item-overlay" class="modal-overlay hidden">
+  <div class="modal-card item-modal-card">
+    <h3 id="item-modal-title">Agregar ítem nuevo</h3>
+    <div class="modal-field">
+      <label>Nombre</label>
+      <input type="text" id="item-nombre" maxlength="120">
+    </div>
+    <div class="modal-field">
+      <label>Categoría</label>
+      <select id="item-categoria">
+        <option value="tinta">Tinta</option>
+        <option value="material">Material</option>
+        <option value="insumo">Insumo</option>
+        <option value="acrilico">Acrílico / PAI / ABS</option>
+        <option value="accesorio">Accesorio</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Máquina</label>
+      <select id="item-maquina">
+        <option value="">General (sin máquina)</option>
+        <option value="DTF Textil Prestige">DTF Textil Prestige</option>
+        <option value="DTF UV">DTF UV</option>
+        <option value="Cama Plana UV">Cama Plana UV</option>
+        <option value="Mimaki">Mimaki</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Unidad</label>
+      <input type="text" id="item-unidad" maxlength="30" placeholder="ej. L, unidades, planchas">
+    </div>
+    <div class="modal-field">
+      <label id="item-cantidad-label">Cantidad inicial</label>
+      <input type="number" id="item-cantidad" min="0" step="any" inputmode="decimal">
+    </div>
+    <div class="modal-field">
+      <label>Stock mínimo (opcional)</label>
+      <input type="number" id="item-stock-minimo" min="0" step="any" inputmode="decimal" placeholder="Sin definir">
+    </div>
+    <div class="modal-field checkbox-field" id="item-forzar-field">
+      <label><input type="checkbox" id="item-forzar-comprar"> Forzar "Comprar" manualmente</label>
+    </div>
+    <div class="modal-error" id="item-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-danger" id="item-delete">Eliminar</button>
+      <div class="modal-actions-right">
+        <button type="button" class="btn-secondary" id="item-cancel">Cancelar</button>
+        <button type="button" class="btn-primary" id="item-submit">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getDatabase, ref, get, onValue, update, push, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // -----------------------------------------------------------
+  // TODO: reemplaza este objeto con el firebaseConfig real que
+  // te entrega la consola de Firebase (ver SETUP.md paso 2).
+  // -----------------------------------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZdD13Cat1m5L5S3TPamgeX-iYJef1Zh4",
+    authDomain: "tago-inventario.firebaseapp.com",
+    databaseURL: "https://tago-inventario-default-rtdb.firebaseio.com",
+    projectId: "tago-inventario",
+    storageBucket: "tago-inventario.firebasestorage.app",
+    messagingSenderId: "591743216757",
+    appId: "1:591743216757:web:bc8d219629139cfcd49c3c"
+  };
+
+  const SESSION_KEY = "tago_session_user";
+
+  const els = {
+    setupBanner: document.getElementById("setup-banner"),
+    userStep: document.getElementById("user-step"),
+    userGrid: document.getElementById("user-grid"),
+    userLoading: document.getElementById("user-loading"),
+    pinStep: document.getElementById("pin-step"),
+    pinBackBtn: document.getElementById("pin-back-btn"),
+    pinUserName: document.getElementById("pin-user-name"),
+    pinDots: document.getElementById("pin-dots"),
+    pinErrorMsg: document.getElementById("pin-error-msg"),
+    keypad: document.getElementById("keypad"),
+    loginScreen: document.getElementById("login-screen"),
+    appShell: document.getElementById("app-shell"),
+    currentUserName: document.getElementById("current-user-name"),
+    logoutBtn: document.getElementById("logout-btn"),
+    navBtns: document.querySelectorAll(".nav-btn"),
+    panels: document.querySelectorAll(".panel"),
+
+    dashboardAlertsContainer: document.getElementById("dashboard-alerts-container"),
+    dashboardQuickGrid: document.getElementById("dashboard-quick-grid"),
+
+    configBtn: document.getElementById("config-btn"),
+    configBackBtn: document.getElementById("config-back-btn"),
+    configContainer: document.getElementById("config-container"),
+
+    changelogBtn: document.getElementById("changelog-btn"),
+    changelogBackBtn: document.getElementById("changelog-back-btn"),
+    changelogFilterUser: document.getElementById("changelog-filter-user"),
+    changelogFilterFrom: document.getElementById("changelog-filter-from"),
+    changelogFilterTo: document.getElementById("changelog-filter-to"),
+    changelogFilterClear: document.getElementById("changelog-filter-clear"),
+    changelogTbody: document.getElementById("changelog-tbody"),
+    changelogEmpty: document.getElementById("changelog-empty"),
+
+    stockHome: document.getElementById("stock-home"),
+    stockDetail: document.getElementById("stock-detail"),
+    stockTilesGrid: document.getElementById("stock-tiles-grid"),
+    stockBackBtn: document.getElementById("stock-back-btn"),
+    stockDetailTitle: document.getElementById("stock-detail-title"),
+    stockContainer: document.getElementById("stock-container"),
+
+    movFilterItem: document.getElementById("mov-filter-item"),
+    movFilterFrom: document.getElementById("mov-filter-from"),
+    movFilterTo: document.getElementById("mov-filter-to"),
+    movFilterClear: document.getElementById("mov-filter-clear"),
+    movTbody: document.getElementById("mov-tbody"),
+    movEmpty: document.getElementById("mov-empty"),
+
+    movOverlay: document.getElementById("mov-overlay"),
+    movItemName: document.getElementById("mov-item-name"),
+    movTipoToggle: document.getElementById("mov-tipo-toggle"),
+    movTipoBtns: document.querySelectorAll("#mov-tipo-toggle .tipo-btn"),
+    movCantidad: document.getElementById("mov-cantidad"),
+    movNota: document.getElementById("mov-nota"),
+    movError: document.getElementById("mov-error"),
+    movCancel: document.getElementById("mov-cancel"),
+    movSubmit: document.getElementById("mov-submit"),
+
+    editMovOverlay: document.getElementById("edit-mov-overlay"),
+    editMovItemName: document.getElementById("edit-mov-item-name"),
+    editMovTipoToggle: document.getElementById("edit-mov-tipo-toggle"),
+    editMovTipoBtns: document.querySelectorAll("#edit-mov-tipo-toggle .tipo-btn"),
+    editMovCantidad: document.getElementById("edit-mov-cantidad"),
+    editMovNota: document.getElementById("edit-mov-nota"),
+    editMovError: document.getElementById("edit-mov-error"),
+    editMovDelete: document.getElementById("edit-mov-delete"),
+    editMovCancel: document.getElementById("edit-mov-cancel"),
+    editMovSubmit: document.getElementById("edit-mov-submit"),
+
+    addItemBtn: document.getElementById("add-item-btn"),
+    itemOverlay: document.getElementById("item-overlay"),
+    itemModalTitle: document.getElementById("item-modal-title"),
+    itemNombre: document.getElementById("item-nombre"),
+    itemCategoria: document.getElementById("item-categoria"),
+    itemMaquina: document.getElementById("item-maquina"),
+    itemUnidad: document.getElementById("item-unidad"),
+    itemCantidadLabel: document.getElementById("item-cantidad-label"),
+    itemCantidad: document.getElementById("item-cantidad"),
+    itemStockMinimo: document.getElementById("item-stock-minimo"),
+    itemForzarField: document.getElementById("item-forzar-field"),
+    itemForzarComprar: document.getElementById("item-forzar-comprar"),
+    itemError: document.getElementById("item-error"),
+    itemDelete: document.getElementById("item-delete"),
+    itemCancel: document.getElementById("item-cancel"),
+    itemSubmit: document.getElementById("item-submit"),
+
+    reportesNavBadge: document.getElementById("reportes-nav-badge"),
+    reportTotalItems: document.getElementById("report-total-items"),
+    reportTotalComprar: document.getElementById("report-total-comprar"),
+    reportCategoryGrid: document.getElementById("report-category-grid"),
+    buyListContainer: document.getElementById("buy-list-container"),
+    exportBuyListBtn: document.getElementById("export-buy-list-btn"),
+    consumptionTbody: document.getElementById("consumption-tbody"),
+    exportStockBtn: document.getElementById("export-stock-btn"),
+    exportMovsBtn: document.getElementById("export-movs-btn")
+  };
+
+  const MACHINES = ["DTF Textil Prestige", "DTF UV", "Cama Plana UV", "Mimaki"];
+
+  const CATEGORY_TILES = [
+    { key: "machine:DTF Textil Prestige", label: "DTF Textil Prestige", icon: "🧵", accent: "verde",
+      matches: (it) => (it.categoria === "tinta" || it.categoria === "material") && it.maquina === "DTF Textil Prestige" },
+    { key: "machine:DTF UV", label: "DTF UV", icon: "🔆", accent: "azul",
+      matches: (it) => (it.categoria === "tinta" || it.categoria === "material") && it.maquina === "DTF UV" },
+    { key: "machine:Cama Plana UV", label: "Cama Plana UV", icon: "🛏️", accent: "lavanda",
+      matches: (it) => (it.categoria === "tinta" || it.categoria === "material") && it.maquina === "Cama Plana UV" },
+    { key: "machine:Mimaki", label: "Mimaki", icon: "🎨", accent: "verde",
+      matches: (it) => (it.categoria === "tinta" || it.categoria === "material") && it.maquina === "Mimaki" },
+    { key: "cat:insumo", label: "Insumos generales", icon: "📦", accent: "azul",
+      matches: (it) => it.categoria === "insumo" },
+    { key: "cat:acrilico", label: "Acrílicos / PAI / ABS", icon: "🔷", accent: "lavanda",
+      matches: (it) => it.categoria === "acrilico" },
+    { key: "cat:accesorio", label: "Roller porta pendones", icon: "🪧", accent: "verde",
+      matches: (it) => it.categoria === "accesorio" }
+  ];
+
+  let currentStockView = "home";
+
+  let usersById = {};
+  let selectedUserId = null;
+  let enteredPin = "";
+  let sessionUserName = null;
+  let db = null;
+  let itemsState = {};
+  let movimientosState = {};
+  let movItemId = null;
+  let movTipo = "entrada";
+  let itemModalMode = "create";
+  let itemModalId = null;
+  let cambiosState = {};
+
+  const ACCION_LABELS = {
+    crear_item: "Ítem creado",
+    editar_item: "Ítem editado",
+    eliminar_item: "Ítem eliminado",
+    editar_movimiento: "Movimiento editado",
+    eliminar_movimiento: "Movimiento eliminado",
+    editar_configuracion: "Configuración editada"
+  };
+
+  async function logCambio({ tipo_accion, item_afectado = "", campo_modificado = "", valor_anterior = "", valor_nuevo = "" }) {
+    try {
+      await push(ref(db, "cambios"), {
+        usuario: sessionUserName || "Desconocido",
+        fecha: serverTimestamp(),
+        tipo_accion,
+        item_afectado,
+        campo_modificado,
+        valor_anterior: String(valor_anterior),
+        valor_nuevo: String(valor_nuevo)
+      });
+    } catch (err) {
+      console.error("No se pudo registrar el cambio:", err);
+    }
+  }
+
+  function isFirebaseConfigured() {
+    return firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
+  }
+
+  function showAppShell(name) {
+    sessionUserName = name;
+    els.loginScreen.classList.add("hidden");
+    els.appShell.classList.add("active");
+    els.currentUserName.textContent = name;
+    activatePanel("dashboard");
+  }
+
+  function showLoginScreen() {
+    els.appShell.classList.remove("active");
+    els.loginScreen.classList.remove("hidden");
+    resetPinStep();
+  }
+
+  function resetPinStep() {
+    selectedUserId = null;
+    enteredPin = "";
+    els.pinStep.classList.remove("active");
+    els.userStep.classList.remove("hidden");
+    updatePinDots();
+    els.pinErrorMsg.textContent = "";
+  }
+
+  function renderUsers(users) {
+    usersById = users;
+    els.userLoading.style.display = "none";
+    els.userGrid.innerHTML = "";
+
+    const entries = Object.entries(users);
+    if (entries.length === 0) {
+      els.userLoading.textContent = "No hay usuarios cargados en /users todavía.";
+      els.userLoading.style.display = "block";
+      return;
+    }
+
+    for (const [id, user] of entries) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "user-btn";
+      btn.textContent = user.name || id;
+      btn.addEventListener("click", () => openPinStep(id));
+      els.userGrid.appendChild(btn);
+    }
+  }
+
+  function openPinStep(userId) {
+    selectedUserId = userId;
+    enteredPin = "";
+    els.pinUserName.textContent = usersById[userId].name || userId;
+    els.userStep.classList.add("hidden");
+    els.pinStep.classList.add("active");
+    els.pinErrorMsg.textContent = "";
+    updatePinDots();
+  }
+
+  function updatePinDots() {
+    const dots = els.pinDots.querySelectorAll(".pin-dot");
+    dots.forEach((dot, i) => dot.classList.toggle("filled", i < enteredPin.length));
+    els.pinDots.classList.remove("error");
+  }
+
+  function handlePinError() {
+    els.pinDots.classList.add("error");
+    els.pinDots.classList.add("shake");
+    els.pinErrorMsg.textContent = "PIN incorrecto, intenta de nuevo.";
+    setTimeout(() => {
+      els.pinDots.classList.remove("shake");
+      enteredPin = "";
+      updatePinDots();
+    }, 320);
+  }
+
+  function handleKeyPress(key) {
+    if (!selectedUserId) return;
+
+    if (key === "clear") {
+      enteredPin = enteredPin.slice(0, -1);
+      updatePinDots();
+      return;
+    }
+
+    if (enteredPin.length >= 4) return;
+    enteredPin += key;
+    updatePinDots();
+
+    if (enteredPin.length === 4) {
+      const user = usersById[selectedUserId];
+      if (user && user.pin === enteredPin) {
+        localStorage.setItem(SESSION_KEY, selectedUserId);
+        showAppShell(user.name || selectedUserId);
+      } else {
+        handlePinError();
+      }
+    }
+  }
+
+  els.keypad.addEventListener("click", (e) => {
+    const btn = e.target.closest(".key-btn");
+    if (btn) handleKeyPress(btn.dataset.key);
+  });
+
+  els.pinBackBtn.addEventListener("click", resetPinStep);
+
+  els.logoutBtn.addEventListener("click", () => {
+    // Cerrar sesión del ecosistema (login único) y volver al Home.
+    localStorage.removeItem("tago_session");
+    localStorage.removeItem(SESSION_KEY);
+    window.location.href = "/";
+  });
+
+  function activatePanel(name) {
+    els.navBtns.forEach((b) => b.classList.toggle("active", b.dataset.panel === name));
+    els.panels.forEach((p) => p.classList.remove("active"));
+    const panel = document.getElementById(`panel-${name}`);
+    if (panel) panel.classList.add("active");
+  }
+
+  els.navBtns.forEach((btn) => {
+    btn.addEventListener("click", () => activatePanel(btn.dataset.panel));
+  });
+
+  // ============ PANELES DE ACCESO POR ICONO (Configuracion, Control de cambios) ============
+
+  let previousPanelBeforeOverlay = "dashboard";
+
+  function openOverlayPanel(name) {
+    const activeBtn = Array.from(els.navBtns).find((b) => b.classList.contains("active"));
+    previousPanelBeforeOverlay = activeBtn ? activeBtn.dataset.panel : "dashboard";
+    els.navBtns.forEach((b) => b.classList.remove("active"));
+    els.panels.forEach((p) => p.classList.remove("active"));
+    document.getElementById(`panel-${name}`).classList.add("active");
+  }
+
+  function closeOverlayPanel() {
+    activatePanel(previousPanelBeforeOverlay);
+  }
+
+  els.configBtn.addEventListener("click", () => { openOverlayPanel("config"); renderConfig(); });
+  els.configBackBtn.addEventListener("click", closeOverlayPanel);
+
+  els.changelogBtn.addEventListener("click", () => { openOverlayPanel("changelog"); renderChangelog(); });
+  els.changelogBackBtn.addEventListener("click", closeOverlayPanel);
+
+  els.dashboardQuickGrid.querySelectorAll("[data-goto]").forEach((btn) => {
+    btn.addEventListener("click", () => activatePanel(btn.dataset.goto));
+  });
+
+  // ============ STOCK ACTUAL ============
+
+  function formatQty(n) {
+    const num = Number(n) || 0;
+    return num.toLocaleString("es-CL", { maximumFractionDigits: 2 });
+  }
+
+  function needsComprar(item) {
+    const min = item.stock_minimo;
+    const byMin = (min !== null && min !== undefined && min !== "") && (Number(item.cantidad_actual) <= Number(min));
+    return byMin || item.forzar_comprar === true;
+  }
+
+  function groupItems(items) {
+    const byMachine = {};
+    MACHINES.forEach((m) => { byMachine[m] = { tinta: [], material: [] }; });
+    const insumos = [], acrilicos = [], accesorios = [], otros = [];
+
+    for (const [id, item] of Object.entries(items)) {
+      const full = { id, ...item };
+      if (item.categoria === "tinta" && byMachine[item.maquina]) byMachine[item.maquina].tinta.push(full);
+      else if (item.categoria === "material" && byMachine[item.maquina]) byMachine[item.maquina].material.push(full);
+      else if (item.categoria === "insumo") insumos.push(full);
+      else if (item.categoria === "acrilico") acrilicos.push(full);
+      else if (item.categoria === "accesorio") accesorios.push(full);
+      else otros.push(full);
+    }
+
+    const sortFn = (a, b) => a.nombre.localeCompare(b.nombre, "es");
+    MACHINES.forEach((m) => { byMachine[m].tinta.sort(sortFn); byMachine[m].material.sort(sortFn); });
+    insumos.sort(sortFn); acrilicos.sort(sortFn); accesorios.sort(sortFn); otros.sort(sortFn);
+
+    return { byMachine, insumos, acrilicos, accesorios, otros };
+  }
+
+  function buildItemRow(item) {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.dataset.id = item.id;
+
+    const main = document.createElement("div");
+    main.className = "item-main";
+    const name = document.createElement("span");
+    name.className = "item-name";
+    name.textContent = item.nombre;
+    main.appendChild(name);
+    if (needsComprar(item)) {
+      const badge = document.createElement("span");
+      badge.className = "badge-comprar";
+      badge.textContent = "Comprar";
+      main.appendChild(badge);
+    }
+
+    const qty = document.createElement("div");
+    qty.className = "item-qty";
+    qty.textContent = `${formatQty(item.cantidad_actual)} ${item.unidad}`;
+
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+    const movBtn = document.createElement("button");
+    movBtn.type = "button";
+    movBtn.className = "btn-mov";
+    movBtn.textContent = "Registrar";
+    movBtn.addEventListener("click", () => openMovModal(item.id));
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "btn-edit";
+    editBtn.title = "Editar ítem";
+    editBtn.textContent = "⚙";
+    editBtn.addEventListener("click", () => openItemModalEdit(item.id));
+    actions.appendChild(movBtn);
+    actions.appendChild(editBtn);
+
+    row.appendChild(main);
+    row.appendChild(qty);
+    row.appendChild(actions);
+    return row;
+  }
+
+  function buildItemList(items) {
+    const list = document.createElement("div");
+    list.className = "item-list";
+    items.forEach((item) => list.appendChild(buildItemRow(item)));
+    return list;
+  }
+
+  function buildSubgroup(label, items) {
+    const wrap = document.createElement("div");
+    wrap.className = "subgroup";
+    const h = document.createElement("h4");
+    h.className = "subgroup-title";
+    h.textContent = label;
+    wrap.appendChild(h);
+    wrap.appendChild(buildItemList(items));
+    return wrap;
+  }
+
+  function buildSection(label, buildBody) {
+    const section = document.createElement("div");
+    section.className = "machine-section";
+    const title = document.createElement("h3");
+    title.className = "section-title";
+    title.textContent = label;
+    section.appendChild(title);
+    buildBody(section);
+    return section;
+  }
+
+  function renderStockTiles() {
+    els.stockTilesGrid.innerHTML = "";
+    const allItems = Object.values(itemsState);
+
+    CATEGORY_TILES.forEach((tile) => {
+      const items = allItems.filter(tile.matches);
+      const comprarCount = items.filter(needsComprar).length;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `stock-tile accent-${tile.accent}`;
+
+      const icon = document.createElement("span");
+      icon.className = "stock-tile-icon";
+      icon.textContent = tile.icon;
+
+      const label = document.createElement("span");
+      label.className = "stock-tile-label";
+      label.textContent = tile.label;
+
+      btn.appendChild(icon);
+      btn.appendChild(label);
+
+      if (comprarCount > 0) {
+        const badge = document.createElement("span");
+        badge.className = "stock-tile-badge";
+        badge.textContent = String(comprarCount);
+        badge.title = `${comprarCount} ítem(s) marcados para comprar`;
+        btn.appendChild(badge);
+      }
+
+      btn.addEventListener("click", () => openCategoryDetail(tile.key));
+      els.stockTilesGrid.appendChild(btn);
+    });
+  }
+
+  function showStockHome() {
+    currentStockView = "home";
+    els.stockHome.classList.remove("hidden");
+    els.stockDetail.classList.add("hidden");
+    renderStockTiles();
+  }
+
+  function openCategoryDetail(key) {
+    currentStockView = key;
+    els.stockHome.classList.add("hidden");
+    els.stockDetail.classList.remove("hidden");
+    renderCategoryDetail();
+  }
+
+  els.stockBackBtn.addEventListener("click", showStockHome);
+
+  function renderCategoryDetail() {
+    const tile = CATEGORY_TILES.find((t) => t.key === currentStockView);
+    if (!tile) { showStockHome(); return; }
+
+    els.stockDetailTitle.textContent = tile.label;
+
+    const container = els.stockContainer;
+    container.innerHTML = "";
+
+    const items = Object.entries(itemsState)
+      .filter(([, it]) => tile.matches(it))
+      .map(([id, it]) => ({ id, ...it }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+    if (currentStockView.startsWith("machine:")) {
+      const tintas = items.filter((it) => it.categoria === "tinta");
+      const materiales = items.filter((it) => it.categoria === "material");
+      if (tintas.length) container.appendChild(buildSubgroup("Tintas", tintas));
+      if (materiales.length) container.appendChild(buildSubgroup("Materiales", materiales));
+    } else if (items.length) {
+      container.appendChild(buildItemList(items));
+    }
+
+    if (!container.children.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-note";
+      empty.textContent = "No hay ítems en esta categoría todavía.";
+      container.appendChild(empty);
+    }
+  }
+
+  function renderStock() {
+    if (currentStockView === "home") {
+      renderStockTiles();
+    } else {
+      renderCategoryDetail();
+    }
+  }
+
+  // ============ MODAL: REGISTRAR MOVIMIENTO ============
+
+  function openMovModal(id) {
+    movItemId = id;
+    movTipo = "entrada";
+    const item = itemsState[id];
+    els.movItemName.textContent = `${item.nombre} (${item.unidad})`;
+    els.movCantidad.value = "";
+    els.movNota.value = "";
+    els.movError.textContent = "";
+    els.movTipoBtns.forEach((b) => b.classList.toggle("active", b.dataset.tipo === "entrada"));
+    els.movOverlay.classList.remove("hidden");
+  }
+
+  function closeMovModal() {
+    els.movOverlay.classList.add("hidden");
+    movItemId = null;
+  }
+
+  els.movTipoBtns.forEach((b) => {
+    b.addEventListener("click", () => {
+      movTipo = b.dataset.tipo;
+      els.movTipoBtns.forEach((x) => x.classList.toggle("active", x === b));
+    });
+  });
+
+  els.movCancel.addEventListener("click", closeMovModal);
+
+  els.movSubmit.addEventListener("click", async () => {
+    const cantidad = parseFloat(els.movCantidad.value);
+    if (!cantidad || cantidad <= 0) {
+      els.movError.textContent = "Ingresa una cantidad válida.";
+      return;
+    }
+    const item = itemsState[movItemId];
+    if (!item) { closeMovModal(); return; }
+
+    const current = Number(item.cantidad_actual) || 0;
+    const delta = movTipo === "entrada" ? cantidad : -cantidad;
+    const nueva = Math.round((current + delta) * 100) / 100;
+
+    els.movSubmit.disabled = true;
+    try {
+      await update(ref(db, `items/${movItemId}`), { cantidad_actual: nueva });
+      await push(ref(db, "movimientos"), {
+        item_id: movItemId,
+        tipo: movTipo,
+        cantidad: cantidad,
+        fecha: serverTimestamp(),
+        usuario: sessionUserName,
+        nota: els.movNota.value.trim() || null
+      });
+      closeMovModal();
+    } catch (err) {
+      els.movError.textContent = "No se pudo guardar. Intenta de nuevo.";
+      console.error("Error registrando movimiento:", err);
+    } finally {
+      els.movSubmit.disabled = false;
+    }
+  });
+
+  // ============ MODAL: AGREGAR / EDITAR ITEM ============
+
+  function applyMaquinaLockForCategoria() {
+    const categoria = els.itemCategoria.value;
+    if (categoria === "tinta" || categoria === "material") {
+      els.itemMaquina.disabled = false;
+      if (!els.itemMaquina.value) els.itemMaquina.value = MACHINES[0];
+    } else {
+      els.itemMaquina.value = "";
+      els.itemMaquina.disabled = true;
+    }
+  }
+
+  els.itemCategoria.addEventListener("change", applyMaquinaLockForCategoria);
+
+  function openItemModalCreate() {
+    itemModalMode = "create";
+    itemModalId = null;
+    els.itemModalTitle.textContent = "Agregar ítem nuevo";
+    els.itemNombre.value = "";
+
+    if (currentStockView.startsWith("machine:")) {
+      els.itemCategoria.value = "tinta";
+      els.itemMaquina.value = currentStockView.slice("machine:".length);
+    } else if (currentStockView.startsWith("cat:")) {
+      els.itemCategoria.value = currentStockView.slice("cat:".length);
+      els.itemMaquina.value = "";
+    } else {
+      els.itemCategoria.value = "tinta";
+      els.itemMaquina.value = MACHINES[0];
+    }
+    els.itemMaquina.disabled = false;
+    els.itemUnidad.value = "";
+    els.itemCantidadLabel.textContent = "Cantidad inicial";
+    els.itemCantidad.value = "0";
+    els.itemStockMinimo.value = "";
+    els.itemForzarComprar.checked = false;
+    els.itemForzarField.style.display = "none";
+    els.itemDelete.style.display = "none";
+    els.itemError.textContent = "";
+    applyMaquinaLockForCategoria();
+    els.itemOverlay.classList.remove("hidden");
+  }
+
+  function openItemModalEdit(id) {
+    const item = itemsState[id];
+    if (!item) return;
+    itemModalMode = "edit";
+    itemModalId = id;
+    els.itemModalTitle.textContent = "Editar ítem";
+    els.itemNombre.value = item.nombre || "";
+    els.itemCategoria.value = item.categoria || "tinta";
+    els.itemMaquina.value = item.maquina || "";
+    els.itemUnidad.value = item.unidad || "";
+    els.itemCantidadLabel.textContent = "Cantidad actual";
+    els.itemCantidad.value = item.cantidad_actual ?? 0;
+    els.itemStockMinimo.value = (item.stock_minimo === null || item.stock_minimo === undefined) ? "" : item.stock_minimo;
+    els.itemForzarComprar.checked = !!item.forzar_comprar;
+    els.itemForzarField.style.display = "block";
+    els.itemDelete.style.display = "inline-flex";
+    els.itemError.textContent = "";
+    applyMaquinaLockForCategoria();
+    els.itemOverlay.classList.remove("hidden");
+  }
+
+  function closeItemModal() {
+    els.itemOverlay.classList.add("hidden");
+    itemModalId = null;
+  }
+
+  els.addItemBtn.addEventListener("click", openItemModalCreate);
+  els.itemCancel.addEventListener("click", closeItemModal);
+
+  els.itemSubmit.addEventListener("click", async () => {
+    const nombre = els.itemNombre.value.trim();
+    const unidad = els.itemUnidad.value.trim();
+    const cantidad = parseFloat(els.itemCantidad.value);
+    const categoria = els.itemCategoria.value;
+    const maquina = els.itemMaquina.value || null;
+    const stockRaw = els.itemStockMinimo.value.trim();
+    const stockMinimo = stockRaw === "" ? null : parseFloat(stockRaw);
+
+    if (!nombre) { els.itemError.textContent = "Ingresa un nombre."; return; }
+    if (!unidad) { els.itemError.textContent = "Ingresa una unidad."; return; }
+    if (Number.isNaN(cantidad) || cantidad < 0) { els.itemError.textContent = "Ingresa una cantidad válida."; return; }
+    if (stockRaw !== "" && (Number.isNaN(stockMinimo) || stockMinimo < 0)) { els.itemError.textContent = "El stock mínimo no es válido."; return; }
+
+    const payload = {
+      nombre,
+      categoria,
+      maquina,
+      unidad,
+      cantidad_actual: cantidad,
+      stock_minimo: stockMinimo,
+      forzar_comprar: els.itemForzarComprar.checked
+    };
+
+    els.itemSubmit.disabled = true;
+    try {
+      if (itemModalMode === "create") {
+        await push(ref(db, "items"), payload);
+        await logCambio({ tipo_accion: "crear_item", item_afectado: nombre });
+      } else {
+        const original = itemsState[itemModalId] || {};
+        const FIELD_LABELS = {
+          nombre: "Nombre", categoria: "Categoría", maquina: "Máquina", unidad: "Unidad",
+          cantidad_actual: "Cantidad actual", stock_minimo: "Stock mínimo", forzar_comprar: "Forzar comprar"
+        };
+        const changedEntries = Object.keys(FIELD_LABELS).filter((key) => {
+          const before = original[key] ?? null;
+          const after = payload[key] ?? null;
+          return String(before) !== String(after);
+        });
+        await update(ref(db, `items/${itemModalId}`), payload);
+        for (const key of changedEntries) {
+          const fmt = (v) => {
+            if (key === "forzar_comprar") return v ? "Sí" : "No";
+            return v ?? "(vacío)";
+          };
+          await logCambio({
+            tipo_accion: "editar_item",
+            item_afectado: nombre,
+            campo_modificado: FIELD_LABELS[key],
+            valor_anterior: fmt(original[key]),
+            valor_nuevo: fmt(payload[key])
+          });
+        }
+      }
+      closeItemModal();
+    } catch (err) {
+      els.itemError.textContent = "No se pudo guardar. Intenta de nuevo.";
+      console.error("Error guardando ítem:", err);
+    } finally {
+      els.itemSubmit.disabled = false;
+    }
+  });
+
+  els.itemDelete.addEventListener("click", async () => {
+    if (!itemModalId) return;
+    const item = itemsState[itemModalId];
+    const nombre = item ? item.nombre : "este ítem";
+    if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return;
+
+    els.itemDelete.disabled = true;
+    try {
+      await remove(ref(db, `items/${itemModalId}`));
+      await logCambio({ tipo_accion: "eliminar_item", item_afectado: nombre });
+      closeItemModal();
+    } catch (err) {
+      els.itemError.textContent = "No se pudo eliminar. Intenta de nuevo.";
+      console.error("Error eliminando ítem:", err);
+    } finally {
+      els.itemDelete.disabled = false;
+    }
+  });
+
+  // ============ MOVIMIENTOS ============
+
+  function populateMovFilterOptions() {
+    const select = els.movFilterItem;
+    const prevValue = select.value;
+    select.innerHTML = "";
+    const optAll = document.createElement("option");
+    optAll.value = "";
+    optAll.textContent = "Todos los ítems";
+    select.appendChild(optAll);
+
+    const items = Object.entries(itemsState)
+      .map(([id, it]) => ({ id, nombre: it.nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+    items.forEach((it) => {
+      const opt = document.createElement("option");
+      opt.value = it.id;
+      opt.textContent = it.nombre;
+      select.appendChild(opt);
+    });
+    select.value = prevValue;
+  }
+
+  function renderMovimientos() {
+    populateMovFilterOptions();
+
+    const filterItem = els.movFilterItem.value;
+    const fromVal = els.movFilterFrom.value;
+    const toVal = els.movFilterTo.value;
+    const fromTs = fromVal ? new Date(`${fromVal}T00:00:00`).getTime() : null;
+    const toTs = toVal ? new Date(`${toVal}T23:59:59`).getTime() : null;
+
+    let list = Object.entries(movimientosState)
+      .map(([id, m]) => ({ id, ...m }))
+      .filter((m) => !m.eliminado);
+    list.sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
+
+    if (filterItem) list = list.filter((m) => m.item_id === filterItem);
+    if (fromTs) list = list.filter((m) => (m.fecha || 0) >= fromTs);
+    if (toTs) list = list.filter((m) => (m.fecha || 0) <= toTs);
+
+    els.movTbody.innerHTML = "";
+
+    if (!list.length) {
+      els.movEmpty.style.display = "block";
+      return;
+    }
+    els.movEmpty.style.display = "none";
+
+    for (const m of list) {
+      const item = itemsState[m.item_id];
+      const fecha = m.fecha ? new Date(m.fecha).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }) : "—";
+
+      const tr = document.createElement("tr");
+      const tdFecha = document.createElement("td"); tdFecha.textContent = fecha;
+      const tdItem = document.createElement("td"); tdItem.textContent = item ? item.nombre : m.item_id;
+      const tdTipo = document.createElement("td");
+      tdTipo.textContent = m.tipo === "entrada" ? "Entrada" : "Salida";
+      tdTipo.className = m.tipo === "entrada" ? "tipo-entrada" : "tipo-salida";
+      const tdCantidad = document.createElement("td");
+      tdCantidad.textContent = `${formatQty(m.cantidad)} ${item ? item.unidad : ""}`;
+      const tdUsuario = document.createElement("td"); tdUsuario.textContent = m.usuario || "";
+      const tdNota = document.createElement("td");
+      tdNota.textContent = m.nota || "";
+      if (m.editado_por) {
+        const tag = document.createElement("span");
+        tag.className = "mov-edited-tag";
+        tag.textContent = "✎ editado";
+        tag.title = `Editado por ${m.editado_por}`;
+        tdNota.appendChild(tag);
+      }
+      const tdAcciones = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn-mov";
+      editBtn.textContent = "Editar";
+      editBtn.addEventListener("click", () => openEditMovModal(m.id));
+      tdAcciones.appendChild(editBtn);
+
+      tr.append(tdFecha, tdItem, tdTipo, tdCantidad, tdUsuario, tdNota, tdAcciones);
+      els.movTbody.appendChild(tr);
+    }
+  }
+
+  // ============ MODAL: EDITAR MOVIMIENTO ============
+
+  let editMovId = null;
+  let editMovTipo = "entrada";
+
+  function openEditMovModal(id) {
+    const m = movimientosState[id];
+    if (!m) return;
+    editMovId = id;
+    editMovTipo = m.tipo;
+    const item = itemsState[m.item_id];
+    els.editMovItemName.textContent = item ? `${item.nombre} (${item.unidad})` : m.item_id;
+    els.editMovTipoBtns.forEach((b) => b.classList.toggle("active", b.dataset.tipo === m.tipo));
+    els.editMovCantidad.value = m.cantidad;
+    els.editMovNota.value = m.nota || "";
+    els.editMovError.textContent = "";
+    els.editMovOverlay.classList.remove("hidden");
+  }
+
+  function closeEditMovModal() {
+    els.editMovOverlay.classList.add("hidden");
+    editMovId = null;
+  }
+
+  els.editMovTipoBtns.forEach((b) => {
+    b.addEventListener("click", () => {
+      editMovTipo = b.dataset.tipo;
+      els.editMovTipoBtns.forEach((x) => x.classList.toggle("active", x === b));
+    });
+  });
+
+  els.editMovCancel.addEventListener("click", closeEditMovModal);
+
+  els.editMovSubmit.addEventListener("click", async () => {
+    const m = movimientosState[editMovId];
+    if (!m) { closeEditMovModal(); return; }
+
+    const newCantidad = parseFloat(els.editMovCantidad.value);
+    if (!newCantidad || newCantidad <= 0) {
+      els.editMovError.textContent = "Ingresa una cantidad válida.";
+      return;
+    }
+    const newTipo = editMovTipo;
+    const newNota = els.editMovNota.value.trim() || null;
+    const item = itemsState[m.item_id];
+
+    els.editMovSubmit.disabled = true;
+    try {
+      if (item) {
+        const oldEffect = m.tipo === "entrada" ? Number(m.cantidad) : -Number(m.cantidad);
+        const newEffect = newTipo === "entrada" ? newCantidad : -newCantidad;
+        const current = Number(item.cantidad_actual) || 0;
+        const updated = Math.round((current - oldEffect + newEffect) * 100) / 100;
+        await update(ref(db, `items/${m.item_id}`), { cantidad_actual: updated });
+      }
+      await update(ref(db, `movimientos/${editMovId}`), {
+        tipo: newTipo,
+        cantidad: newCantidad,
+        nota: newNota,
+        editado_por: sessionUserName,
+        editado_fecha: serverTimestamp()
+      });
+      const label = item ? item.nombre : m.item_id;
+      const movFieldChanges = [
+        { campo: "Tipo", antes: m.tipo === "entrada" ? "Entrada" : "Salida", despues: newTipo === "entrada" ? "Entrada" : "Salida" },
+        { campo: "Cantidad", antes: m.cantidad, despues: newCantidad },
+        { campo: "Nota", antes: m.nota || "(vacío)", despues: newNota || "(vacío)" }
+      ].filter((c) => String(c.antes) !== String(c.despues));
+      for (const c of movFieldChanges) {
+        await logCambio({
+          tipo_accion: "editar_movimiento",
+          item_afectado: label,
+          campo_modificado: c.campo,
+          valor_anterior: c.antes,
+          valor_nuevo: c.despues
+        });
+      }
+      closeEditMovModal();
+    } catch (err) {
+      els.editMovError.textContent = "No se pudo guardar. Intenta de nuevo.";
+      console.error("Error editando movimiento:", err);
+    } finally {
+      els.editMovSubmit.disabled = false;
+    }
+  });
+
+  els.editMovDelete.addEventListener("click", async () => {
+    const m = movimientosState[editMovId];
+    if (!m) { closeEditMovModal(); return; }
+    const item = itemsState[m.item_id];
+    const label = item ? item.nombre : m.item_id;
+    if (!confirm(`¿Eliminar este movimiento de "${label}"? Se revertirá su efecto sobre el stock.`)) return;
+
+    els.editMovDelete.disabled = true;
+    try {
+      if (item) {
+        const oldEffect = m.tipo === "entrada" ? Number(m.cantidad) : -Number(m.cantidad);
+        const current = Number(item.cantidad_actual) || 0;
+        const reverted = Math.round((current - oldEffect) * 100) / 100;
+        await update(ref(db, `items/${m.item_id}`), { cantidad_actual: reverted });
+      }
+      await update(ref(db, `movimientos/${editMovId}`), {
+        eliminado: true,
+        eliminado_por: sessionUserName,
+        eliminado_fecha: serverTimestamp()
+      });
+      await logCambio({
+        tipo_accion: "eliminar_movimiento",
+        item_afectado: label,
+        campo_modificado: "Movimiento",
+        valor_anterior: `${m.tipo === "entrada" ? "Entrada" : "Salida"} de ${formatQty(m.cantidad)}`,
+        valor_nuevo: "(eliminado)"
+      });
+      closeEditMovModal();
+    } catch (err) {
+      els.editMovError.textContent = "No se pudo eliminar. Intenta de nuevo.";
+      console.error("Error eliminando movimiento:", err);
+    } finally {
+      els.editMovDelete.disabled = false;
+    }
+  });
+
+  els.movFilterItem.addEventListener("change", renderMovimientos);
+  els.movFilterFrom.addEventListener("change", renderMovimientos);
+  els.movFilterTo.addEventListener("change", renderMovimientos);
+  els.movFilterClear.addEventListener("click", () => {
+    els.movFilterItem.value = "";
+    els.movFilterFrom.value = "";
+    els.movFilterTo.value = "";
+    renderMovimientos();
+  });
+
+  // ============ REPORTES ============
+
+  function categoryLabelFor(item) {
+    const tile = CATEGORY_TILES.find((t) => t.matches(item));
+    return tile ? tile.label : "Otros";
+  }
+
+  function computeCategoryData() {
+    const allItems = Object.entries(itemsState).map(([id, it]) => ({ id, ...it }));
+    return CATEGORY_TILES.map((tile) => {
+      const items = allItems.filter(tile.matches).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+      const comprarItems = items.filter(needsComprar);
+      return { ...tile, items, comprarItems };
+    });
+  }
+
+  function buildBuyRow(item) {
+    const row = document.createElement("div");
+    row.className = "item-row buy-row";
+
+    const main = document.createElement("div");
+    main.className = "item-main";
+    const name = document.createElement("span");
+    name.className = "item-name";
+    name.textContent = item.nombre;
+    main.appendChild(name);
+    const badge = document.createElement("span");
+    badge.className = "badge-comprar";
+    badge.textContent = "Comprar";
+    main.appendChild(badge);
+
+    const detail = document.createElement("div");
+    detail.className = "buy-row-detail";
+    const minText = (item.stock_minimo === null || item.stock_minimo === undefined) ? "—" : formatQty(item.stock_minimo);
+    detail.textContent = `${formatQty(item.cantidad_actual)} ${item.unidad} · mínimo ${minText}`;
+
+    row.appendChild(main);
+    row.appendChild(detail);
+    return row;
+  }
+
+  // ============ DASHBOARD ============
+
+  function urgencyScore(item) {
+    const min = item.stock_minimo;
+    if (min !== null && min !== undefined && Number(min) > 0) {
+      return Number(item.cantidad_actual) / Number(min);
+    }
+    return item.forzar_comprar ? -1 : 0;
+  }
+
+  function computeAlerts() {
+    const categoryData = computeCategoryData();
+    return categoryData.map((cat) => {
+      const items = cat.comprarItems.slice().sort((a, b) => urgencyScore(a) - urgencyScore(b) || a.nombre.localeCompare(b.nombre, "es"));
+      return { ...cat, items };
+    });
+  }
+
+  function renderDashboardAlerts() {
+    const categoryData = computeAlerts();
+    const container = els.dashboardAlertsContainer;
+    container.innerHTML = "";
+    let any = false;
+
+    categoryData.forEach((cat) => {
+      if (!cat.items.length) return;
+      any = true;
+      container.appendChild(buildSection(cat.label, (section) => {
+        const list = document.createElement("div");
+        list.className = "item-list";
+        cat.items.forEach((item) => list.appendChild(buildBuyRow(item)));
+        section.appendChild(list);
+      }));
+    });
+
+    if (!any) {
+      const card = document.createElement("div");
+      card.className = "dashboard-empty-state";
+      const icon = document.createElement("div");
+      icon.className = "dashboard-empty-icon";
+      icon.textContent = "✅";
+      const text = document.createElement("div");
+      text.className = "dashboard-empty-text";
+      text.textContent = "Todo el stock está en niveles saludables";
+      card.append(icon, text);
+      container.appendChild(card);
+    }
+  }
+
+  // ============ CONFIGURACION ============
+
+  function buildConfigRow(item) {
+    const row = document.createElement("div");
+    row.className = "item-row config-row";
+
+    const main = document.createElement("div");
+    main.className = "item-main";
+    const name = document.createElement("span");
+    name.className = "item-name";
+    name.textContent = item.nombre;
+    main.appendChild(name);
+
+    const qtyInfo = document.createElement("span");
+    qtyInfo.className = "config-qty-info";
+    qtyInfo.textContent = `${formatQty(item.cantidad_actual)} ${item.unidad}`;
+
+    const minInput = document.createElement("input");
+    minInput.type = "number";
+    minInput.min = "0";
+    minInput.step = "any";
+    minInput.inputMode = "decimal";
+    minInput.className = "config-min-input";
+    minInput.placeholder = "Sin definir";
+    minInput.value = (item.stock_minimo === null || item.stock_minimo === undefined) ? "" : item.stock_minimo;
+    minInput.addEventListener("change", async () => {
+      const raw = minInput.value.trim();
+      if (raw !== "" && (Number.isNaN(parseFloat(raw)) || parseFloat(raw) < 0)) return;
+      const val = raw === "" ? null : parseFloat(raw);
+      const before = (item.stock_minimo === null || item.stock_minimo === undefined) ? "(vacío)" : item.stock_minimo;
+      if (String(before) === String(val ?? "(vacío)")) return;
+      try {
+        await update(ref(db, `items/${item.id}`), { stock_minimo: val });
+        await logCambio({
+          tipo_accion: "editar_item",
+          item_afectado: item.nombre,
+          campo_modificado: "Stock mínimo",
+          valor_anterior: before,
+          valor_nuevo: val ?? "(vacío)"
+        });
+      } catch (err) {
+        console.error("Error actualizando stock mínimo:", err);
+      }
+    });
+
+    const forceLabel = document.createElement("label");
+    forceLabel.className = "config-force-label";
+    const forceCheckbox = document.createElement("input");
+    forceCheckbox.type = "checkbox";
+    forceCheckbox.checked = !!item.forzar_comprar;
+    forceCheckbox.addEventListener("change", async () => {
+      const before = !!item.forzar_comprar;
+      const after = forceCheckbox.checked;
+      try {
+        await update(ref(db, `items/${item.id}`), { forzar_comprar: after });
+        await logCambio({
+          tipo_accion: "editar_item",
+          item_afectado: item.nombre,
+          campo_modificado: "Forzar comprar",
+          valor_anterior: before ? "Sí" : "No",
+          valor_nuevo: after ? "Sí" : "No"
+        });
+      } catch (err) {
+        console.error("Error actualizando forzar_comprar:", err);
+      }
+    });
+    forceLabel.appendChild(forceCheckbox);
+    forceLabel.appendChild(document.createTextNode(" Forzar"));
+
+    row.append(main, qtyInfo, minInput, forceLabel);
+    return row;
+  }
+
+  function renderConfig() {
+    const categoryData = computeCategoryData();
+    const container = els.configContainer;
+    container.innerHTML = "";
+
+    categoryData.forEach((cat) => {
+      if (!cat.items.length) return;
+
+      container.appendChild(buildSection(cat.label, (section) => {
+        const header = section.querySelector(".section-title");
+        const wrap = document.createElement("div");
+        wrap.className = "config-section-header";
+        header.remove();
+        wrap.appendChild(header);
+
+        const bulkForm = document.createElement("div");
+        bulkForm.className = "config-bulk-form";
+        const bulkInput = document.createElement("input");
+        bulkInput.type = "number";
+        bulkInput.min = "0";
+        bulkInput.step = "any";
+        bulkInput.inputMode = "decimal";
+        bulkInput.placeholder = "Stock mínimo para toda la categoría";
+        const bulkBtn = document.createElement("button");
+        bulkBtn.type = "button";
+        bulkBtn.className = "btn-secondary";
+        bulkBtn.textContent = "Aplicar a toda la categoría";
+        bulkBtn.addEventListener("click", async () => {
+          const raw = bulkInput.value.trim();
+          if (raw === "") return;
+          const num = parseFloat(raw);
+          if (Number.isNaN(num) || num < 0) return;
+          const updates = {};
+          cat.items.forEach((item) => { updates[`items/${item.id}/stock_minimo`] = num; });
+          bulkBtn.disabled = true;
+          try {
+            await update(ref(db), updates);
+            await logCambio({
+              tipo_accion: "editar_configuracion",
+              item_afectado: `Categoría: ${cat.label}`,
+              campo_modificado: "Stock mínimo (masivo)",
+              valor_anterior: "(varios)",
+              valor_nuevo: num
+            });
+            bulkInput.value = "";
+          } catch (err) {
+            console.error("Error aplicando stock mínimo a la categoría:", err);
+          } finally {
+            bulkBtn.disabled = false;
+          }
+        });
+        bulkForm.append(bulkInput, bulkBtn);
+        wrap.appendChild(bulkForm);
+        section.insertBefore(wrap, section.firstChild);
+
+        const list = document.createElement("div");
+        list.className = "item-list";
+        cat.items.forEach((item) => list.appendChild(buildConfigRow(item)));
+        section.appendChild(list);
+      }));
+    });
+
+    if (!container.children.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-note";
+      empty.textContent = "No hay ítems cargados todavía.";
+      container.appendChild(empty);
+    }
+  }
+
+  function renderReportesSummary(categoryData) {
+    const allItemsCount = Object.keys(itemsState).length;
+    const totalComprar = categoryData.reduce((sum, cat) => sum + cat.comprarItems.length, 0);
+
+    els.reportTotalItems.textContent = allItemsCount;
+    els.reportTotalComprar.textContent = totalComprar;
+
+    els.reportCategoryGrid.innerHTML = "";
+    categoryData.forEach((cat) => {
+      const card = document.createElement("div");
+      card.className = "category-stat-card";
+      if (cat.comprarItems.length > 0) card.classList.add("has-alert");
+
+      const icon = document.createElement("span");
+      icon.className = "category-stat-icon";
+      icon.textContent = cat.icon;
+
+      const label = document.createElement("span");
+      label.className = "category-stat-label";
+      label.textContent = cat.label;
+
+      const count = document.createElement("span");
+      count.className = "category-stat-count";
+      count.textContent = String(cat.comprarItems.length);
+
+      card.append(icon, label, count);
+      els.reportCategoryGrid.appendChild(card);
+    });
+
+    return totalComprar;
+  }
+
+  function renderBuyList(categoryData) {
+    const container = els.buyListContainer;
+    container.innerHTML = "";
+    let any = false;
+
+    categoryData.forEach((cat) => {
+      if (!cat.comprarItems.length) return;
+      any = true;
+      container.appendChild(buildSection(cat.label, (section) => {
+        const list = document.createElement("div");
+        list.className = "item-list";
+        cat.comprarItems.forEach((item) => list.appendChild(buildBuyRow(item)));
+        section.appendChild(list);
+      }));
+    });
+
+    if (!any) {
+      const empty = document.createElement("div");
+      empty.className = "empty-note";
+      empty.textContent = "No hay ítems marcados para comprar.";
+      container.appendChild(empty);
+    }
+  }
+
+  function computeConsumption() {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const totals = {};
+    Object.values(movimientosState).forEach((m) => {
+      if (m.eliminado) return;
+      if (m.tipo === "salida" && m.fecha && m.fecha >= cutoff) {
+        totals[m.item_id] = (totals[m.item_id] || 0) + (Number(m.cantidad) || 0);
+      }
+    });
+
+    const rows = Object.entries(itemsState).map(([id, item]) => ({
+      id,
+      nombre: item.nombre,
+      unidad: item.unidad,
+      categoria: categoryLabelFor(item),
+      total: totals[id] || 0
+    }));
+
+    rows.sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre, "es"));
+    return rows;
+  }
+
+  function renderConsumptionTable(rows) {
+    els.consumptionTbody.innerHTML = "";
+    rows.forEach((r) => {
+      const tr = document.createElement("tr");
+      const tdN = document.createElement("td"); tdN.textContent = r.nombre;
+      const tdC = document.createElement("td"); tdC.textContent = r.categoria;
+      const tdT = document.createElement("td"); tdT.textContent = formatQty(r.total);
+      const tdU = document.createElement("td"); tdU.textContent = r.unidad;
+      tr.append(tdN, tdC, tdT, tdU);
+      els.consumptionTbody.appendChild(tr);
+    });
+  }
+
+  function renderReportes() {
+    const categoryData = computeCategoryData();
+    const totalComprar = renderReportesSummary(categoryData);
+    renderBuyList(categoryData);
+    renderConsumptionTable(computeConsumption());
+    els.reportesNavBadge.textContent = String(totalComprar);
+    els.reportesNavBadge.classList.toggle("hidden", totalComprar === 0);
+  }
+
+  // ---- CSV export helpers ----
+
+  function csvEscape(val) {
+    const s = (val === null || val === undefined) ? "" : String(val);
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+
+  function downloadCsv(filename, rows) {
+    const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  els.exportBuyListBtn.addEventListener("click", () => {
+    const categoryData = computeCategoryData();
+    const rows = [["Categoría", "Nombre", "Cantidad actual", "Unidad", "Stock mínimo"]];
+    categoryData.forEach((cat) => {
+      cat.comprarItems.forEach((item) => {
+        const min = (item.stock_minimo === null || item.stock_minimo === undefined) ? "" : formatQty(item.stock_minimo);
+        rows.push([cat.label, item.nombre, formatQty(item.cantidad_actual), item.unidad, min]);
+      });
+    });
+    downloadCsv(`tago-lista-compra-${todayStr()}.csv`, rows);
+  });
+
+  els.exportStockBtn.addEventListener("click", () => {
+    const categoryData = computeCategoryData();
+    const rows = [["Categoría", "Tipo", "Nombre", "Cantidad actual", "Unidad", "Stock mínimo", "Forzar comprar", "Comprar"]];
+    categoryData.forEach((cat) => {
+      cat.items.forEach((item) => {
+        const min = (item.stock_minimo === null || item.stock_minimo === undefined) ? "" : formatQty(item.stock_minimo);
+        rows.push([
+          cat.label,
+          item.categoria,
+          item.nombre,
+          formatQty(item.cantidad_actual),
+          item.unidad,
+          min,
+          item.forzar_comprar ? "Sí" : "No",
+          needsComprar(item) ? "Sí" : "No"
+        ]);
+      });
+    });
+    downloadCsv(`tago-stock-actual-${todayStr()}.csv`, rows);
+  });
+
+  els.exportMovsBtn.addEventListener("click", () => {
+    const list = Object.values(movimientosState).filter((m) => !m.eliminado).sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
+    const rows = [["Fecha", "Ítem", "Tipo", "Cantidad", "Usuario", "Nota"]];
+    list.forEach((m) => {
+      const item = itemsState[m.item_id];
+      const fecha = m.fecha ? new Date(m.fecha).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }) : "";
+      rows.push([
+        fecha,
+        item ? item.nombre : m.item_id,
+        m.tipo === "entrada" ? "Entrada" : "Salida",
+        formatQty(m.cantidad),
+        m.usuario || "",
+        m.nota || ""
+      ]);
+    });
+    downloadCsv(`tago-movimientos-${todayStr()}.csv`, rows);
+  });
+
+  // ============ CONTROL DE CAMBIOS ============
+
+  function computeChangelogRows() {
+    const rows = [];
+
+    Object.entries(cambiosState).forEach(([id, c]) => {
+      rows.push({
+        id: `cambio-${id}`,
+        usuario: c.usuario || "",
+        fecha: c.fecha || 0,
+        accionLabel: ACCION_LABELS[c.tipo_accion] || c.tipo_accion,
+        itemAfectado: c.item_afectado || "",
+        campo: c.campo_modificado || "",
+        antes: c.valor_anterior || "",
+        despues: c.valor_nuevo || ""
+      });
+    });
+
+    Object.entries(movimientosState).forEach(([id, m]) => {
+      const item = itemsState[m.item_id];
+      rows.push({
+        id: `mov-${id}`,
+        usuario: m.usuario || "",
+        fecha: m.fecha || 0,
+        accionLabel: m.tipo === "entrada" ? "Entrada de stock" : "Salida de stock",
+        itemAfectado: item ? item.nombre : (m.item_id || ""),
+        campo: "",
+        antes: "",
+        despues: `${formatQty(m.cantidad)} ${item ? item.unidad : ""}`.trim()
+      });
+    });
+
+    rows.sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
+    return rows;
+  }
+
+  function formatChangeValue(row) {
+    if (row.antes === "" || row.antes === null || row.antes === undefined) return row.despues;
+    return `${row.antes} → ${row.despues}`;
+  }
+
+  function populateChangelogFilterOptions() {
+    const select = els.changelogFilterUser;
+    const prevValue = select.value;
+    select.innerHTML = "";
+    const optAll = document.createElement("option");
+    optAll.value = "";
+    optAll.textContent = "Todos los usuarios";
+    select.appendChild(optAll);
+
+    const names = Object.values(usersById)
+      .map((u) => u.name)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, "es"));
+
+    names.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+
+    if (names.includes(prevValue)) select.value = prevValue;
+  }
+
+  function renderChangelog() {
+    const rows = computeChangelogRows();
+    const userFilter = els.changelogFilterUser.value;
+    const fromRaw = els.changelogFilterFrom.value;
+    const toRaw = els.changelogFilterTo.value;
+    const fromTs = fromRaw ? new Date(`${fromRaw}T00:00:00`).getTime() : null;
+    const toTs = toRaw ? new Date(`${toRaw}T23:59:59`).getTime() : null;
+
+    const filtered = rows.filter((r) => {
+      if (userFilter && r.usuario !== userFilter) return false;
+      if (fromTs && (!r.fecha || r.fecha < fromTs)) return false;
+      if (toTs && (!r.fecha || r.fecha > toTs)) return false;
+      return true;
+    });
+
+    els.changelogTbody.innerHTML = "";
+    els.changelogEmpty.style.display = filtered.length ? "none" : "block";
+
+    filtered.forEach((r) => {
+      const tr = document.createElement("tr");
+      const tdUsuario = document.createElement("td"); tdUsuario.textContent = r.usuario;
+      const tdFecha = document.createElement("td");
+      tdFecha.textContent = r.fecha ? new Date(r.fecha).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }) : "";
+      const tdAccion = document.createElement("td"); tdAccion.textContent = r.accionLabel;
+      const tdItem = document.createElement("td"); tdItem.textContent = r.itemAfectado;
+      const tdCambio = document.createElement("td");
+      tdCambio.textContent = r.campo ? `${r.campo}: ${formatChangeValue(r)}` : formatChangeValue(r);
+      tr.append(tdUsuario, tdFecha, tdAccion, tdItem, tdCambio);
+      els.changelogTbody.appendChild(tr);
+    });
+  }
+
+  els.changelogFilterUser.addEventListener("change", renderChangelog);
+  els.changelogFilterFrom.addEventListener("change", renderChangelog);
+  els.changelogFilterTo.addEventListener("change", renderChangelog);
+  els.changelogFilterClear.addEventListener("click", () => {
+    els.changelogFilterUser.value = "";
+    els.changelogFilterFrom.value = "";
+    els.changelogFilterTo.value = "";
+    renderChangelog();
+  });
+
+  /* ============================================================
+     PUENTE CON EL ECOSISTEMA TAGO (login único)
+     ------------------------------------------------------------
+     El login lo hace el Home una sola vez. Esta app ya no pide PIN:
+     lee la SESIÓN COMPARTIDA (tago_session) y la IDENTIDAD COMPARTIDA
+     (tago_usuarios_v2) del mismo dominio. Si el usuario tiene acceso a
+     "inventario", entra directo; si no hay sesión o no tiene acceso,
+     vuelve al Home. Su login propio queda solo como respaldo histórico.
+     ============================================================ */
+  const ECO_HOME_URL = "/";
+  const ECO_APP_KEY = "inventario";
+  function getEcoSession() {
+    try { return JSON.parse(localStorage.getItem("tago_session") || "null"); } catch (e) { return null; }
+  }
+  function getEcoUsuarios() {
+    try { return JSON.parse(localStorage.getItem("tago_usuarios_v2") || "null"); } catch (e) { return null; }
+  }
+  // Devuelve true si el usuario quedó autenticado (seguir cargando la app);
+  // false si redirige al Home (sin sesión o sin acceso).
+  function ecosistemaGate() {
+    const s = getEcoSession();
+    if (!s) { window.location.href = ECO_HOME_URL; return false; }
+    // Permiso: apps de la sesión (las deja el Home al loguear); respaldo: identidad local.
+    const apps = Array.isArray(s.apps) ? s.apps
+               : ((getEcoUsuarios() || []).find((x) => x.id === s.id) || {}).apps;
+    if (Array.isArray(apps) && !apps.includes(ECO_APP_KEY)) {
+      window.location.href = ECO_HOME_URL; return false; // logueado pero sin acceso
+    }
+    showAppShell(s.nombre);
+    return true;
+  }
+
+  async function init() {
+    // Login único del ecosistema: entra con la sesión compartida o vuelve al Home.
+    if (!ecosistemaGate()) return;
+
+    if (!isFirebaseConfigured()) {
+      els.setupBanner.style.display = "block";
+      els.userLoading.textContent = "Configura Firebase para ver los usuarios.";
+      return;
+    }
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    db = getDatabase(app);
+
+    try {
+      await signInAnonymously(auth);
+      const snapshot = await get(ref(db, "users"));
+      renderUsers(snapshot.exists() ? snapshot.val() : {});
+    } catch (err) {
+      els.userLoading.textContent = "No se pudo conectar a Firebase. Revisa la consola.";
+      console.error("Error conectando a Firebase:", err);
+      return;
+    }
+
+    onValue(ref(db, "items"), (snapshot) => {
+      itemsState = snapshot.val() || {};
+      renderStock();
+      renderMovimientos();
+      renderReportes();
+      renderDashboardAlerts();
+      renderConfig();
+      renderChangelog();
+    });
+
+    onValue(ref(db, "movimientos"), (snapshot) => {
+      movimientosState = snapshot.val() || {};
+      renderMovimientos();
+      renderReportes();
+      renderChangelog();
+    });
+
+    onValue(ref(db, "cambios"), (snapshot) => {
+      cambiosState = snapshot.val() || {};
+      populateChangelogFilterOptions();
+      renderChangelog();
+    });
+
+    // (La autenticación la resuelve ecosistemaGate() al inicio de init.)
+  }
+
+  init();
+</script>
+</body>
+</html>

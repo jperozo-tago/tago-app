@@ -1,0 +1,70 @@
+{
+  "rules": {
+    "tago_permitidos": { ".read": false, ".write": false },
+    "tago_admins": { ".read": false, ".write": false },
+    "tago_pedidos": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_usuarios": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_meta": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_mail_alertas": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": true
+    },
+    "tago_chats": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_mensajes": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_pedido_comentarios": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_pedido_historial": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_categorias_custom": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      "$catId": {
+        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')) || (!newData.exists() && auth.token.email == 'j.perozo@tago.cl'))"
+      }
+    },
+    "tago_notificaciones": {
+      "$emailKey": {
+        ".read": "auth != null && auth.token.email.replace('.', '_') == $emailKey",
+        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+      }
+    },
+    "tago_tareas_estados": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_tareas": {
+      ".read": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()",
+      "$tareaId": {
+        ".read": "auth != null && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || (data.exists() && data.child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists()) || (data.exists() && data.child('creadoPorEmail').val() == auth.token.email))",
+        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (!data.exists() || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || data.child('creadoPorEmail').val() == auth.token.email || data.child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists())"
+      }
+    },
+    "tago_tareas_visibilidad": {
+      "$emailKey": {
+        ".read": "auth != null && (auth.token.email.replace('.', '_') == $emailKey || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists())",
+        "$tareaId": {
+          ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || !root.child('tago_tareas').child($tareaId).exists() || root.child('tago_tareas').child($tareaId).child('creadoPorEmail').val() == auth.token.email || root.child('tago_tareas').child($tareaId).child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists())"
+        }
+      }
+    },
+    "$other": { ".read": false, ".write": false }
+  }
+}

@@ -1,0 +1,6 @@
+.DS_Store
+deploy/public/
+Control de inventario/public/
+**/.firebase/
+**/firebase-setup/
+node_modules/

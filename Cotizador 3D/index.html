@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAGO · Cotizador impresión 3D</title>
+
+<!-- Google Fonts con fallback a fuentes de sistema si no hay internet -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     IDENTIDAD DE MARCA TAGO
+     ============================================================ */
+  :root{
+    --azul-oscuro: #0B1447;   /* primario */
+    --verde:       #49CEAB;   /* acento */
+    --azul-bril:   #4063F9;   /* acento */
+    --gris-fondo:  #EDEDED;   /* fondo */
+    --lavanda:     #8F9BFF;   /* detalles secundarios */
+
+    --blanco: #ffffff;
+    --texto: #1a2140;
+    --texto-suave: #5b6480;
+    --borde: #d9dce6;
+    --ok-bg: #e6f9f2;
+    --warn-bg: #fff4e0;
+    --warn-bd: #f0b458;
+    --warn-tx: #8a5300;
+    --danger: #e0483d;
+
+    --font-heading: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-body: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+    --radio: 14px;
+    --radio-sm: 10px;
+    --sombra: 0 6px 20px rgba(11,20,71,.08);
+    --sombra-fuerte: 0 10px 30px rgba(11,20,71,.15);
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: var(--font-body);
+    background: var(--gris-fondo);
+    color: var(--texto);
+    -webkit-text-size-adjust: 100%;
+    padding-bottom: 40px;
+  }
+
+  h1,h2,h3,h4{ font-family: var(--font-heading); color: var(--azul-oscuro); margin:0; }
+
+  /* ============================================================
+     ENCABEZADO
+     ============================================================ */
+  header{
+    background: var(--azul-oscuro);
+    color: #fff;
+    padding: 14px 16px;
+    position: sticky; top:0; z-index: 50;
+    box-shadow: var(--sombra);
+  }
+  .header-row{
+    display:flex; align-items:center; gap:12px;
+    max-width: 980px; margin: 0 auto;
+  }
+  /* Logo: versión letras blancas + isotipo verde, directo sobre el header azul.
+     Respeta el brandbook: no se recolorea el isotipo ni se deforma; se mantiene
+     aire alrededor (padding-right) equivalente al ancho del isotipo. */
+  .logo-box{
+    display:flex; align-items:center; justify-content:center;
+    padding-right: 6px;
+  }
+  .logo-box img{ height: 30px; width:auto; display:block; }
+  .logo-fallback{
+    font-family: var(--font-heading); font-weight:900; font-size: 22px;
+    color: #fff; letter-spacing: 1px;
+  }
+  .header-titles{ display:flex; flex-direction:column; line-height:1.15; }
+  .header-titles .app-name{ font-family: var(--font-heading); font-weight:700; font-size: 16px; }
+  .header-titles .app-sub{ font-size: 12px; color: var(--lavanda); }
+  .header-spacer{ flex:1; }
+  .stage-badge{
+    font-size: 11px; background: rgba(255,255,255,.12); color:#cdd4ff;
+    padding: 4px 10px; border-radius: 999px; white-space:nowrap;
+  }
+
+  /* ============================================================
+     TABS (navegación de vistas)
+     ============================================================ */
+  .tabs{
+    display:flex; gap:6px; max-width: 980px; margin: 12px auto 0; padding: 0 16px;
+  }
+  .tab-btn{
+    flex:1; font-family: var(--font-heading); font-weight:600; font-size: 15px;
+    padding: 13px 8px; border:none; border-radius: var(--radio);
+    background: #fff; color: var(--texto-suave); cursor:pointer;
+    box-shadow: var(--sombra); transition: .15s;
+  }
+  .tab-btn.active{ background: var(--azul-bril); color:#fff; }
+  .tab-btn:active{ transform: translateY(1px); }
+
+  main{ max-width: 980px; margin: 0 auto; padding: 16px; }
+  .view{ display:none; }
+  .view.active{ display:block; animation: fade .2s ease; }
+  @keyframes fade{ from{opacity:0; transform: translateY(4px);} to{opacity:1; transform:none;} }
+
+  /* ============================================================
+     TARJETAS Y FORMULARIOS
+     ============================================================ */
+  .card{
+    background:#fff; border-radius: var(--radio); box-shadow: var(--sombra);
+    padding: 18px; margin-bottom: 16px;
+  }
+  .card > h2{ font-size: 18px; margin-bottom: 4px; }
+  .card > .card-sub{ color: var(--texto-suave); font-size: 13px; margin-bottom: 14px; }
+
+  .field{ margin-bottom: 14px; }
+  .field label{
+    display:flex; align-items:center; gap:6px;
+    font-weight:600; font-size: 14px; margin-bottom: 6px; color: var(--azul-oscuro);
+  }
+  input[type=text], input[type=number], select{
+    width:100%; font-family: var(--font-body); font-size: 16px;
+    padding: 13px 14px; border:1.5px solid var(--borde); border-radius: var(--radio-sm);
+    background:#fff; color: var(--texto); transition: border-color .15s;
+  }
+  input:focus, select:focus{ outline:none; border-color: var(--azul-bril); }
+  input.invalid{ border-color: var(--danger); background:#fff6f5; }
+
+  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .row-inline{ display:flex; gap:10px; align-items:flex-end; }
+  .row-inline .field{ flex:1; margin-bottom:0; }
+
+  .hint{ font-size: 12px; color: var(--texto-suave); margin-top: 4px; }
+  .field-error{ font-size: 12px; color: var(--danger); margin-top: 4px; display:none; }
+  .field-error.show{ display:block; }
+
+  /* checkbox grande */
+  .check-row{
+    display:flex; align-items:flex-start; gap:10px; padding: 12px;
+    background: var(--gris-fondo); border-radius: var(--radio-sm); cursor:pointer;
+  }
+  .check-row input{ width:22px; height:22px; margin-top:1px; accent-color: var(--azul-bril); flex-shrink:0; }
+  .check-row .ctxt{ font-size: 13px; color: var(--texto); }
+
+  /* toggle mono/multi */
+  .toggle{
+    display:flex; background: var(--gris-fondo); border-radius: var(--radio-sm); padding:4px; gap:4px;
+  }
+  .toggle button{
+    flex:1; border:none; background:transparent; padding: 11px; border-radius: 8px;
+    font-family: var(--font-heading); font-weight:600; font-size: 14px; color: var(--texto-suave); cursor:pointer;
+  }
+  .toggle button.active{ background:#fff; color: var(--azul-oscuro); box-shadow: var(--sombra); }
+
+  /* Tooltip (ícono ?) */
+  .tip{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%; background: var(--lavanda); color:#fff;
+    font-size: 12px; font-weight:700; cursor:help; position:relative; flex-shrink:0;
+    font-family: var(--font-heading);
+  }
+  .tip::after{
+    content: attr(data-tip);
+    position:absolute; bottom: 135%; left:50%; transform: translateX(-50%);
+    background: var(--azul-oscuro); color:#fff; font-family: var(--font-body); font-weight:400;
+    font-size: 12px; line-height:1.35; padding: 8px 10px; border-radius: 8px;
+    width: 220px; max-width: 60vw; text-align:left; z-index: 60;
+    opacity:0; visibility:hidden; transition:.15s; box-shadow: var(--sombra-fuerte);
+  }
+  .tip:hover::after, .tip:focus::after{ opacity:1; visibility:visible; }
+
+  /* ============================================================
+     BOTONES
+     ============================================================ */
+  .btn{
+    font-family: var(--font-heading); font-weight:700; font-size: 16px;
+    padding: 15px 18px; border:none; border-radius: var(--radio); cursor:pointer;
+    width:100%; transition:.15s; -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn-primary{ background: var(--azul-bril); color:#fff; }
+  .btn-verde{ background: var(--verde); color: var(--azul-oscuro); }
+  .btn-secondary{ background: var(--gris-fondo); color: var(--azul-oscuro); }
+  .btn-ghost{ background:#fff; color: var(--azul-bril); border:1.5px solid var(--azul-bril); }
+  .btn-danger-ghost{ background:#fff; color: var(--danger); border:1.5px solid var(--danger); }
+  .btn-sm{ width:auto; font-size: 13px; padding: 9px 14px; border-radius: var(--radio-sm); }
+
+  .btn-row{ display:flex; gap:10px; }
+  .btn-row .btn{ flex:1; }
+
+  /* ============================================================
+     RESULTADO
+     ============================================================ */
+  #resultado{ display:none; }
+  #resultado.show{ display:block; }
+
+  .desglose{ width:100%; border-collapse: collapse; font-size: 14px; }
+  .desglose td{ padding: 9px 4px; border-bottom: 1px solid var(--borde); }
+  .desglose td.val{ text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; font-weight:600; }
+  .desglose td .sub{ font-size: 11px; color: var(--texto-suave); }
+  .desglose tr.total td{ border-top: 2px solid var(--azul-oscuro); border-bottom:none; font-weight:700; padding-top: 12px; }
+
+  .resumen-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  .metric{
+    background: var(--gris-fondo); border-radius: var(--radio-sm); padding: 14px;
+  }
+  .metric.destacada{ background: var(--azul-oscuro); color:#fff; grid-column: 1 / -1; }
+  .metric.destacada .m-label{ color: var(--lavanda); }
+  .metric .m-label{ font-size: 12px; color: var(--texto-suave); font-weight:600; }
+  .metric .m-value{ font-family: var(--font-heading); font-weight:900; font-size: 26px; margin-top: 2px; }
+  .metric .m-extra{ font-size: 12px; margin-top: 2px; opacity:.85; }
+  .metric.verde{ background: var(--ok-bg); }
+
+  .warn{
+    background: var(--warn-bg); border:1.5px solid var(--warn-bd); color: var(--warn-tx);
+    border-radius: var(--radio-sm); padding: 14px; margin-bottom: 14px;
+    font-size: 14px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .warn .wi{ font-size: 20px; }
+
+  .compara{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .compara .c-item{ background: var(--gris-fondo); border-radius: var(--radio-sm); padding: 12px 8px; text-align:center; }
+  .compara .c-item.actual{ background: var(--verde); color: var(--azul-oscuro); }
+  .compara .c-x{ font-family: var(--font-heading); font-weight:700; font-size: 13px; }
+  .compara .c-v{ font-variant-numeric: tabular-nums; font-weight:700; font-size: 15px; margin-top: 2px; }
+
+  /* ============================================================
+     TABLAS EDITABLES (filamentos / config)
+     ============================================================ */
+  .tabla-wrap{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
+  table.editable{ width:100%; border-collapse: collapse; min-width: 420px; }
+  table.editable th{
+    text-align:left; font-family: var(--font-heading); font-size: 12px; color: var(--texto-suave);
+    padding: 8px 6px; border-bottom: 2px solid var(--borde); text-transform: uppercase; letter-spacing:.03em;
+  }
+  table.editable td{ padding: 6px 6px; border-bottom: 1px solid var(--borde); }
+  table.editable input, table.editable select{ padding: 9px 10px; font-size: 14px; }
+  .icon-btn{
+    background: #fff; border:1.5px solid var(--borde); border-radius: 8px; cursor:pointer;
+    width: 38px; height: 38px; font-size: 16px; color: var(--danger); line-height:1;
+  }
+  .icon-btn:hover{ border-color: var(--danger); }
+
+  .config-group{ border-top: 1px solid var(--borde); padding-top: 16px; margin-top: 16px; }
+  .config-group:first-of-type{ border-top:none; padding-top:0; margin-top:0; }
+  .config-group h3{ font-size: 15px; margin-bottom: 12px; display:flex; align-items:center; gap:8px; }
+
+  .calc-note{ font-size: 13px; color: var(--texto-suave); background: var(--gris-fondo); padding:10px 12px; border-radius: var(--radio-sm); }
+  .calc-note b{ color: var(--azul-oscuro); }
+
+  .iva-badge{
+    display:inline-block; background: var(--lavanda); color:#fff; font-weight:700;
+    padding: 4px 12px; border-radius: 999px; font-size: 14px;
+  }
+
+  /* ============================================================
+     HISTORIAL
+     ============================================================ */
+  .search-box{ margin-bottom: 14px; }
+  .hist-item{
+    background:#fff; border:1px solid var(--borde); border-radius: var(--radio-sm);
+    padding: 14px; margin-bottom: 10px;
+  }
+  .hist-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .hist-cliente{ font-family: var(--font-heading); font-weight:700; font-size: 15px; color: var(--azul-oscuro); }
+  .hist-meta{ font-size: 12px; color: var(--texto-suave); margin-top: 3px; }
+  .hist-precio{ font-family: var(--font-heading); font-weight:900; font-size: 18px; color: var(--azul-oscuro); white-space:nowrap; }
+  .hist-actions{ display:flex; gap:8px; margin-top: 12px; flex-wrap:wrap; }
+  .empty-state{ text-align:center; color: var(--texto-suave); padding: 40px 20px; }
+  .empty-state .big{ font-size: 40px; }
+
+  /* Modal detalle */
+  .modal-bg{
+    display:none; position:fixed; inset:0; background: rgba(11,20,71,.55); z-index: 100;
+    align-items:flex-end; justify-content:center; padding: 0;
+  }
+  .modal-bg.show{ display:flex; }
+  .modal{
+    background:#fff; width:100%; max-width: 560px; border-radius: 20px 20px 0 0;
+    max-height: 90vh; overflow-y:auto; padding: 20px; animation: slideup .2s ease;
+  }
+  @keyframes slideup{ from{transform: translateY(30px); opacity:.6;} to{transform:none; opacity:1;} }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; }
+  .modal-close{ background: var(--gris-fondo); border:none; width:38px; height:38px; border-radius:50%; font-size:18px; cursor:pointer; }
+
+  /* Toast */
+  #toast{
+    position:fixed; bottom: 20px; left:50%; transform: translateX(-50%) translateY(80px);
+    background: var(--azul-oscuro); color:#fff; padding: 13px 20px; border-radius: 999px;
+    font-family: var(--font-heading); font-weight:600; font-size: 14px; z-index: 200;
+    box-shadow: var(--sombra-fuerte); transition: transform .25s; max-width: 90vw; text-align:center;
+  }
+  #toast.show{ transform: translateX(-50%) translateY(0); }
+
+  /* Banner etapa */
+  .stage-note{
+    background: #fff; border:1.5px dashed var(--lavanda); color: var(--texto-suave);
+    border-radius: var(--radio-sm); padding: 12px 14px; font-size: 13px; margin-bottom: 16px;
+  }
+  .stage-note b{ color: var(--azul-oscuro); }
+
+  /* ============================================================
+     DESKTOP
+     ============================================================ */
+  @media (min-width: 760px){
+    .cotizador-layout{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items:start; }
+    .modal-bg{ align-items:center; }
+    .modal{ border-radius: 20px; }
+    .resumen-grid{ grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 420px){
+    .grid-3{ grid-template-columns: 1fr 1fr; }
+    .tab-btn{ font-size: 14px; padding: 12px 4px; }
+    .logo-box img{ height: 26px; }
+    .header-titles .app-name{ font-size: 15px; }
+    .header-titles .app-sub{ display:none; }
+    .stage-badge{ display:none; }
+  }
+
+  /* Selección en historial */
+  .hist-item .hist-sel{ width:20px; height:20px; accent-color: var(--azul-bril); margin-right:10px; flex-shrink:0; }
+  .hist-item.selected{ border-color: var(--azul-bril); box-shadow: 0 0 0 2px rgba(64,99,249,.15); }
+
+  /* ============================================================
+     LOGIN POR PIN
+     ============================================================ */
+  /* La app queda oculta hasta iniciar sesión */
+  body:not(.authed) header,
+  body:not(.authed) .tabs,
+  body:not(.authed) main{ display:none !important; }
+  #login-screen{ display:none; }
+  body:not(.authed) #login-screen{
+    display:flex; align-items:center; justify-content:center;
+    position:fixed; inset:0; z-index:300; padding:20px;
+    background:
+      radial-gradient(1000px 380px at 15% -10%, rgba(73,206,171,.30), transparent 60%),
+      radial-gradient(900px 380px at 90% 0%, rgba(64,99,249,.42), transparent 55%),
+      linear-gradient(160deg, #0B1447 0%, #131d5c 100%);
+  }
+  .login-card{
+    background:#fff; border-radius:22px; box-shadow:0 20px 50px rgba(0,0,0,.35);
+    width:100%; max-width:400px; padding:28px 24px 26px; text-align:center;
+  }
+  .login-logo{ height:40px; width:auto; }
+  .login-tagline{ font-family:var(--font-heading); font-weight:600; color:var(--verde); font-size:14px; margin-top:12px; }
+  .login-card h2{ font-size:18px; margin:22px 0 14px; color:var(--azul-oscuro); }
+  .login-users{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .login-user-btn{
+    font-family:var(--font-heading); font-weight:700; font-size:16px; color:var(--azul-oscuro);
+    background:var(--gris-fondo); border:2px solid transparent; border-radius:14px;
+    padding:16px 10px; cursor:pointer; transition:.15s; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .login-user-btn:hover{ border-color:var(--azul-bril); background:#fff; }
+  .login-user-avatar{
+    width:40px; height:40px; border-radius:50%; background:var(--lavanda); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900;
+  }
+  /* Paso de PIN */
+  .pin-back{ background:none; border:none; color:var(--texto-suave); font-size:14px; cursor:pointer; margin-bottom:8px; }
+  .pin-hello{ font-size:15px; color:var(--texto-suave); margin-bottom:16px; }
+  .pin-hello b{ color:var(--azul-oscuro); }
+  .pin-dots{ display:flex; gap:14px; justify-content:center; margin-bottom:10px; }
+  .pin-dot{ width:16px; height:16px; border-radius:50%; border:2px solid var(--lavanda); transition:.12s; }
+  .pin-dot.filled{ background:var(--azul-bril); border-color:var(--azul-bril); }
+  .pin-dots.error .pin-dot{ border-color:var(--danger); animation:shake .3s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .pin-error{ color:var(--danger); font-size:13px; min-height:18px; margin-bottom:10px; }
+  .pin-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:280px; margin:0 auto; }
+  .pin-key{
+    font-family:var(--font-heading); font-weight:700; font-size:22px; color:var(--azul-oscuro);
+    background:var(--gris-fondo); border:none; border-radius:14px; padding:16px 0; cursor:pointer; transition:.1s;
+  }
+  .pin-key:hover{ background:#e2e5f0; }
+  .pin-key:active{ transform:scale(.96); }
+  .pin-key.wide{ font-size:16px; }
+
+  /* Chip de usuario + cerrar sesión en el header */
+  .user-chip{ display:flex; align-items:center; gap:8px; }
+  .user-name{ font-family:var(--font-heading); font-weight:600; font-size:13px; color:#fff; }
+  .logout-btn, .home-btn{
+    background:rgba(255,255,255,.12); color:#cdd4ff; border:none; border-radius:999px;
+    padding:6px 12px; font-size:12px; font-family:var(--font-heading); font-weight:600; cursor:pointer;
+  }
+  .logout-btn:hover, .home-btn:hover{ background:rgba(255,255,255,.22); }
+  .home-btn{ background:var(--verde); color:var(--azul-oscuro); }
+  .home-btn:hover{ background:#5fd8b8; }
+  @media (max-width:520px){ .login-card{ padding:22px 16px; } }
+
+  /* ============================================================
+     IMPRESIÓN / PDF  (el usuario elige "Guardar como PDF" en el diálogo)
+     ============================================================ */
+  #print-root{ display:none; }
+  .print-doc{ font-family: var(--font-body); color:#111; }
+  .print-cot{ padding: 4px 0 8px; }
+  .print-cot + .print-cot{ page-break-before: always; }
+  .print-head{ display:flex; align-items:center; gap:14px; border-bottom:3px solid #0B1447; padding-bottom:10px; margin-bottom:14px; }
+  .print-logo{ font-family: var(--font-heading); font-weight:900; font-size:26px; color:#0B1447; letter-spacing:1px; }
+  .print-logo img{ height:40px; width:auto; display:block; }
+  .print-title{ font-family: var(--font-heading); font-weight:700; font-size:18px; color:#0B1447; }
+  .print-sub{ font-size:12px; color:#555; }
+  .print-meta{ font-size:12px; color:#333; margin:2px 0 12px; }
+  .print-tbl{ width:100%; border-collapse:collapse; font-size:13px; margin-bottom:12px; }
+  .print-tbl td{ padding:6px 4px; border-bottom:1px solid #ddd; }
+  .print-tbl td.n{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .print-tbl tr.tot td{ border-top:2px solid #0B1447; border-bottom:none; font-weight:700; padding-top:9px; font-size:15px; }
+  /* PDF en tabla agrupada */
+  .print-tabla thead th{ background:#0B1447; color:#fff; text-align:left; padding:7px 6px; font-family:var(--font-heading); font-size:11px; }
+  .print-tabla thead th.n{ text-align:right; }
+  .print-tabla td{ font-size:12px; }
+  /* Selector de campos del modal de exportación */
+  .export-campos{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; }
+  .export-campos label{ display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; padding:6px 8px; border-radius:8px; background:var(--gris-fondo); }
+  .export-campos input{ width:18px; height:18px; accent-color:var(--azul-bril); }
+  @media (max-width:520px){ .export-campos{ grid-template-columns:1fr; } }
+  .print-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+  .print-metric{ border:1px solid #ccc; border-radius:8px; padding:8px 10px; }
+  .print-metric .l{ font-size:11px; color:#666; }
+  .print-metric .v{ font-family: var(--font-heading); font-weight:700; font-size:16px; color:#0B1447; }
+  .print-foot{ font-size:10px; color:#888; border-top:1px solid #ddd; padding-top:8px; margin-top:6px; }
+
+  @media print {
+    body > *:not(#print-root){ display:none !important; }
+    #print-root{ display:block !important; }
+    @page{ margin: 14mm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN POR PIN ==================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <img class="login-logo" src="assets/logo-color.svg" alt="TAGO"
+         onerror="this.outerHTML='<div style=&quot;font-family:var(--font-heading);font-weight:900;font-size:30px;color:var(--azul-oscuro);letter-spacing:1px&quot;>TAGO</div>'">
+    <div class="login-tagline">Hazlo único, hazlo con Tago</div>
+
+    <!-- Paso 1: elegir usuario -->
+    <div id="login-users-step">
+      <h2>¿Quién eres?</h2>
+      <div class="login-users" id="login-users"></div>
+    </div>
+
+    <!-- Paso 2: ingresar PIN -->
+    <div id="login-pin-step" style="display:none;">
+      <button type="button" class="pin-back" id="pin-back">&larr; Cambiar usuario</button>
+      <div class="pin-hello">Hola, <b id="pin-user-name"></b> — ingresa tu PIN</div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-pad" id="pin-pad"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== HEADER ==================== -->
+<header>
+  <div class="header-row">
+    <div class="logo-box">
+      <!-- Coloca el logo oficial en assets/logo.svg o assets/logo.png (fondo transparente).
+           Prueba svg, luego png, y si no existe muestra el respaldo textual "TAGO". -->
+      <img id="logo-img" src="assets/logo.svg" alt="TAGO"
+           onerror="if(this.dataset.step!=='png'){this.dataset.step='png';this.src='assets/logo.png';}else{tagoLogoFallback(this);}">
+    </div>
+    <div class="header-titles">
+      <span class="app-name">Cotizador 3D</span>
+      <span class="app-sub">Impresión Bambu Lab X2D · CLP</span>
+    </div>
+    <div class="header-spacer"></div>
+    <div class="user-chip">
+      <button class="home-btn" id="home-btn" title="Volver al inicio del ecosistema TAGO">&larr; Inicio</button>
+      <span class="user-name" id="header-user-name"></span>
+      <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== TABS ==================== -->
+<nav class="tabs">
+  <button class="tab-btn active" data-view="cotizador">Cotizador</button>
+  <button class="tab-btn" data-view="historial">Historial</button>
+  <button class="tab-btn" data-view="config">Configuración</button>
+</nav>
+
+<main>
+
+  <!-- ============================================================
+       VISTA: COTIZADOR
+       ============================================================ -->
+  <section id="view-cotizador" class="view active">
+    <div class="stage-note">
+      <b>Vista previa:</b> login por PIN ✓ y cálculo funcionando. Falta conectar <b>Firestore</b> (configuración e
+      historial compartidos en tiempo real entre todo el equipo) y el <b>despliegue</b> — lo siguiente en la lista.
+    </div>
+
+    <div class="cotizador-layout">
+      <!-- Columna de datos -->
+      <div>
+        <div class="card">
+          <h2>Datos del trabajo</h2>
+          <p class="card-sub">Completa los campos y presiona <b>Calcular</b>.</p>
+
+          <div class="field">
+            <label>Nombre del trabajo / cliente</label>
+            <input type="text" id="in-nombre" placeholder="Ej: Llavero logo — Cliente X">
+          </div>
+
+          <div class="field">
+            <label>Filamento
+              <span class="tip" tabindex="0" data-tip="Se cargan desde la tabla de Configuración. El precio por kg viene de ahí.">?</span>
+            </label>
+            <select id="in-filamento"></select>
+            <div class="field-error" id="err-filamento">Selecciona un filamento (agrégalos en Configuración).</div>
+          </div>
+
+          <div class="field">
+            <label>Máquina
+              <span class="tip" tabindex="0" data-tip="La impresora donde harás el trabajo. Cada modelo tiene su valor, vida útil, mantención y consumo (se administran en Configuración).">?</span>
+            </label>
+            <select id="in-maquina"></select>
+            <div class="field-error" id="err-maquina">Selecciona una máquina (agrégalas en Configuración).</div>
+          </div>
+
+          <div class="field">
+            <label>Gramos de filamento (según slicer)
+              <span class="tip" tabindex="0" data-tip="Los gramos que reporta Bambu Studio / tu laminador para el proyecto.">?</span>
+            </label>
+            <input type="number" id="in-gramos" min="0" step="0.1" inputmode="decimal" placeholder="Ej: 100">
+            <div class="field-error" id="err-gramos">Ingresa los gramos (mayor que 0).</div>
+          </div>
+
+          <div class="field">
+            <label class="check-row" for="in-purga">
+              <input type="checkbox" id="in-purga">
+              <span class="ctxt"><b>Los gramos ya incluyen la purga/desperdicio.</b><br>
+              Bambu Studio suma la purga al total del proyecto multicolor. Si lo marcas, se aplica 0% de desperdicio para no cobrarlo doble.</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Tipo de impresión
+              <span class="tip" tabindex="0" data-tip="Monocolor usa el % de desperdicio monocolor; multicolor usa el de AMS (más purga). Puedes ajustar el % abajo.">?</span>
+            </label>
+            <div class="toggle" id="toggle-color">
+              <button type="button" data-modo="mono" class="active">Monocolor</button>
+              <button type="button" data-modo="multi">Multicolor (AMS)</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Desperdicio aplicado (%)
+              <span class="tip" tabindex="0" data-tip="Precargado según mono/multi desde Configuración. Editable para este trabajo. Se ignora si marcaste que los gramos ya lo incluyen.">?</span>
+            </label>
+            <input type="number" id="in-desperdicio" min="0" step="0.5" inputmode="decimal">
+          </div>
+
+          <div class="field">
+            <label>Tiempo de impresión</label>
+            <div class="grid-2">
+              <div>
+                <input type="number" id="in-horas" min="0" step="1" inputmode="numeric" placeholder="Horas">
+                <div class="hint">Horas</div>
+              </div>
+              <div>
+                <input type="number" id="in-minutos" min="0" max="59" step="1" inputmode="numeric" placeholder="Minutos">
+                <div class="hint">Minutos</div>
+              </div>
+            </div>
+            <div class="field-error" id="err-tiempo">Ingresa el tiempo de impresión (mayor que 0).</div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Cantidad de piezas</label>
+              <input type="number" id="in-cantidad" min="1" step="1" inputmode="numeric" value="1">
+            </div>
+            <div class="field">
+              <label>Horas de diseño
+                <span class="tip" tabindex="0" data-tip="Horas de modelado/diseño 3D. Se cobran con la tarifa de diseño de Configuración.">?</span>
+              </label>
+              <input type="number" id="in-diseno" min="0" step="0.25" inputmode="decimal" value="0">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Min. preparación
+                <span class="tip" tabindex="0" data-tip="Laminado, carga de filamento, retiro de placa, control de calidad.">?</span>
+              </label>
+              <input type="number" id="in-prep" min="0" step="1" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label>Min. postproceso
+                <span class="tip" tabindex="0" data-tip="Retiro de soportes, limpieza, ensamblaje, acabados.">?</span>
+              </label>
+              <input type="number" id="in-post" min="0" step="1" inputmode="numeric">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Empaque (con IVA)</label>
+              <input type="number" id="in-empaque" min="0" step="1" inputmode="numeric" value="0">
+            </div>
+            <div class="field">
+              <label>Envío (con IVA)</label>
+              <input type="number" id="in-envio" min="0" step="1" inputmode="numeric" value="0">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Margen (% de ganancia sobre el costo)
+              <span class="tip" tabindex="0" data-tip="% de ganancia sobre el costo. 50% → precio = costo ×1,5; 100% → ×2; 200% → ×3. Precargado desde Configuración.">?</span>
+            </label>
+            <input type="number" id="in-margen" min="0" step="5" inputmode="numeric">
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-calcular">Calcular</button>
+            <button class="btn btn-secondary" id="btn-limpiar" style="flex:0 0 40%;">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna de resultado -->
+      <div>
+        <div class="card" id="resultado">
+          <h2>Resultado</h2>
+          <p class="card-sub" id="res-titulo">—</p>
+
+          <div id="res-warn"></div>
+
+          <table class="desglose" id="res-desglose"></table>
+
+          <h3 style="margin:18px 0 10px; font-size:15px;">Resumen</h3>
+          <div class="resumen-grid" id="res-resumen"></div>
+
+          <h3 style="margin:18px 0 8px; font-size:15px;">Comparación de márgenes</h3>
+          <div class="compara" id="res-compara"></div>
+
+          <button class="btn btn-verde" id="btn-guardar" style="margin-top:16px;">Guardar cotización</button>
+        </div>
+
+        <div class="card" id="resultado-placeholder">
+          <div class="empty-state">
+            <div class="big">🧮</div>
+            <p>Completa los datos y presiona <b>Calcular</b> para ver el desglose de costos y el precio sugerido.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VISTA: HISTORIAL
+       ============================================================ -->
+  <section id="view-historial" class="view">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h2>Historial de cotizaciones</h2>
+      </div>
+      <p class="card-sub">En la Etapa 1 se guardan en este dispositivo. En la Etapa 2 pasan a ser compartidas por todo el equipo.</p>
+      <div class="search-box">
+        <input type="text" id="hist-search" placeholder="Buscar por cliente / trabajo…">
+      </div>
+
+      <!-- Barra de selección / exportación -->
+      <div id="hist-toolbar" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+        <label class="ctxt" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+          <input type="checkbox" id="hist-check-all" style="width:20px; height:20px; accent-color:var(--azul-bril);">
+          Seleccionar todo
+        </label>
+        <span id="hist-sel-count" class="hint" style="margin:0;">0 seleccionadas</span>
+        <div class="header-spacer" style="flex:1;"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-export-pdf">Exportar PDF</button>
+        <button class="btn btn-ghost btn-sm" id="btn-export">Exportar Excel</button>
+      </div>
+
+      <div id="hist-list"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VISTA: CONFIGURACIÓN
+       ============================================================ -->
+  <section id="view-config" class="view">
+    <div class="card">
+      <h2>Configuración</h2>
+      <p class="card-sub">Parámetros del negocio. Todos son editables y quedan guardados. Se usan como base en cada cotización.</p>
+
+      <!-- Filamentos -->
+      <div class="config-group">
+        <h3>Filamentos
+          <span class="tip" tabindex="0" data-tip="Catálogo de materiales con su precio por kg. Alimentan el selector del cotizador.">?</span>
+        </h3>
+        <div class="tabla-wrap">
+          <table class="editable" id="tabla-filamentos">
+            <thead>
+              <tr><th>Nombre</th><th>Tipo</th><th>Precio / kg (con IVA)</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-add-filamento" style="margin-top:12px;">+ Agregar filamento</button>
+      </div>
+
+      <!-- Desperdicio -->
+      <div class="config-group">
+        <h3>Desperdicio por defecto</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label>Monocolor (%)
+              <span class="tip" tabindex="0" data-tip="Pérdida típica en impresión de un solo color (skirt, ajustes).">?</span>
+            </label>
+            <input type="number" data-cfg="despMono" min="0" step="0.5" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label>Multicolor / AMS (%)
+              <span class="tip" tabindex="0" data-tip="Purga de cambios de color del AMS. Suele ser bastante mayor.">?</span>
+            </label>
+            <input type="number" data-cfg="despMulti" min="0" step="0.5" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+
+      <!-- Fallos -->
+      <div class="config-group">
+        <h3>Impresiones fallidas</h3>
+        <div class="field">
+          <label>Tasa de fallos (%)
+            <span class="tip" tabindex="0" data-tip="Provisión por impresiones que fallan. Reparte ese costo entre los trabajos buenos: costo ÷ (1 − tasa).">?</span>
+          </label>
+          <input type="number" data-cfg="tasaFallos" min="0" max="99" step="0.5" inputmode="decimal">
+        </div>
+      </div>
+
+      <!-- Máquinas (parque de impresoras) -->
+      <div class="config-group">
+        <h3>Máquinas
+          <span class="tip" tabindex="0" data-tip="Tus impresoras. Cada una con su valor, vida útil, mantención y consumo. En el cotizador eliges en cuál imprimes. La depreciación/h se calcula sola: precio ÷ vida útil.">?</span>
+        </h3>
+        <div class="tabla-wrap">
+          <table class="editable" id="tabla-maquinas">
+            <thead>
+              <tr><th>Nombre</th><th>Valor (con IVA)</th><th>Vida útil (h)</th><th>Mant. $/h</th><th>Watts</th><th>Deprec/h</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-add-maquina" style="margin-top:12px;">+ Agregar máquina</button>
+      </div>
+
+      <!-- Energía -->
+      <div class="config-group">
+        <h3>Energía</h3>
+        <div class="field" style="max-width:280px;">
+          <label>Precio kWh (con IVA)
+            <span class="tip" tabindex="0" data-tip="Lo que cobra tu cuenta de electricidad por kWh, tal como lo pagas (con IVA). Aplica a todas las máquinas; el consumo en W va por máquina.">?</span>
+          </label>
+          <input type="number" data-cfg="precioKwh" min="0" step="5" inputmode="numeric">
+        </div>
+      </div>
+
+      <!-- Mano de obra -->
+      <div class="config-group">
+        <h3>Mano de obra y diseño</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label>Tarifa mano de obra (CLP/hora)
+              <span class="tip" tabindex="0" data-tip="Valor de la hora de trabajo del taller (preparación y postproceso).">?</span>
+            </label>
+            <input type="number" data-cfg="tarifaHora" min="0" step="100" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label>Tarifa diseño 3D (CLP/hora)
+              <span class="tip" tabindex="0" data-tip="Valor de la hora de modelado/diseño. Por defecto igual a mano de obra.">?</span>
+            </label>
+            <input type="number" data-cfg="tarifaDiseno" min="0" step="100" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+
+      <!-- Márgenes y cargos -->
+      <div class="config-group">
+        <h3>Overhead, comisión y margen</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label>Overhead (%)
+              <span class="tip" tabindex="0" data-tip="Gastos indirectos sobre el costo directo: arriendo proporcional, internet, administración.">?</span>
+            </label>
+            <input type="number" data-cfg="overhead" min="0" step="0.5" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label>Comisión medio de pago (%)
+              <span class="tip" tabindex="0" data-tip="Comisión de tarjeta/transferencia. Se agrega arriba para que no se coma el margen.">?</span>
+            </label>
+            <input type="number" data-cfg="comision" min="0" max="99" step="0.1" inputmode="decimal">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Margen por defecto (%)
+              <span class="tip" tabindex="0" data-tip="% de ganancia sobre el costo con que se precarga el cotizador. 50% → precio ×1,5; 100% → ×2; 200% → ×3.">?</span>
+            </label>
+            <input type="number" data-cfg="margen" min="0" step="5" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label>Precio mínimo por pedido (CLP)
+              <span class="tip" tabindex="0" data-tip="Piso comercial. Si el precio calculado queda por debajo, se avisa y se sugiere cobrar este mínimo.">?</span>
+            </label>
+            <input type="number" data-cfg="precioMinimo" min="0" step="500" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+
+      <!-- IVA -->
+      <div class="config-group">
+        <h3>IVA
+          <span class="tip" tabindex="0" data-tip="El IVA de la venta (19%) siempre se agrega al final. Aparte, si recuperas el IVA de tus compras, tus costos deben ir netos (sin IVA).">?</span>
+        </h3>
+        <div class="calc-note" style="margin-bottom:12px;">IVA de la venta: <span class="iva-badge">19% fijo</span> — se agrega siempre al precio final (débito fiscal).</div>
+        <label class="check-row" for="cfg-descontar-iva">
+          <input type="checkbox" id="cfg-descontar-iva">
+          <span class="ctxt"><b>Descontar el IVA de los costos (soy contribuyente y compro con factura).</b><br>
+          Si está activo, el material, la electricidad, la máquina, el empaque y el envío se costean <b>netos (÷1,19)</b> porque su IVA es crédito fiscal que recuperas. La mano de obra no se toca (los sueldos no llevan IVA). Desactívalo si compras con boleta y el IVA es un costo real para ti.</span>
+        </label>
+        <div class="calc-note" style="margin-top:12px;">💡 <b>Ingresa siempre los precios con IVA</b> (tal como los pagas). No ingreses el neto: si el descuento está activo, la app lo netea sola — hacerlo tú lo descontaría dos veces.</div>
+      </div>
+
+      <div class="btn-row" style="margin-top:18px;">
+        <button class="btn btn-primary" id="btn-guardar-config">Guardar configuración</button>
+        <button class="btn btn-secondary" id="btn-reset-config" style="flex:0 0 40%;">Restaurar</button>
+      </div>
+    </div>
+
+    <div class="stage-note">
+      <b>Etapa 2:</b> aquí irá también la <b>gestión de usuarios y PINs</b> y el <b>log de cambios</b> (quién editó qué y cuándo), cuando conectemos Firestore.
+    </div>
+  </section>
+
+</main>
+
+<!-- Modal detalle historial -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modal-titulo">Detalle</h2>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: elegir formato y campos a exportar -->
+<div class="modal-bg" id="export-modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Exportar historial</h2>
+      <button class="modal-close" id="export-close">✕</button>
+    </div>
+    <p class="card-sub" id="export-sub">Se exportan las cotizaciones seleccionadas (o todas si no marcaste ninguna).</p>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">Formato</h3>
+    <div class="toggle" id="export-formato">
+      <button type="button" data-fmt="excel" class="active">Excel</button>
+      <button type="button" data-fmt="pdf-tabla">PDF (tabla)</button>
+      <button type="button" data-fmt="pdf-detalle">PDF (detallado)</button>
+    </div>
+
+    <div id="export-campos-wrap">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 8px;">
+        <h3 style="font-size:15px;">Columnas a incluir</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="export-toggle-all">Todas / ninguna</button>
+      </div>
+      <div class="export-campos" id="export-campos"></div>
+    </div>
+    <div id="export-detalle-nota" class="calc-note" style="display:none; margin-top:14px;">El PDF detallado incluye el desglose completo de cada cotización (una hoja por cotización).</div>
+
+    <button class="btn btn-verde" id="export-descargar" style="margin-top:18px;">Descargar</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Aviso sin conexión (los datos se guardan y se sincronizan al volver) -->
+<div id="offline-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:150; background:var(--warn-bd); color:var(--warn-tx); text-align:center; font-family:var(--font-heading); font-weight:600; font-size:13px; padding:8px 14px;">
+  Sin conexión — trabajando local. Los cambios se sincronizarán al volver la conexión.
+</div>
+
+<!-- Contenedor de impresión / PDF (oculto en pantalla; visible solo al imprimir) -->
+<div id="print-root"></div>
+
+<!-- ============================================================
+     PUENTE FIREBASE / FIRESTORE (módulo). Conecta datos compartidos.
+     Si el Auth anónimo está apagado o no hay red, la app sigue en modo
+     local (localStorage) — nunca se rompe.
+     ============================================================ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { initializeFirestore, persistentLocalCache, persistentSingleTabManager,
+           doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, serverTimestamp, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC_9mguXUm-Oo8v8FuqhesCNQ1mCEIc0zI",
+    authDomain: "tago-app-489c1.firebaseapp.com",
+    projectId: "tago-app-489c1",
+    storageBucket: "tago-app-489c1.firebasestorage.app",
+    messagingSenderId: "919374961221",
+    appId: "1:919374961221:web:d3adc54d9b9abc358ea12c"
+  };
+
+  const api = {};
+  window.TagoCalcDB = api;
+  api.ready = (async () => {
+    try{
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      // Usa la sesión de Google del ecosistema (iniciada en el Home, persistida y
+      // compartida por ser el mismo dominio). Sin usuario → modo local (el gate ya
+      // habrá redirigido al Home). Las reglas solo dejan pasar correos autorizados.
+      const user = await new Promise(res => { const off = onAuthStateChanged(auth, u => { off(); res(u); }); });
+      if(!user) return false;
+      const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }) });
+      api.onConfig       = (cb) => onSnapshot(doc(db, "calc_config", "app"), s => cb(s.exists() ? s.data() : null));
+      api.saveConfig     = (obj) => setDoc(doc(db, "calc_config", "app"), obj);
+      api.onCotizaciones = (cb) => onSnapshot(query(collection(db, "calc_cotizaciones"), orderBy("creadoEn", "desc")),
+                                              s => cb(s.docs.map(d => Object.assign({ id:d.id }, d.data()))));
+      api.addCotizacion  = (obj) => addDoc(collection(db, "calc_cotizaciones"), Object.assign({}, obj, { creadoEn: serverTimestamp() }));
+      api.deleteCotizacion = (id) => deleteDoc(doc(db, "calc_cotizaciones", id));
+      api.addLog         = (obj) => addDoc(collection(db, "calc_config_log"), Object.assign({}, obj, { fecha: serverTimestamp() }));
+      return true;
+    }catch(e){
+      console.warn("Firestore no disponible (modo local):", e && (e.code || e.message));
+      return false;
+    }
+  })();
+</script>
+
+<script>
+/* ================================================================
+   TAGO · Cotizador de impresión 3D
+   ----------------------------------------------------------------
+   Arquitectura (Etapa 1):
+     1) NÚCLEO DE CÁLCULO  — funciones puras, sin DOM (calcularCotizacion).
+     2) PERSISTENCIA        — capa store{} sobre localStorage con try/catch
+                              y una interfaz estable (getConfig/saveConfig/
+                              listCotizaciones/addCotizacion/…) para poder
+                              cambiar el backend a Firestore en la Etapa 2
+                              SIN tocar la UI ni el cálculo.
+     3) UI                  — render y eventos.
+   ================================================================ */
+
+/* ================================================================
+   1) NÚCLEO DE CÁLCULO (funciones puras)
+   ================================================================ */
+
+/**
+ * Calcula el desglose completo de una cotización.
+ * Todas las entradas son números ya normalizados. No toca el DOM.
+ *
+ * @param {Object} t   datos del trabajo
+ * @param {Object} cfg parámetros de configuración
+ * @returns {Object}   desglose + precios
+ */
+function calcularCotizacion(t, cfg){
+  // Tiempo total en horas (horas + minutos/60)
+  const horasTotales = t.horas + t.minutos / 60;
+
+  // Desperdicio efectivo: si los gramos ya incluyen la purga -> 0%
+  const desperdicioPct = t.gramosIncluyenPurga ? 0 : t.desperdicioPct;
+
+  // IVA: si TAGO recupera el IVA de sus compras (contribuyente con factura), los
+  // insumos afectos se costean NETOS (÷1,19). La mano de obra NO lleva IVA, así
+  // que nunca se le aplica este divisor. Con descontarIva=false, todo va con IVA.
+  const ivaDiv = (cfg.descontarIva === false) ? 1 : 1.19;
+  const precioKgNeto = t.precioKg / ivaDiv;   // filamento afecto a IVA
+  const precioKwhNeto = cfg.precioKwh / ivaDiv;
+  const empaqueNeto = t.empaque / ivaDiv;     // empaque/envío afectos a IVA
+  const envioNeto   = t.envio / ivaDiv;
+
+  // material = (gramos / 1000) × precio_kg × (1 + desperdicio%)
+  const material = (t.gramos / 1000) * precioKgNeto * (1 + desperdicioPct / 100);
+
+  // Datos de la máquina donde se imprime este trabajo (cada trabajo usa una).
+  // Vienen en t.maquina = { precioCompra, vidaUtil, mantencionHora, watts }.
+  const maq = t.maquina || {};
+
+  // energia = (watts / 1000) × horas_totales × precio_kwh
+  const energia = ((maq.watts || 0) / 1000) * horasTotales * precioKwhNeto;
+
+  // depreciacion_hora = precio_compra / vida_util_horas  (precio de máquina neto)
+  const depreciacionHora = ((maq.precioCompra || 0) / ivaDiv) / (maq.vidaUtil || 1);
+
+  // Componentes de máquina, separados para el desglose
+  const depreciacion = depreciacionHora * horasTotales;
+  const mantencion   = ((maq.mantencionHora || 0) / ivaDiv) * horasTotales;
+  const maquina      = depreciacion + mantencion; // (deprec_hora + mantencion_hora) × horas
+
+  // mano_obra = ((min_prep + min_post) / 60) × tarifa_hora  (sueldos NO llevan IVA)
+  const manoObra = ((t.minPrep + t.minPost) / 60) * cfg.tarifaHora;
+
+  // diseno = horas_diseno × tarifa_diseno
+  const diseno = t.horasDiseno * cfg.tarifaDiseno;
+
+  // costo_directo
+  const costoDirecto = material + energia + maquina + manoObra + diseno;
+
+  // overhead_clp = costo_directo × overhead%
+  const overheadClp = costoDirecto * (cfg.overhead / 100);
+
+  // costo_total = (costo_directo + overhead_clp) / (1 − tasa_fallos)
+  const baseConOverhead = costoDirecto + overheadClp;
+  const costoTotal = baseConOverhead / (1 - cfg.tasaFallos / 100);
+
+  // Provisión por fallos (lo que agrega el ajuste), para mostrar en el desglose
+  const provisionFallos = costoTotal - baseConOverhead;
+
+  // precio_neto = costo_total × (1 + margen%/100) + empaque + envio  (empaque/envío netos)
+  // margen es el % de ganancia sobre el costo (50% → ×1,5; 100% → ×2; 200% → ×3).
+  const precioNeto = costoTotal * (1 + t.margen / 100) + empaqueNeto + envioNeto;
+
+  // precio_con_iva = precio_neto × 1.19
+  const IVA = 0.19;
+  const precioConIva = precioNeto * (1 + IVA);
+  const ivaClp = precioConIva - precioNeto;
+
+  // precio_final = precio_con_iva / (1 − comision_pago)
+  const precioFinal = precioConIva / (1 - cfg.comision / 100);
+  const comisionClp = precioFinal - precioConIva;
+
+  // precio_por_pieza = precio_final / cantidad_piezas
+  const cantidad = t.cantidad > 0 ? t.cantidad : 1;
+  const precioPorPieza = precioFinal / cantidad;
+
+  // Utilidad = precio_neto − costo_total (el margen bruto antes de IVA/comisión/extras)
+  const utilidadClp = precioNeto - costoTotal;
+  const utilidadPct = costoTotal > 0 ? (utilidadClp / costoTotal) * 100 : 0;
+
+  return {
+    horasTotales, desperdicioPct,
+    material, energia, depreciacion, mantencion, maquina,
+    manoObra, diseno, costoDirecto, overheadClp, provisionFallos,
+    costoTotal, empaque: empaqueNeto, envio: envioNeto,
+    precioNeto, ivaClp, precioConIva, comisionClp, precioFinal,
+    precioPorPieza, utilidadClp, utilidadPct,
+    ivaDescontado: (ivaDiv !== 1)
+  };
+}
+
+/**
+ * Precio final para un margen alternativo (para la comparación 50%/100%/200%).
+ * `margen` es el % de ganancia sobre el costo. Reutiliza la fórmula neto→IVA→comisión.
+ */
+function precioFinalConMargen(costoTotal, margen, empaque, envio, comision){
+  const neto = costoTotal * (1 + margen / 100) + empaque + envio;
+  const conIva = neto * 1.19;
+  return conIva / (1 - comision / 100);
+}
+
+/* ----------------------------------------------------------------
+   CASOS DE PRUEBA VERIFICADOS A MANO (valores por defecto salvo lo indicado)
+   Redondeo CLP en la UI; aquí van los valores exactos de referencia.
+
+   CONFIG DEFAULT (ajustada a mercado chileno): despMono 8, despMulti 30, tasaFallos 7,
+   precioKwh 220, tarifaHora 5.500, tarifaDiseno 5.500, overhead 12, comision 3,
+   margen 50 (% ganancia sobre el costo), precioMinimo 6.000.
+   NOTA MARGEN: el margen es % de ganancia sobre el costo → precio_neto = costo×(1+margen/100).
+   200% equivale a ×3, 150% a ×2,5, 100% a ×2, 50% a ×1,5.
+   NOTA IVA: los Casos 1-3 se calculan CON IVA (descontarIva=false) para mostrar la
+   fórmula pura. El default real de la app es descontarIva=true (costos netos): con
+   eso el Caso 1 baja de $5.253 a ~$4.679 de costo total (ver Caso 4 del autotest).
+   Los casos usan la MÁQUINA X2D: $1.300.000 / 10.000 h -> deprec_hora = 130 CLP/h,
+   mantención 50 CLP/h, 130 W.
+   (La otra máquina, A1 Combo $480.760 / 8.000 h -> deprec_hora ≈ 60 CLP/h,
+    mantención 40 CLP/h, 100 W → sale bastante más barata de operar.)
+
+   ── CASO 1 ─ 100 g PLA $18.000/kg, 5 h 0 min, monocolor 8%, 1 pieza,
+                prep 15, post 0, diseño 0, empaque 0, envío 0, margen 200% (×3)
+     material      = 0,1 × 18.000 × 1,08            = 1.944
+     energia       = 0,130 × 5 × 220                = 143
+     deprec_hora   = 1.300.000 / 10.000             = 130
+     depreciacion  = 130 × 5                        = 650
+     mantencion    = 50 × 5                         = 250
+     maquina       = 650 + 250                      = 900
+     mano_obra     = (15/60) × 5.500                = 1.375
+     diseno        = 0
+     costo_directo = 1.944+143+900+1.375+0          = 4.362
+     overhead      = 4.362 × 0,12                   = 523,44
+     costo_total   = (4.362+523,44)/0,93            ≈ 5.253,16   → $5.253
+     precio_neto   = 5.253,16 × 3                    ≈ 15.759,47  → $15.759
+     precio_con_iva= 15.759,47 × 1,19               ≈ 18.753,77  → $18.754
+     precio_final  = 18.753,77 / 0,97               ≈ 19.333,78  → $19.334
+     utilidad      = 15.759,47 − 5.253,16           ≈ 10.506,31 (200,0%)
+
+   ── CASO 2 ─ 250 g PETG $20.000/kg, 3 h 20 min, multicolor 30%, 4 piezas,
+                prep 15, post 30, diseño 0, empaque 500, envío 3.000, margen 150% (×2,5)
+     horas_totales = 3 + 20/60                       = 3,3333
+     material      = 0,25 × 20.000 × 1,30            = 6.500
+     energia       = 0,130 × 3,3333 × 220            ≈ 95,33
+     maquina       = (130+50) × 3,3333               = 600
+     mano_obra     = (45/60) × 5.500                 = 4.125
+     costo_directo = 6.500+95,33+600+4.125           ≈ 11.320,33
+     overhead      = 11.320,33 × 0,12                ≈ 1.358,44
+     costo_total   = 12.678,77 / 0,93                ≈ 13.633,09  → $13.633
+     precio_neto   = 13.633,09×2,5 + 500 + 3.000     ≈ 37.582,73  → $37.583
+     precio_final  = (37.582,73×1,19)/0,97           ≈ 46.106,65  → $46.107
+     por_pieza     = 46.106,65 / 4                   ≈ 11.526,66  → $11.527
+
+   ── CASO 3 ─ pedido muy chico → gatilla el precio mínimo:
+                2 g PLA $18.000/kg, 0 h 8 min, monocolor 8%, prep 5, resto 0, margen 3.0
+     precio_final ≈ 3.250  <  precio_minimo 6.000  → muestra advertencia.
+   ---------------------------------------------------------------- */
+
+/* ================================================================
+   2) PERSISTENCIA (capa store — hoy localStorage, mañana Firestore)
+   ================================================================ */
+
+const CONFIG_DEFAULT = {
+  filamentos: [
+    { id: 'f1', nombre: 'PLA Básico',   tipo: 'PLA',  precioKg: 18000 },
+    { id: 'f2', nombre: 'PETG',         tipo: 'PETG', precioKg: 20000 },
+    { id: 'f3', nombre: 'TPU Flexible', tipo: 'TPU',  precioKg: 25000 }
+  ],
+  despMono: 8, despMulti: 30, tasaFallos: 7,
+  // Parque de máquinas — cada trabajo se imprime en una. Cada máquina tiene su
+  // valor, vida útil, mantención/h y consumo (W). La depreciación/h se calcula
+  // sola: precio ÷ vida útil. Vida útil y mantención ajustadas a mercado CL 2026.
+  //  · X2D: CoreXY con cámara y AMS → mayor consumo (~130 W) y valor.
+  //  · A1 (Combo AMS Lite): bed-slinger abierta, más chica → menos consumo
+  //    (~100 W), vida útil algo menor y mantención más barata (repuestos económicos).
+  maquinas: [
+    { id:'m1', nombre:'Bambu Lab X2D (AMS)',           precioCompra:1300000, vidaUtil:10000, mantencionHora:50, watts:130 },
+    { id:'m2', nombre:'Bambu Lab A1 (Combo AMS Lite)', precioCompra:480760,  vidaUtil:8000,  mantencionHora:40, watts:100 }
+  ],
+  precioKwh: 220,   // Providencia = zona Enel ≈ $220/kWh con IVA
+  // Mano de obra $5.500/h = costo real de un operador de ~$700k líquidos/mes
+  // (bruto ~$865k + leyes sociales ~5% ≈ $910k) ÷ ~165 h productivas al mes.
+  // Diseño por defecto igual a mano de obra (puedes subirlo: modelado es más caro).
+  tarifaHora: 5500, tarifaDiseno: 5500,
+  // margen = % de ganancia sobre el costo (markup). 50% → precio neto = costo×1,5;
+  // 100% → ×2; 200% → ×3. La utilidad sobre el costo queda igual al % de margen.
+  overhead: 12, comision: 3, margen: 50, precioMinimo: 6000,
+  // IVA: si TAGO es contribuyente y compra con factura, el IVA de los insumos
+  // (máquina, filamento, electricidad, empaque, envío) es crédito fiscal → NO es
+  // costo. Con descontarIva=true, esos costos se calculan netos (÷1,19). La mano
+  // de obra NO lleva IVA (sueldos no son afectos), así que nunca se le descuenta.
+  // El IVA (19%) se agrega una sola vez en la venta (débito fiscal).
+  descontarIva: true
+};
+
+const LS_CONFIG = 'tago3d_config_v3';   // v2: parque de máquinas · v3: margen como % (antes era multiplicador)
+const LS_COTIZ  = 'tago3d_cotizaciones_v1';
+
+/* store DUAL-MODE: lee/escribe en Cloud Firestore (compartido en tiempo real)
+   cuando está disponible; si no, en localStorage (respaldo por dispositivo).
+   La UI no cambia: sigue llamando store.getConfig()/listCotizaciones()/etc.,
+   respaldadas por los globales CFG y COTIZ (poblados local-first y luego por
+   los onSnapshot de Firestore). FB_ON indica si Firestore está activo. */
+const store = {
+  getConfig(){ return CFG; },
+  listCotizaciones(){ return COTIZ; },
+  getCotizacion(id){ return COTIZ.find(c => c.id === id) || null; },
+
+  saveConfig(cfg, cambio){
+    CFG = cfg;
+    if(FB_ON && window.TagoCalcDB){
+      window.TagoCalcDB.saveConfig(cfg);
+      window.TagoCalcDB.addLog({ autor: autorActual(), cambio: cambio || 'Actualizó la configuración' });
+      // el onSnapshot re-renderiza al confirmar el servidor
+    }else{
+      try{ localStorage.setItem(LS_CONFIG, JSON.stringify(cfg)); }catch(e){ console.error(e); }
+    }
+    return true;
+  },
+
+  addCotizacion(c){
+    if(FB_ON && window.TagoCalcDB){
+      c.autor = autorActual();
+      window.TagoCalcDB.addCotizacion(c);   // creadoEn lo pone el servidor; onSnapshot actualiza
+      return c;
+    }
+    c.id = 'c' + Date.now() + Math.random().toString(36).slice(2,6);
+    c.creadoEn = new Date().toISOString();
+    c.autor = autorActual();
+    COTIZ.unshift(c);
+    try{ localStorage.setItem(LS_COTIZ, JSON.stringify(COTIZ)); }catch(e){}
+    return c;
+  },
+
+  deleteCotizacion(id){
+    if(FB_ON && window.TagoCalcDB){ window.TagoCalcDB.deleteCotizacion(id); return; }
+    COTIZ = COTIZ.filter(c => c.id !== id);
+    try{ localStorage.setItem(LS_COTIZ, JSON.stringify(COTIZ)); }catch(e){}
+  }
+};
+
+// Autor de la acción = usuario logueado (sesión compartida del ecosistema)
+function autorActual(){ return (typeof SESSION !== 'undefined' && SESSION) ? SESSION.nombre : 'Local'; }
+
+// Carga local (respaldo y pintado instantáneo antes de que responda Firestore)
+function loadConfigLocal(){
+  try{
+    const raw = localStorage.getItem(LS_CONFIG);
+    if(!raw) return structuredCloneSafe(CONFIG_DEFAULT);
+    return Object.assign(structuredCloneSafe(CONFIG_DEFAULT), JSON.parse(raw));
+  }catch(e){ return structuredCloneSafe(CONFIG_DEFAULT); }
+}
+function loadCotizLocal(){
+  try{ const raw = localStorage.getItem(LS_COTIZ); return raw ? JSON.parse(raw) : []; }
+  catch(e){ return []; }
+}
+
+// Fecha robusta: acepta ISO string (local) o Firestore Timestamp (nube)
+function aFecha(v){
+  if(!v) return new Date();
+  if(typeof v === 'string') return new Date(v);
+  if(typeof v.toDate === 'function') return v.toDate();
+  if(v.seconds != null) return new Date(v.seconds * 1000);
+  return new Date(v);
+}
+
+// Copia profunda segura (structuredClone no siempre disponible en navegadores viejos)
+function structuredCloneSafe(obj){
+  try{ return structuredClone(obj); }
+  catch(_){ return JSON.parse(JSON.stringify(obj)); }
+}
+
+/* ================================================================
+   3) UTILIDADES DE FORMATO
+   ================================================================ */
+
+// $12.500 — CLP sin decimales, separador de miles con punto (es-CL)
+const nfCLP = new Intl.NumberFormat('es-CL', { style:'currency', currency:'CLP', maximumFractionDigits:0 });
+function formatCLP(n){
+  if(!isFinite(n)) n = 0;
+  return nfCLP.format(Math.round(n));
+}
+// Número plano con miles (para gramos, etc.)
+const nfNum = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 });
+function num(v){ const x = parseFloat(v); return isFinite(x) ? x : 0; }
+function intOr(v, def){ const x = parseInt(v,10); return isFinite(x) ? x : def; }
+
+/* ================================================================
+   4) ESTADO EN MEMORIA + ARRANQUE
+   ================================================================ */
+
+let CFG = loadConfigLocal();   // config (local-first; Firestore la sobrescribe en vivo)
+let COTIZ = loadCotizLocal();  // historial (idem)
+let FB_ON = false;             // ¿Firestore activo? (lo enciende initFirestore)
+let ultimoResultado = null;   // guarda el último cálculo para "Guardar cotización"
+let ultimoTrabajo = null;     // datos de entrada del último cálculo
+
+/* ================================================================
+   LOGIN POR PIN + SESIÓN
+   ----------------------------------------------------------------
+   En modo local, los usuarios y PINs viven en localStorage (semilla
+   por defecto). En la Etapa Firestore se leerán de la colección
+   `usuarios`. La sesión (quién está logueado) queda en el dispositivo
+   hasta cerrar sesión. El autor de cada cotización = usuario logueado.
+   ================================================================ */
+// IDENTIDAD CENTRAL DEL ECOSISTEMA (compartida entre el Home y todas las apps).
+// En local es una clave común (mismo origen); en producción será la colección
+// `usuarios` del proyecto central `tago`. Cada usuario trae `apps`: la lista de
+// apps a las que puede entrar. Esta app solo deja pasar a quien tenga APP_KEY.
+const APP_KEY     = 'calculadora';
+const LS_USUARIOS = 'tago_usuarios_v2';   // identidad compartida del ecosistema
+const LS_SESSION  = 'tago_session';        // SESIÓN COMPARTIDA: inicias sesión una vez
+                                           // en el Home y entras a todas las apps del
+                                           // mismo dominio sin volver a loguearte.
+
+// Misma semilla/estructura que el Home (identidad compartida): nombre, pin, admin, apps.
+const USUARIOS_DEFAULT = [
+  { id:'miguel',   nombre:'Miguel',   pin:'0210', admin:true,  apps:['inventario'] },
+  { id:'carol',    nombre:'Carol',    pin:'2010', admin:true,  apps:['inventario','calculadora'] },
+  { id:'jose',     nombre:'José',     pin:'0210', admin:false, apps:['inventario','calculadora'] },
+  { id:'andreina', nombre:'Andreina', pin:'0409', admin:false, apps:['inventario','calculadora'] }
+];
+
+// URL del Home (inicio del ecosistema). Ruta de raíz: funciona igual sirviendo la
+// carpeta unificada en local y en producción (tago.web.app/ = Home).
+const HOME_URL = '/';
+
+// ¿El usuario tiene acceso a ESTA app?
+function tieneAcceso(u){ return !!(u && Array.isArray(u.apps) && u.apps.includes(APP_KEY)); }
+
+let SESSION = null;        // { id, nombre } del usuario logueado
+let pinBuffer = '';        // dígitos ingresados en el paso de PIN
+let pinUsuario = null;     // usuario elegido en el paso de PIN
+
+function getUsuarios(){
+  try{
+    const raw = localStorage.getItem(LS_USUARIOS);
+    if(!raw){ localStorage.setItem(LS_USUARIOS, JSON.stringify(USUARIOS_DEFAULT)); return structuredCloneSafe(USUARIOS_DEFAULT); }
+    return JSON.parse(raw);
+  }catch(e){ return structuredCloneSafe(USUARIOS_DEFAULT); }
+}
+function saveUsuarios(list){
+  try{ localStorage.setItem(LS_USUARIOS, JSON.stringify(list)); return true; }
+  catch(e){ return false; }
+}
+
+function setupLogin(){
+  renderLoginUsers();
+  construirPinPad();
+  document.getElementById('pin-back').addEventListener('click', volverAUsuarios);
+  document.getElementById('logout-btn').addEventListener('click', cerrarSesion);
+  document.getElementById('home-btn').addEventListener('click', ()=>{ window.location.href = HOME_URL; });
+  // Soporte de teclado físico en el paso de PIN
+  document.addEventListener('keydown', e=>{
+    if(document.body.classList.contains('authed')) return;
+    if(document.getElementById('login-pin-step').style.display === 'none') return;
+    if(e.key >= '0' && e.key <= '9') pinAgregar(e.key);
+    else if(e.key === 'Backspace') pinBorrar();
+  });
+}
+
+function renderLoginUsers(){
+  const cont = document.getElementById('login-users');
+  // Solo usuarios con acceso a ESTA app
+  const usuarios = getUsuarios().filter(tieneAcceso);
+  if(usuarios.length === 0){
+    cont.innerHTML = '<p style="grid-column:1/-1;color:var(--texto-suave);font-size:14px;">Ningún usuario tiene acceso a esta app todavía. Asígnalo desde la administración del Home.</p>';
+    return;
+  }
+  cont.innerHTML = usuarios.map(u=>`
+    <button type="button" class="login-user-btn" data-uid="${u.id}">
+      <span class="login-user-avatar">${escapeHtml((u.nombre||'?').charAt(0).toUpperCase())}</span>
+      ${escapeHtml(u.nombre)}
+    </button>`).join('');
+  cont.querySelectorAll('[data-uid]').forEach(b=>{
+    b.addEventListener('click', ()=> irAPin(b.dataset.uid));
+  });
+}
+
+function construirPinPad(){
+  const pad = document.getElementById('pin-pad');
+  const teclas = ['1','2','3','4','5','6','7','8','9','borrar','0','ok'];
+  pad.innerHTML = teclas.map(t=>{
+    if(t==='borrar') return `<button type="button" class="pin-key wide" data-k="del">←</button>`;
+    if(t==='ok')     return `<button type="button" class="pin-key wide" data-k="ok">OK</button>`;
+    return `<button type="button" class="pin-key" data-k="${t}">${t}</button>`;
+  }).join('');
+  pad.querySelectorAll('[data-k]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const k = b.dataset.k;
+      if(k==='del') pinBorrar();
+      else if(k==='ok') pinValidar();
+      else pinAgregar(k);
+    });
+  });
+}
+
+function irAPin(uid){
+  const u = getUsuarios().find(x=> x.id===uid);
+  if(!u) return;
+  pinUsuario = u;
+  pinBuffer = '';
+  document.getElementById('pin-user-name').textContent = u.nombre;
+  document.getElementById('pin-error').textContent = '';
+  actualizarPinDots();
+  document.getElementById('login-users-step').style.display = 'none';
+  document.getElementById('login-pin-step').style.display = 'block';
+}
+
+function volverAUsuarios(){
+  pinUsuario = null; pinBuffer = '';
+  document.getElementById('login-pin-step').style.display = 'none';
+  document.getElementById('login-users-step').style.display = 'block';
+}
+
+function pinAgregar(d){
+  if(pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  document.getElementById('pin-error').textContent = '';
+  actualizarPinDots();
+  if(pinBuffer.length === 4) setTimeout(pinValidar, 120); // valida solo al completar
+}
+function pinBorrar(){
+  pinBuffer = pinBuffer.slice(0, -1);
+  document.getElementById('pin-error').textContent = '';
+  actualizarPinDots();
+}
+function actualizarPinDots(){
+  const dots = document.querySelectorAll('#pin-dots .pin-dot');
+  dots.forEach((d,i)=> d.classList.toggle('filled', i < pinBuffer.length));
+}
+
+function pinValidar(){
+  if(!pinUsuario || pinBuffer.length !== 4) return;
+  if(pinBuffer === String(pinUsuario.pin)){
+    iniciarSesion(pinUsuario);
+  }else{
+    const dots = document.getElementById('pin-dots');
+    dots.classList.add('error');
+    document.getElementById('pin-error').textContent = 'PIN incorrecto, intenta de nuevo';
+    setTimeout(()=>{ dots.classList.remove('error'); pinBuffer=''; actualizarPinDots(); }, 500);
+  }
+}
+
+function iniciarSesion(u){
+  // Doble chequeo de permiso (por si el filtro se saltara)
+  if(!tieneAcceso(u)){
+    document.getElementById('pin-error').textContent = 'No tienes acceso a la Calculadora 3D';
+    setTimeout(()=>{ pinBuffer=''; actualizarPinDots(); }, 400);
+    return;
+  }
+  SESSION = { id:u.id, nombre:u.nombre };
+  try{ localStorage.setItem(LS_SESSION, JSON.stringify(SESSION)); }catch(e){}
+  document.body.classList.add('authed');
+  document.getElementById('header-user-name').textContent = u.nombre;
+  volverAUsuarios();
+  toast('Hola, ' + u.nombre + ' 👋');
+}
+
+// Cerrar sesión = salir de TODO el ecosistema (sesión compartida) y volver al Home.
+function cerrarSesion(){
+  SESSION = null;
+  try{ localStorage.removeItem(LS_SESSION); }catch(e){}
+  document.body.classList.remove('authed');
+  window.location.href = HOME_URL;
+}
+
+// Muestra un aviso cuando el usuario logueado NO tiene acceso a esta app
+function mostrarSinAcceso(nombre){
+  document.getElementById('login-users-step').innerHTML =
+    '<h2>Sin acceso</h2>' +
+    '<p style="color:var(--texto-suave);font-size:14px;margin-bottom:18px;">Hola ' + escapeHtml(nombre) +
+    ', no tienes acceso a la Calculadora 3D. Pídele a un administrador que te lo habilite.</p>' +
+    '<button type="button" class="login-user-btn" style="grid-column:1/-1;" onclick="window.location.href=HOME_URL">&larr; Volver al inicio</button>';
+  document.getElementById('login-pin-step').style.display = 'none';
+  document.getElementById('login-users-step').style.display = 'block';
+}
+
+// Restaura la sesión COMPARTIDA: si vienes logueado del Home y tienes acceso, entra
+// directo (sin PIN). Si estás logueado pero sin acceso, avisa. Si no hay sesión, login.
+function restaurarSesion(){
+  try{
+    const raw = localStorage.getItem(LS_SESSION);
+    if(!raw){ window.location.href = HOME_URL; return false; }   // sin sesión → login en el Home
+    const s = JSON.parse(raw);
+    // Permiso: usa la lista de apps de la sesión (la deja el Home al loguear);
+    // si no viene, cae a la identidad local como respaldo.
+    const apps = Array.isArray(s.apps) ? s.apps
+               : (getUsuarios().find(x=> x.id === s.id) || {}).apps;
+    const tiene = Array.isArray(apps) && apps.includes(APP_KEY);
+    if(tiene){
+      SESSION = s;
+      document.body.classList.add('authed');
+      document.getElementById('header-user-name').textContent = s.nombre;
+      return true;
+    }
+    mostrarSinAcceso(s.nombre || '');   // logueado pero sin acceso a esta app
+  }catch(e){ window.location.href = HOME_URL; }
+  return false;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+function init(){
+  setupLogin();
+  setupTabs();
+  setupCotizador();
+  setupConfig();
+  setupHistorial();
+  setupModal();
+  renderConfigInputs();
+  poblarFilamentos();
+  poblarMaquinas();
+  precargarDefaultsCotizador();
+  renderHistorial();
+  restaurarSesion();   // sesión compartida: entra directo o vuelve al Home
+  initFirestore();     // conecta datos compartidos (config + historial) en vivo
+  setupConexionBanner();
+}
+
+/* ================================================================
+   FIRESTORE — datos compartidos en tiempo real (config + historial)
+   Si Firestore no está disponible (Auth anónimo apagado o sin conexión),
+   la app sigue en modo local (localStorage) sin romperse.
+   ================================================================ */
+function initFirestore(){
+  const fb = window.TagoCalcDB;
+  if(!fb) return;                       // no se cargó el puente → modo local
+  fb.ready.then(ok => {
+    if(!ok){ console.info('Calculadora en modo local (Firestore no disponible).'); return; }
+    FB_ON = true;
+    // Configuración compartida
+    fb.onConfig(data => {
+      if(data){
+        CFG = Object.assign(structuredCloneSafe(CONFIG_DEFAULT), data);
+        renderConfigInputs(); poblarFilamentos(); poblarMaquinas(); precargarDefaultsCotizador();
+      }else{
+        fb.saveConfig(CFG);             // primera vez: sube la config local como semilla
+      }
+    });
+    // Historial compartido (ordenado por fecha desc)
+    fb.onCotizaciones(list => { COTIZ = list; renderHistorial(); });
+    toast('Datos compartidos conectados ✓');
+  });
+}
+
+// Banner cuando no hay conexión (los datos se guardan y sincronizan al volver)
+function setupConexionBanner(){
+  const upd = ()=>{
+    const b = document.getElementById('offline-banner');
+    if(b) b.style.display = navigator.onLine ? 'none' : 'block';
+  };
+  window.addEventListener('online', upd);
+  window.addEventListener('offline', upd);
+  upd();
+}
+
+/* ---------------- Tabs ---------------- */
+function setupTabs(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> cambiarVista(btn.dataset.view));
+  });
+}
+function cambiarVista(view){
+  document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  if(view === 'historial') renderHistorial();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+/* ================================================================
+   5) COTIZADOR — eventos y cálculo
+   ================================================================ */
+
+let modoColor = 'mono';
+
+function setupCotizador(){
+  // Toggle mono/multi
+  document.querySelectorAll('#toggle-color button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      modoColor = b.dataset.modo;
+      document.querySelectorAll('#toggle-color button').forEach(x=> x.classList.toggle('active', x===b));
+      // Precarga el % de desperdicio correspondiente (editable)
+      document.getElementById('in-desperdicio').value = (modoColor==='mono') ? CFG.despMono : CFG.despMulti;
+      actualizarEstadoDesperdicio();
+    });
+  });
+
+  document.getElementById('in-purga').addEventListener('change', actualizarEstadoDesperdicio);
+  document.getElementById('btn-calcular').addEventListener('click', onCalcular);
+  document.getElementById('btn-limpiar').addEventListener('click', limpiarCotizador);
+  document.getElementById('btn-guardar').addEventListener('click', onGuardarCotizacion);
+
+  // Limpiar errores al escribir
+  ['in-filamento','in-gramos','in-horas','in-minutos'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', ()=>{
+      document.getElementById(id).classList.remove('invalid');
+    });
+  });
+}
+
+// Si "los gramos ya incluyen la purga" está marcado -> desperdicio deshabilitado (0% efectivo)
+function actualizarEstadoDesperdicio(){
+  const purga = document.getElementById('in-purga').checked;
+  const desp = document.getElementById('in-desperdicio');
+  desp.disabled = purga;
+  desp.style.opacity = purga ? .5 : 1;
+}
+
+function precargarDefaultsCotizador(){
+  document.getElementById('in-desperdicio').value = CFG.despMono;
+  document.getElementById('in-prep').value = 15;
+  document.getElementById('in-post').value = 0;
+  document.getElementById('in-margen').value = CFG.margen;
+}
+
+// Carga el <select> de filamentos desde la configuración
+function poblarFilamentos(){
+  const sel = document.getElementById('in-filamento');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Selecciona un filamento —</option>';
+  CFG.filamentos.forEach(f=>{
+    const o = document.createElement('option');
+    o.value = f.id;
+    o.textContent = `${f.nombre} · ${f.tipo} · ${formatCLP(f.precioKg)}/kg`;
+    sel.appendChild(o);
+  });
+  if(prev) sel.value = prev;
+}
+
+// Carga el <select> de máquinas desde la configuración (preselecciona la primera)
+function poblarMaquinas(){
+  const sel = document.getElementById('in-maquina');
+  const prev = sel.value;
+  sel.innerHTML = '';
+  CFG.maquinas.forEach(m=>{
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = m.nombre;
+    sel.appendChild(o);
+  });
+  // Mantiene la selección previa si sigue existiendo; si no, toma la primera
+  if(prev && CFG.maquinas.some(m=>m.id===prev)) sel.value = prev;
+  else if(CFG.maquinas.length) sel.value = CFG.maquinas[0].id;
+}
+
+function validarCotizador(){
+  let ok = true;
+  const showErr = (inputId, errId, cond)=>{
+    const input = document.getElementById(inputId);
+    const err = document.getElementById(errId);
+    if(cond){ input.classList.add('invalid'); err.classList.add('show'); ok=false; }
+    else { input.classList.remove('invalid'); err.classList.remove('show'); }
+  };
+  showErr('in-filamento','err-filamento', !document.getElementById('in-filamento').value);
+  showErr('in-maquina','err-maquina', !document.getElementById('in-maquina').value);
+  showErr('in-gramos','err-gramos', num(document.getElementById('in-gramos').value) <= 0);
+  const horas = num(document.getElementById('in-horas').value);
+  const minutos = num(document.getElementById('in-minutos').value);
+  const tiempoInvalido = (horas + minutos/60) <= 0;
+  const err = document.getElementById('err-tiempo');
+  if(tiempoInvalido){
+    document.getElementById('in-horas').classList.add('invalid');
+    document.getElementById('in-minutos').classList.add('invalid');
+    err.classList.add('show'); ok=false;
+  } else {
+    document.getElementById('in-horas').classList.remove('invalid');
+    document.getElementById('in-minutos').classList.remove('invalid');
+    err.classList.remove('show');
+  }
+  return ok;
+}
+
+// Lee el formulario y arma el objeto "trabajo"
+function leerTrabajo(){
+  const fid = document.getElementById('in-filamento').value;
+  const fil = CFG.filamentos.find(f=> f.id===fid) || {};
+  const mid = document.getElementById('in-maquina').value;
+  const maq = CFG.maquinas.find(m=> m.id===mid) || {};
+  return {
+    nombre: document.getElementById('in-nombre').value.trim() || 'Sin nombre',
+    filamentoId: fid,
+    filamentoNombre: fil.nombre || '—',
+    filamentoTipo: fil.tipo || '',
+    precioKg: fil.precioKg || 0,
+    // Máquina: guardamos su id, nombre y una copia de sus parámetros (para que
+    // el cálculo y el historial no cambien si luego editas la máquina en Config).
+    maquinaId: mid,
+    maquinaNombre: maq.nombre || '—',
+    maquina: {
+      precioCompra: maq.precioCompra || 0,
+      vidaUtil: maq.vidaUtil || 1,
+      mantencionHora: maq.mantencionHora || 0,
+      watts: maq.watts || 0
+    },
+    gramos: num(document.getElementById('in-gramos').value),
+    gramosIncluyenPurga: document.getElementById('in-purga').checked,
+    modoColor: modoColor,
+    desperdicioPct: num(document.getElementById('in-desperdicio').value),
+    horas: intOr(document.getElementById('in-horas').value, 0),
+    minutos: intOr(document.getElementById('in-minutos').value, 0),
+    cantidad: Math.max(1, intOr(document.getElementById('in-cantidad').value, 1)),
+    minPrep: num(document.getElementById('in-prep').value),
+    minPost: num(document.getElementById('in-post').value),
+    horasDiseno: num(document.getElementById('in-diseno').value),
+    empaque: num(document.getElementById('in-empaque').value),
+    envio: num(document.getElementById('in-envio').value),
+    margen: Math.max(1, num(document.getElementById('in-margen').value) || CFG.margen)
+  };
+}
+
+function onCalcular(){
+  if(!validarCotizador()){
+    toast('Revisa los campos marcados en rojo');
+    return;
+  }
+  const trabajo = leerTrabajo();
+  const r = calcularCotizacion(trabajo, CFG);
+  ultimoResultado = r;
+  ultimoTrabajo = trabajo;
+  renderResultado(trabajo, r);
+}
+
+/* ---------------- Render del resultado ---------------- */
+function renderResultado(t, r){
+  document.getElementById('resultado-placeholder').style.display = 'none';
+  const box = document.getElementById('resultado');
+  box.classList.add('show');
+
+  document.getElementById('res-titulo').textContent =
+    `${t.nombre} · ${t.maquinaNombre} · ${t.filamentoNombre} · ${nfNum.format(t.gramos)} g · ${t.cantidad} pza(s)`;
+
+  // Advertencia de precio mínimo
+  const warnBox = document.getElementById('res-warn');
+  if(r.precioFinal < CFG.precioMinimo){
+    warnBox.innerHTML = `<div class="warn"><span class="wi">⚠️</span><div>
+      El precio final calculado (<b>${formatCLP(r.precioFinal)}</b>) queda por debajo del mínimo por pedido
+      (<b>${formatCLP(CFG.precioMinimo)}</b>). Se sugiere cobrar al menos el mínimo.</div></div>`;
+  } else {
+    warnBox.innerHTML = '';
+  }
+
+  // Desglose ítem por ítem. Si se descuenta el IVA, las tarifas se muestran netas.
+  const despTxt = t.gramosIncluyenPurga
+    ? 'purga ya incluida en gramos (0%)'
+    : `desperdicio ${nfNum.format(r.desperdicioPct)}%`;
+  const ivaDiv = r.ivaDescontado ? 1.19 : 1;
+  const netoTag = r.ivaDescontado ? ' · sin IVA' : '';
+
+  const filas = [
+    ['Material', `<span class="sub">${t.filamentoNombre} · ${despTxt}${netoTag}</span>`, r.material],
+    ['Energía', `<span class="sub">${nfNum.format(t.maquina.watts)} W · ${nfNum.format(r.horasTotales)} h · ${formatCLP(CFG.precioKwh/ivaDiv)}/kWh${netoTag}</span>`, r.energia],
+    ['Depreciación máquina', `<span class="sub">${t.maquinaNombre} · ${formatCLP((t.maquina.precioCompra/ivaDiv)/t.maquina.vidaUtil)}/h${netoTag}</span>`, r.depreciacion],
+    ['Mantención', `<span class="sub">${formatCLP(t.maquina.mantencionHora/ivaDiv)}/h${netoTag}</span>`, r.mantencion],
+    ['Mano de obra', `<span class="sub">${nfNum.format(t.minPrep+t.minPost)} min · ${formatCLP(CFG.tarifaHora)}/h</span>`, r.manoObra],
+    ['Diseño', `<span class="sub">${nfNum.format(t.horasDiseno)} h · ${formatCLP(CFG.tarifaDiseno)}/h</span>`, r.diseno],
+    ['Overhead', `<span class="sub">${nfNum.format(CFG.overhead)}% sobre costo directo</span>`, r.overheadClp],
+    ['Provisión por fallos', `<span class="sub">tasa ${nfNum.format(CFG.tasaFallos)}%</span>`, r.provisionFallos],
+    ['Empaque', '', r.empaque],
+    ['Envío', '', r.envio],
+    ['IVA', `<span class="sub">19%</span>`, r.ivaClp],
+    ['Comisión de pago', `<span class="sub">${nfNum.format(CFG.comision)}%</span>`, r.comisionClp],
+  ];
+
+  let html = '';
+  filas.forEach(([label, sub, val])=>{
+    html += `<tr><td>${label}${sub? '<br>'+sub : ''}</td><td class="val">${formatCLP(val)}</td></tr>`;
+  });
+  html += `<tr class="total"><td>Precio final (con IVA y comisión)</td><td class="val">${formatCLP(r.precioFinal)}</td></tr>`;
+  if(r.ivaDescontado){
+    html += `<tr><td colspan="2" style="border:none; padding-top:10px;"><span class="sub" style="color:var(--texto-suave);">Costos netos (sin IVA): el IVA de tus compras con factura es crédito fiscal que recuperas. El IVA de 19% se cobra solo en la venta.</span></td></tr>`;
+  }
+  document.getElementById('res-desglose').innerHTML = html;
+
+  // Resumen destacado
+  document.getElementById('res-resumen').innerHTML = `
+    <div class="metric"><div class="m-label">Costo total</div><div class="m-value">${formatCLP(r.costoTotal)}</div></div>
+    <div class="metric"><div class="m-label">Precio neto</div><div class="m-value">${formatCLP(r.precioNeto)}</div></div>
+    <div class="metric destacada"><div class="m-label">Precio final (con IVA)</div>
+      <div class="m-value">${formatCLP(r.precioFinal)}</div>
+      <div class="m-extra">${formatCLP(r.precioPorPieza)} por pieza · ${t.cantidad} pza(s)</div></div>
+    <div class="metric verde"><div class="m-label">Utilidad</div>
+      <div class="m-value">${formatCLP(r.utilidadClp)}</div>
+      <div class="m-extra">${nfNum.format(r.utilidadPct)}% sobre el costo</div></div>
+  `;
+
+  // Comparación de márgenes 50% / 100% / 200% (ganancia sobre el costo)
+  const margenes = [50,100,200];
+  document.getElementById('res-compara').innerHTML = margenes.map(m=>{
+    const pf = precioFinalConMargen(r.costoTotal, m, r.empaque, r.envio, CFG.comision);
+    const actual = Math.abs(m - t.margen) < 0.001;
+    return `<div class="c-item ${actual?'actual':''}"><div class="c-x">${m}%</div><div class="c-v">${formatCLP(pf)}</div></div>`;
+  }).join('');
+
+  // Llevar el foco visual al resultado en móvil
+  if(window.innerWidth < 760){
+    box.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+function limpiarCotizador(){
+  ['in-nombre','in-gramos','in-horas','in-minutos','in-empaque','in-envio','in-diseno'].forEach(id=>{
+    document.getElementById(id).value = (id==='in-empaque'||id==='in-envio'||id==='in-diseno') ? 0 : '';
+  });
+  document.getElementById('in-cantidad').value = 1;
+  document.getElementById('in-purga').checked = false;
+  document.getElementById('in-filamento').value = '';
+  if(CFG.maquinas.length) document.getElementById('in-maquina').value = CFG.maquinas[0].id;
+  modoColor = 'mono';
+  document.querySelectorAll('#toggle-color button').forEach(x=> x.classList.toggle('active', x.dataset.modo==='mono'));
+  precargarDefaultsCotizador();
+  actualizarEstadoDesperdicio();
+  document.getElementById('resultado').classList.remove('show');
+  document.getElementById('resultado-placeholder').style.display = 'block';
+  ultimoResultado = ultimoTrabajo = null;
+  document.querySelectorAll('.invalid').forEach(x=> x.classList.remove('invalid'));
+  document.querySelectorAll('.field-error').forEach(x=> x.classList.remove('show'));
+}
+
+function onGuardarCotizacion(){
+  if(!ultimoResultado || !ultimoTrabajo){ toast('Primero calcula una cotización'); return; }
+  const registro = {
+    trabajo: ultimoTrabajo,
+    resultado: ultimoResultado,
+    cfgSnapshot: structuredCloneSafe(CFG) // guardamos los parámetros usados
+  };
+  store.addCotizacion(registro);
+  toast('Cotización guardada ✓');
+  renderHistorial();
+}
+
+/* ================================================================
+   6) CONFIGURACIÓN — render y guardado
+   ================================================================ */
+
+function setupConfig(){
+  document.getElementById('btn-add-filamento').addEventListener('click', ()=>{
+    CFG.filamentos.push({ id:'f'+Date.now(), nombre:'Nuevo filamento', tipo:'PLA', precioKg:0 });
+    renderFilamentos();
+  });
+  document.getElementById('btn-add-maquina').addEventListener('click', ()=>{
+    CFG.maquinas.push({ id:'m'+Date.now(), nombre:'Nueva máquina', precioCompra:0, vidaUtil:10000, mantencionHora:50, watts:100 });
+    renderMaquinas();
+  });
+  document.getElementById('btn-guardar-config').addEventListener('click', guardarConfig);
+  document.getElementById('btn-reset-config').addEventListener('click', ()=>{
+    if(confirm('¿Restaurar todos los parámetros a los valores por defecto? Se perderán tus cambios de configuración.')){
+      CFG = structuredCloneSafe(CONFIG_DEFAULT);
+      store.saveConfig(CFG);
+      renderConfigInputs();
+      poblarFilamentos();
+      poblarMaquinas();
+      precargarDefaultsCotizador();
+      toast('Configuración restaurada');
+    }
+  });
+}
+
+// Vuelca CFG a los inputs de la vista Configuración
+function renderConfigInputs(){
+  document.querySelectorAll('[data-cfg]').forEach(inp=>{
+    const key = inp.dataset.cfg;
+    if(key in CFG) inp.value = CFG[key];
+  });
+  document.getElementById('cfg-descontar-iva').checked = (CFG.descontarIva !== false);
+  renderFilamentos();
+  renderMaquinas();
+}
+
+function renderFilamentos(){
+  const tb = document.querySelector('#tabla-filamentos tbody');
+  tb.innerHTML = '';
+  const tipos = ['PLA','PETG','TPU','ABS','ASA','PC','Nylon','PLA-CF','PETG-CF'];
+  CFG.filamentos.forEach((f, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" value="${escapeAttr(f.nombre)}" data-fi="${i}" data-fk="nombre"></td>
+      <td><select data-fi="${i}" data-fk="tipo">${tipos.map(tp=>`<option ${tp===f.tipo?'selected':''}>${tp}</option>`).join('')}</select></td>
+      <td><input type="number" min="0" step="500" inputmode="numeric" value="${f.precioKg}" data-fi="${i}" data-fk="precioKg" style="max-width:130px;"></td>
+      <td><button class="icon-btn" title="Eliminar" data-del="${i}">🗑</button></td>
+    `;
+    tb.appendChild(tr);
+  });
+  // Editar celdas
+  tb.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const i = +el.dataset.fi, k = el.dataset.fk;
+      CFG.filamentos[i][k] = (k==='precioKg') ? num(el.value) : el.value;
+    });
+  });
+  // Eliminar
+  tb.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = +btn.dataset.del;
+      CFG.filamentos.splice(i,1);
+      renderFilamentos();
+    });
+  });
+}
+
+// Tabla editable de máquinas (con depreciación/h calculada por fila)
+function renderMaquinas(){
+  const tb = document.querySelector('#tabla-maquinas tbody');
+  tb.innerHTML = '';
+  CFG.maquinas.forEach((m, i)=>{
+    const deprec = (num(m.precioCompra) / (num(m.vidaUtil)||1));
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" value="${escapeAttr(m.nombre)}" data-mi="${i}" data-mk="nombre" style="min-width:160px;"></td>
+      <td><input type="number" min="0" step="1000" inputmode="numeric" value="${m.precioCompra}" data-mi="${i}" data-mk="precioCompra" style="min-width:110px;"></td>
+      <td><input type="number" min="1" step="100" inputmode="numeric" value="${m.vidaUtil}" data-mi="${i}" data-mk="vidaUtil" style="min-width:90px;"></td>
+      <td><input type="number" min="0" step="10" inputmode="numeric" value="${m.mantencionHora}" data-mi="${i}" data-mk="mantencionHora" style="min-width:75px;"></td>
+      <td><input type="number" min="0" step="5" inputmode="numeric" value="${m.watts}" data-mi="${i}" data-mk="watts" style="min-width:70px;"></td>
+      <td class="deprec-cell" style="white-space:nowrap; font-weight:600;">${formatCLP(deprec)}/h</td>
+      <td><button class="icon-btn" title="Eliminar" data-delm="${i}">🗑</button></td>
+    `;
+    tb.appendChild(tr);
+  });
+  // Editar celdas (los campos numéricos actualizan la depreciación mostrada al vuelo)
+  tb.querySelectorAll('input').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const i = +el.dataset.mi, k = el.dataset.mk;
+      CFG.maquinas[i][k] = (k==='nombre') ? el.value : num(el.value);
+      if(k==='precioCompra' || k==='vidaUtil'){
+        const m = CFG.maquinas[i];
+        el.closest('tr').querySelector('.deprec-cell').textContent =
+          formatCLP(num(m.precioCompra)/(num(m.vidaUtil)||1)) + '/h';
+      }
+    });
+  });
+  // Eliminar (deja siempre al menos una máquina)
+  tb.querySelectorAll('[data-delm]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(CFG.maquinas.length <= 1){ toast('Debe quedar al menos una máquina'); return; }
+      CFG.maquinas.splice(+btn.dataset.delm, 1);
+      renderMaquinas();
+    });
+  });
+}
+
+function guardarConfig(){
+  // Lee todos los inputs data-cfg
+  document.querySelectorAll('[data-cfg]').forEach(inp=>{
+    const key = inp.dataset.cfg;
+    CFG[key] = num(inp.value);
+  });
+  CFG.descontarIva = document.getElementById('cfg-descontar-iva').checked;
+  // Filamentos y máquinas ya están sincronizados en CFG por sus listeners.
+  // Limpia filas vacías (sin nombre). Deja siempre al menos una máquina.
+  CFG.filamentos = CFG.filamentos.filter(f=> (f.nombre||'').trim() !== '');
+  const maqLimpias = CFG.maquinas.filter(m=> (m.nombre||'').trim() !== '');
+  if(maqLimpias.length) CFG.maquinas = maqLimpias;
+
+  const ok = store.saveConfig(CFG);
+  poblarFilamentos();
+  poblarMaquinas();
+  precargarDefaultsCotizador();
+  // Si el desperdicio del cotizador seguía el default, lo actualizamos
+  document.getElementById('in-desperdicio').value = (modoColor==='mono') ? CFG.despMono : CFG.despMulti;
+  toast(ok ? 'Configuración guardada ✓' : 'No se pudo guardar (almacenamiento no disponible)');
+}
+
+/* ================================================================
+   7) HISTORIAL
+   ================================================================ */
+
+function setupHistorial(){
+  document.getElementById('hist-search').addEventListener('input', renderHistorial);
+  document.getElementById('btn-export').addEventListener('click', ()=> abrirExportModal('excel'));
+  document.getElementById('btn-export-pdf').addEventListener('click', ()=> abrirExportModal('pdf-tabla'));
+  document.getElementById('hist-check-all').addEventListener('change', e=>{
+    document.querySelectorAll('.hist-sel').forEach(cb=> cb.checked = e.target.checked);
+    actualizarSeleccionHist();
+  });
+  setupExportModal();
+}
+
+/* ---------------- Modal de exportación (formato + campos) ---------------- */
+let exportFormato = 'excel';
+function setupExportModal(){
+  // Casillas de campos (todas marcadas por defecto)
+  document.getElementById('export-campos').innerHTML = CAMPOS_EXPORT.map(c=>
+    `<label><input type="checkbox" class="exp-campo" value="${c.k}" checked> ${escapeHtml(c.h)}</label>`).join('');
+  // Selector de formato
+  document.querySelectorAll('#export-formato button').forEach(b=> b.addEventListener('click', ()=>{
+    exportFormato = b.dataset.fmt;
+    document.querySelectorAll('#export-formato button').forEach(x=> x.classList.toggle('active', x===b));
+    // El PDF detallado no usa selección de columnas (muestra todo)
+    const detalle = exportFormato === 'pdf-detalle';
+    document.getElementById('export-campos-wrap').style.display = detalle ? 'none' : '';
+    document.getElementById('export-detalle-nota').style.display = detalle ? 'block' : 'none';
+  }));
+  document.getElementById('export-toggle-all').addEventListener('click', ()=>{
+    const cbs = [...document.querySelectorAll('.exp-campo')];
+    const encender = !cbs.every(cb=> cb.checked);
+    cbs.forEach(cb=> cb.checked = encender);
+  });
+  document.getElementById('export-close').addEventListener('click', cerrarExportModal);
+  document.getElementById('export-modal-bg').addEventListener('click', e=>{ if(e.target.id==='export-modal-bg') cerrarExportModal(); });
+  document.getElementById('export-descargar').addEventListener('click', ()=>{
+    if(exportFormato === 'pdf-detalle'){ cerrarExportModal(); exportarPDF(); return; }
+    const campos = [...document.querySelectorAll('.exp-campo:checked')].map(cb=> cb.value);
+    if(campos.length === 0){ toast('Elige al menos una columna'); return; }
+    cerrarExportModal();
+    if(exportFormato === 'excel') exportarExcel(campos);
+    else exportarPDFTabla(campos);
+  });
+}
+function abrirExportModal(fmt){
+  const total = cotizacionesAExportar().length;
+  if(total === 0){ toast('No hay cotizaciones para exportar'); return; }
+  const sel = idsSeleccionados().length;
+  document.getElementById('export-sub').textContent = sel
+    ? `Se exportarán las ${sel} cotización(es) seleccionada(s).`
+    : `No seleccionaste ninguna: se exportarán todas (${total}).`;
+  // Preselecciona el formato según el botón
+  document.querySelectorAll('#export-formato button').forEach(b=> b.classList.toggle('active', b.dataset.fmt===fmt));
+  exportFormato = fmt;
+  const detalle = fmt === 'pdf-detalle';
+  document.getElementById('export-campos-wrap').style.display = detalle ? 'none' : '';
+  document.getElementById('export-detalle-nota').style.display = detalle ? 'block' : 'none';
+  document.getElementById('export-modal-bg').classList.add('show');
+}
+function cerrarExportModal(){ document.getElementById('export-modal-bg').classList.remove('show'); }
+
+// IDs de las cotizaciones seleccionadas (checkbox marcado)
+function idsSeleccionados(){
+  return [...document.querySelectorAll('.hist-sel:checked')].map(cb=> cb.dataset.sel);
+}
+
+// Actualiza contador, estilo de fila y el estado del "seleccionar todo"
+function actualizarSeleccionHist(){
+  const todas = [...document.querySelectorAll('.hist-sel')];
+  const marcadas = todas.filter(cb=> cb.checked);
+  document.querySelectorAll('.hist-item').forEach(it=>{
+    const cb = it.querySelector('.hist-sel');
+    it.classList.toggle('selected', !!(cb && cb.checked));
+  });
+  const n = marcadas.length;
+  document.getElementById('hist-sel-count').textContent =
+    n === 0 ? '0 seleccionadas' : (n === 1 ? '1 seleccionada' : n + ' seleccionadas');
+  const all = document.getElementById('hist-check-all');
+  all.checked = (todas.length > 0 && n === todas.length);
+  all.indeterminate = (n > 0 && n < todas.length);
+}
+
+function renderHistorial(){
+  const cont = document.getElementById('hist-list');
+  const q = (document.getElementById('hist-search').value || '').toLowerCase().trim();
+  let lista = store.listCotizaciones();
+  if(q){
+    lista = lista.filter(c=> (c.trabajo.nombre||'').toLowerCase().includes(q));
+  }
+  if(lista.length === 0){
+    cont.innerHTML = `<div class="empty-state"><div class="big">📄</div>
+      <p>${q ? 'Sin resultados para tu búsqueda.' : 'Aún no hay cotizaciones guardadas. Calcula una y presiona “Guardar cotización”.'}</p></div>`;
+    return;
+  }
+  cont.innerHTML = lista.map(c=>{
+    const fecha = aFecha(c.creadoEn).toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <div style="display:flex; align-items:flex-start;">
+          <input type="checkbox" class="hist-sel" data-sel="${c.id}" title="Seleccionar">
+          <div>
+            <div class="hist-cliente">${escapeHtml(c.trabajo.nombre)}</div>
+            <div class="hist-meta">${fecha} · ${escapeHtml(c.autor||'Local')} · ${c.trabajo.cantidad} pza(s) · ${escapeHtml(c.trabajo.maquinaNombre||'—')} · ${escapeHtml(c.trabajo.filamentoNombre)}</div>
+          </div>
+        </div>
+        <div class="hist-precio">${formatCLP(c.resultado.precioFinal)}</div>
+      </div>
+      <div class="hist-actions">
+        <button class="btn btn-ghost btn-sm" data-ver="${c.id}">Ver detalle</button>
+        <button class="btn btn-secondary btn-sm" data-dup="${c.id}">Duplicar</button>
+        <button class="btn btn-danger-ghost btn-sm" data-del="${c.id}">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  cont.querySelectorAll('[data-ver]').forEach(b=> b.addEventListener('click', ()=> verDetalle(b.dataset.ver)));
+  cont.querySelectorAll('[data-dup]').forEach(b=> b.addEventListener('click', ()=> duplicarCotizacion(b.dataset.dup)));
+  cont.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=> eliminarCotizacion(b.dataset.del)));
+  cont.querySelectorAll('.hist-sel').forEach(cb=> cb.addEventListener('change', actualizarSeleccionHist));
+  actualizarSeleccionHist();
+}
+
+function eliminarCotizacion(id){
+  if(confirm('¿Eliminar esta cotización del historial?')){
+    store.deleteCotizacion(id);
+    renderHistorial();
+    toast('Cotización eliminada');
+  }
+}
+
+// Duplicar: carga los datos en el cotizador para recotizar con otros valores
+function duplicarCotizacion(id){
+  const c = store.getCotizacion(id);
+  if(!c) return;
+  const t = c.trabajo;
+  document.getElementById('in-nombre').value = t.nombre==='Sin nombre' ? '' : (t.nombre + ' (copia)');
+  poblarFilamentos();
+  // Si el filamento aún existe lo selecciona; si no, queda vacío
+  document.getElementById('in-filamento').value = CFG.filamentos.some(f=>f.id===t.filamentoId) ? t.filamentoId : '';
+  // Máquina: si aún existe la usa; si no (o cotización antigua), toma la primera
+  poblarMaquinas();
+  document.getElementById('in-maquina').value =
+    CFG.maquinas.some(m=>m.id===t.maquinaId) ? t.maquinaId : (CFG.maquinas[0]?.id || '');
+  document.getElementById('in-gramos').value = t.gramos;
+  document.getElementById('in-purga').checked = !!t.gramosIncluyenPurga;
+  modoColor = t.modoColor || 'mono';
+  document.querySelectorAll('#toggle-color button').forEach(x=> x.classList.toggle('active', x.dataset.modo===modoColor));
+  document.getElementById('in-desperdicio').value = t.desperdicioPct;
+  document.getElementById('in-horas').value = t.horas;
+  document.getElementById('in-minutos').value = t.minutos;
+  document.getElementById('in-cantidad').value = t.cantidad;
+  document.getElementById('in-prep').value = t.minPrep;
+  document.getElementById('in-post').value = t.minPost;
+  document.getElementById('in-diseno').value = t.horasDiseno;
+  document.getElementById('in-empaque').value = t.empaque;
+  document.getElementById('in-envio').value = t.envio;
+  document.getElementById('in-margen').value = t.margen;
+  actualizarEstadoDesperdicio();
+  closeModal();
+  cambiarVista('cotizador');
+  toast('Datos cargados. Ajusta y vuelve a calcular.');
+}
+
+function verDetalle(id){
+  const c = store.getCotizacion(id);
+  if(!c) return;
+  const t = c.trabajo, r = c.resultado;
+  document.getElementById('modal-titulo').textContent = t.nombre;
+  const fecha = aFecha(c.creadoEn).toLocaleString('es-CL');
+  const despTxt = t.gramosIncluyenPurga ? 'purga incluida (0%)' : `desperdicio ${nfNum.format(r.desperdicioPct)}%`;
+
+  const filas = [
+    ['Material', r.material], ['Energía', r.energia],
+    ['Depreciación', r.depreciacion], ['Mantención', r.mantencion],
+    ['Mano de obra', r.manoObra], ['Diseño', r.diseno],
+    ['Overhead', r.overheadClp], ['Provisión por fallos', r.provisionFallos],
+    ['Empaque', r.empaque], ['Envío', r.envio],
+    ['IVA (19%)', r.ivaClp], ['Comisión de pago', r.comisionClp],
+  ];
+  document.getElementById('modal-body').innerHTML = `
+    <p class="hist-meta">${fecha} · ${escapeHtml(c.autor||'Local')}</p>
+    <p class="card-sub">${escapeHtml(t.maquinaNombre||'—')} · ${escapeHtml(t.filamentoNombre)} · ${nfNum.format(t.gramos)} g · ${despTxt} · ${nfNum.format(r.horasTotales)} h · ${t.cantidad} pza(s) · margen ${nfNum.format(t.margen)}%</p>
+    <table class="desglose">
+      ${filas.map(([l,v])=>`<tr><td>${l}</td><td class="val">${formatCLP(v)}</td></tr>`).join('')}
+      <tr class="total"><td>Precio final</td><td class="val">${formatCLP(r.precioFinal)}</td></tr>
+    </table>
+    <div class="resumen-grid" style="margin-top:14px;">
+      <div class="metric"><div class="m-label">Costo total</div><div class="m-value">${formatCLP(r.costoTotal)}</div></div>
+      <div class="metric"><div class="m-label">Precio por pieza</div><div class="m-value">${formatCLP(r.precioPorPieza)}</div></div>
+      <div class="metric verde"><div class="m-label">Utilidad</div><div class="m-value">${formatCLP(r.utilidadClp)}</div><div class="m-extra">${nfNum.format(r.utilidadPct)}%</div></div>
+      <div class="metric"><div class="m-label">Precio neto</div><div class="m-value">${formatCLP(r.precioNeto)}</div></div>
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-secondary btn-sm" onclick="duplicarCotizacion('${c.id}')">Duplicar</button>
+      <button class="btn btn-danger-ghost btn-sm" onclick="eliminarCotizacion('${c.id}'); closeModal();">Eliminar</button>
+    </div>
+  `;
+  openModal();
+}
+
+// Cotizaciones a exportar: las seleccionadas, o todas si no hay ninguna marcada
+function cotizacionesAExportar(){
+  const ids = idsSeleccionados();
+  if(ids.length) return ids.map(id=> store.getCotizacion(id)).filter(Boolean);
+  return store.listCotizaciones();
+}
+
+// Campos disponibles para exportar. Excel y PDF-tabla comparten esta definición.
+// k=clave, h=título, w=ancho, num=numérico, clp=formato peso, sum=lleva total.
+const CAMPOS_EXPORT = [
+  { k:'fecha',       h:'Fecha',           w:130, val:c=> aFecha(c.creadoEn).toLocaleString('es-CL') },
+  { k:'autor',       h:'Autor',           w:70,  val:c=> c.autor||'Local' },
+  { k:'cliente',     h:'Cliente/Trabajo', w:170, val:c=> c.trabajo.nombre },
+  { k:'maquina',     h:'Máquina',         w:150, val:c=> c.trabajo.maquinaNombre||'—' },
+  { k:'filamento',   h:'Filamento',       w:110, val:c=> c.trabajo.filamentoNombre },
+  { k:'gramos',      h:'Gramos',          w:60,  num:true, val:c=> c.trabajo.gramos },
+  { k:'piezas',      h:'Piezas',          w:55,  num:true, val:c=> c.trabajo.cantidad },
+  { k:'horas',       h:'Horas',           w:55,  num:true, val:c=> +(c.resultado.horasTotales.toFixed(2)) },
+  { k:'costoTotal',  h:'Costo total',     w:95,  num:true, clp:true, sum:true, val:c=> Math.round(c.resultado.costoTotal) },
+  { k:'precioNeto',  h:'Precio neto',     w:95,  num:true, clp:true, sum:true, val:c=> Math.round(c.resultado.precioNeto) },
+  { k:'precioFinal', h:'Precio final',    w:95,  num:true, clp:true, sum:true, val:c=> Math.round(c.resultado.precioFinal) },
+  { k:'porPieza',    h:'Precio x pieza',  w:95,  num:true, clp:true, val:c=> Math.round(c.resultado.precioPorPieza) },
+  { k:'utilidad',    h:'Utilidad',        w:95,  num:true, clp:true, sum:true, val:c=> Math.round(c.resultado.utilidadClp) },
+  { k:'utilidadPct', h:'Utilidad %',      w:75,  num:true, val:c=> +(c.resultado.utilidadPct.toFixed(1)) }
+];
+function camposElegidos(campos){
+  if(!campos || !campos.length) return CAMPOS_EXPORT.slice();
+  return CAMPOS_EXPORT.filter(c=> campos.includes(c.k));
+}
+
+// Exporta a Excel NATIVO (SpreadsheetML 2003, .xls): columnas tipadas, montos en CLP
+// y fila de TOTALES con fórmulas SUM vivas. `campos` = claves elegidas (o todas).
+function exportarExcel(campos){
+  const lista = cotizacionesAExportar();
+  if(lista.length===0){ toast('No hay cotizaciones para exportar'); return; }
+  const cols = camposElegidos(campos);
+
+  const cellData = (col, c)=>{
+    const val = col.val(c);
+    if(col.num){
+      const n = isFinite(val) ? val : 0;
+      const style = col.clp ? ' ss:StyleID="clp"' : '';
+      return `<Cell${style}><Data ss:Type="Number">${n}</Data></Cell>`;
+    }
+    return `<Cell><Data ss:Type="String">${escapeHtml(String(val))}</Data></Cell>`;
+  };
+
+  const header = `<Row>${cols.map(c=>`<Cell ss:StyleID="hdr"><Data ss:Type="String">${escapeHtml(c.h)}</Data></Cell>`).join('')}</Row>`;
+  const filas = lista.map(c=> `<Row>${cols.map(col=> cellData(col, c)).join('')}</Row>`).join('');
+
+  // Fila de TOTALES con fórmulas (=SUM del rango de datos, notación R1C1)
+  const totales = `<Row>${cols.map((col,i)=>{
+    if(i===0) return `<Cell ss:StyleID="tot"><Data ss:Type="String">TOTALES (${lista.length})</Data></Cell>`;
+    if(col.sum){
+      const st = col.clp ? 'totclp' : 'tot';
+      return `<Cell ss:StyleID="${st}" ss:Formula="=SUM(R2C:R[-1]C)"><Data ss:Type="Number">0</Data></Cell>`;
+    }
+    return `<Cell ss:StyleID="tot"/>`;
+  }).join('')}</Row>`;
+
+  const xml =
+`<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="Default"><Alignment ss:Vertical="Center"/></Style>
+  <Style ss:ID="hdr"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0B1447" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="clp"><NumberFormat ss:Format="&quot;$&quot;#,##0"/></Style>
+  <Style ss:ID="tot"><Font ss:Bold="1"/><Interior ss:Color="#EDEDED" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="totclp"><Font ss:Bold="1"/><Interior ss:Color="#EDEDED" ss:Pattern="Solid"/><NumberFormat ss:Format="&quot;$&quot;#,##0"/></Style>
+ </Styles>
+ <Worksheet ss:Name="Cotizaciones">
+  <Table>
+${cols.map(c=>`   <Column ss:Width="${c.w}"/>`).join('\n')}
+   ${header}
+   ${filas}
+   ${totales}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+  const blob = new Blob(['﻿'+xml], { type:'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cotizaciones-tago-${new Date().toISOString().slice(0,10)}.xls`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast(`Excel exportado (${lista.length}) ✓`);
+}
+
+// PDF en TABLA AGRUPADA: todas las cotizaciones en una sola tabla (una fila por
+// cotización, columnas = campos elegidos), con fila de totales. NO genera una hoja
+// por cada ítem. Usa el diálogo de impresión → "Guardar como PDF".
+function exportarPDFTabla(campos){
+  const lista = cotizacionesAExportar();
+  if(lista.length===0){ toast('No hay cotizaciones para exportar'); return; }
+  const cols = camposElegidos(campos);
+  const hoy = new Date().toLocaleString('es-CL');
+
+  const th = cols.map(c=> `<th class="${c.num?'n':''}">${escapeHtml(c.h)}</th>`).join('');
+  const filas = lista.map(c=> '<tr>' + cols.map(col=>{
+    const v = col.val(c);
+    const cell = col.clp ? formatCLP(v) : (col.num ? nfNum.format(v) : escapeHtml(String(v)));
+    return `<td class="${col.num?'n':''}">${cell}</td>`;
+  }).join('') + '</tr>').join('');
+  const totales = '<tr class="tot">' + cols.map((col,i)=>{
+    if(i===0) return `<td><b>TOTALES (${lista.length})</b></td>`;
+    if(col.sum){ const s = lista.reduce((a,c)=> a + (col.val(c)||0), 0); return `<td class="n"><b>${formatCLP(s)}</b></td>`; }
+    return '<td></td>';
+  }).join('') + '</tr>';
+
+  const root = document.getElementById('print-root');
+  root.innerHTML =
+    '<div class="print-doc"><div class="print-cot">' +
+      '<div class="print-head"><div class="print-logo"><img src="assets/logo-color.svg" alt="TAGO" onerror="this.parentElement.textContent=\'TAGO\'"></div>' +
+        '<div><div class="print-title">Historial de cotizaciones</div><div class="print-sub">TAGO · tago.cl · ' + lista.length + ' cotización(es)</div></div></div>' +
+      '<table class="print-tbl print-tabla"><thead><tr>' + th + '</tr></thead><tbody>' + filas + totales + '</tbody></table>' +
+      '<div class="print-foot">Generado por el Cotizador 3D de TAGO el ' + hoy + '. Montos en CLP.</div>' +
+    '</div></div>';
+
+  const cleanup = ()=>{ root.innerHTML=''; window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup);
+  toast(`Preparando PDF (tabla) de ${lista.length}…`);
+  setTimeout(()=> window.print(), 60);
+}
+
+// Exporta a PDF DETALLADO: una hoja por cotización con el desglose completo.
+function exportarPDF(){
+  const ids = idsSeleccionados();
+  const lista = ids.length ? ids.map(id=> store.getCotizacion(id)).filter(Boolean)
+                           : store.listCotizaciones();
+  if(lista.length===0){ toast('Selecciona al menos una cotización'); return; }
+
+  const hoy = new Date().toLocaleString('es-CL');
+  const root = document.getElementById('print-root');
+  root.innerHTML = `<div class="print-doc">${lista.map(c=> printCotHTML(c, hoy)).join('')}</div>`;
+
+  // Limpia el contenedor cuando termina la impresión
+  const cleanup = ()=>{ root.innerHTML=''; window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup);
+
+  toast(`Preparando PDF de ${lista.length} cotización(es)…`);
+  setTimeout(()=> window.print(), 60); // deja aplicar estilos antes de imprimir
+}
+
+// Documento imprimible de UNA cotización (branding TAGO + desglose completo)
+function printCotHTML(c, hoy){
+  const t=c.trabajo, r=c.resultado;
+  const fecha = aFecha(c.creadoEn).toLocaleString('es-CL');
+  const despTxt = t.gramosIncluyenPurga ? 'purga incluida (0%)' : `desperdicio ${nfNum.format(r.desperdicioPct)}%`;
+  const filas = [
+    ['Material', r.material], ['Energía', r.energia],
+    ['Depreciación máquina', r.depreciacion], ['Mantención', r.mantencion],
+    ['Mano de obra', r.manoObra], ['Diseño', r.diseno],
+    ['Overhead', r.overheadClp], ['Provisión por fallos', r.provisionFallos],
+    ['Empaque', r.empaque], ['Envío', r.envio],
+    ['IVA (19%)', r.ivaClp], ['Comisión de pago', r.comisionClp]
+  ];
+  const ivaNota = r.ivaDescontado ? ' Costos netos (el IVA de las compras es crédito fiscal recuperable).' : '';
+  return `<div class="print-cot">
+    <div class="print-head">
+      <div class="print-logo"><img src="assets/logo-color.svg" alt="TAGO" onerror="this.parentElement.textContent='TAGO'"></div>
+      <div>
+        <div class="print-title">Cotización de impresión 3D</div>
+        <div class="print-sub">TAGO · tago.cl · Providencia, Santiago de Chile</div>
+      </div>
+    </div>
+    <div class="print-meta">
+      <b>${escapeHtml(t.nombre)}</b><br>
+      Fecha: ${fecha} &nbsp;·&nbsp; Autor: ${escapeHtml(c.autor||'Local')}<br>
+      Máquina: ${escapeHtml(t.maquinaNombre||'—')} &nbsp;·&nbsp; Filamento: ${escapeHtml(t.filamentoNombre)} · ${nfNum.format(t.gramos)} g · ${despTxt}<br>
+      Tiempo impresión: ${nfNum.format(r.horasTotales)} h &nbsp;·&nbsp; Cantidad: ${t.cantidad} pza(s) &nbsp;·&nbsp; Margen: ${nfNum.format(t.margen)}%
+    </div>
+    <table class="print-tbl">
+      ${filas.map(([l,v])=>`<tr><td>${l}</td><td class="n">${formatCLP(v)}</td></tr>`).join('')}
+      <tr class="tot"><td>Precio final (con IVA y comisión)</td><td class="n">${formatCLP(r.precioFinal)}</td></tr>
+    </table>
+    <div class="print-grid">
+      <div class="print-metric"><div class="l">Costo total</div><div class="v">${formatCLP(r.costoTotal)}</div></div>
+      <div class="print-metric"><div class="l">Precio neto (sin IVA)</div><div class="v">${formatCLP(r.precioNeto)}</div></div>
+      <div class="print-metric"><div class="l">Precio final (con IVA)</div><div class="v">${formatCLP(r.precioFinal)}</div></div>
+      <div class="print-metric"><div class="l">Precio por pieza</div><div class="v">${formatCLP(r.precioPorPieza)}</div></div>
+      <div class="print-metric"><div class="l">Utilidad</div><div class="v">${formatCLP(r.utilidadClp)} · ${nfNum.format(r.utilidadPct)}%</div></div>
+    </div>
+    <div class="print-foot">Generado por el Cotizador 3D de TAGO el ${hoy}. Montos en CLP.${ivaNota} Precio referencial, sujeto a confirmación.</div>
+  </div>`;
+}
+
+/* ================================================================
+   8) MODAL / TOAST / HELPERS
+   ================================================================ */
+function setupModal(){
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-bg').addEventListener('click', e=>{
+    if(e.target.id==='modal-bg') closeModal();
+  });
+}
+function openModal(){ document.getElementById('modal-bg').classList.add('show'); }
+function closeModal(){ document.getElementById('modal-bg').classList.remove('show'); }
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+// Respaldo del logo si no existe el archivo en assets/
+function tagoLogoFallback(img){
+  const box = img.parentElement;
+  box.innerHTML = '<span class="logo-fallback">TAGO</span>';
+}
+
+/* ================================================================
+   9) AUTOTEST EN CONSOLA (verifica el núcleo de cálculo al cargar)
+   Abre la consola del navegador para ver ✓/✗ de los casos de prueba.
+   ================================================================ */
+(function autotest(){
+  // Casos 1-3: documentados "con IVA" (sin descontar), para ilustrar la fórmula pura.
+  const cfg = Object.assign({}, CONFIG_DEFAULT, { descontarIva:false });
+  const aprox = (a,b,tol=1)=> Math.abs(a-b) <= tol;
+  // Máquina de referencia = X2D (primera del parque): $1.300.000 / 10.000 h,
+  // mantención $50/h, 130 W. Los casos usan esta máquina.
+  const maqX2D = { precioCompra:1300000, vidaUtil:10000, mantencionHora:50, watts:130 };
+  // Caso 1
+  const r1 = calcularCotizacion({
+    maquina:maqX2D, gramos:100, precioKg:18000, gramosIncluyenPurga:false, desperdicioPct:8,
+    horas:5, minutos:0, cantidad:1, minPrep:15, minPost:0, horasDiseno:0,
+    empaque:0, envio:0, margen:200
+  }, cfg);
+  const ok1 = aprox(r1.material,1944) && aprox(r1.energia,143) && aprox(r1.maquina,900,1)
+    && aprox(r1.costoTotal,5253,2) && aprox(r1.precioFinal,19334,3) && aprox(r1.utilidadPct,200,0.5);
+  // Caso 2
+  const r2 = calcularCotizacion({
+    maquina:maqX2D, gramos:250, precioKg:20000, gramosIncluyenPurga:false, desperdicioPct:30,
+    horas:3, minutos:20, cantidad:4, minPrep:15, minPost:30, horasDiseno:0,
+    empaque:500, envio:3000, margen:150
+  }, cfg);
+  const ok2 = aprox(r2.material,6500) && aprox(r2.costoTotal,13633,3)
+    && aprox(r2.precioFinal,46107,4) && aprox(r2.precioPorPieza,11527,3);
+  // Caso 3 (mínimo)
+  const r3 = calcularCotizacion({
+    maquina:maqX2D, gramos:2, precioKg:18000, gramosIncluyenPurga:false, desperdicioPct:8,
+    horas:0, minutos:8, cantidad:1, minPrep:5, minPost:0, horasDiseno:0,
+    empaque:0, envio:0, margen:200
+  }, cfg);
+  const ok3 = r3.precioFinal < cfg.precioMinimo;
+
+  // Caso 4: mismo Caso 1 pero DESCONTANDO IVA (default real de la app).
+  // Neteando material/energía/máquina (mano de obra sin tocar):
+  //   material 1.633,6 · energía 120,2 · máquina 756,3 · mano obra 1.375
+  //   costo_directo 3.885,1 · overhead 466,2 · costo_total ≈ 4.678,8 → $4.679
+  //   precio_final = (4.678,8×3)×1,19/0,97 ≈ 17.220
+  const cfgIva = Object.assign({}, CONFIG_DEFAULT, { descontarIva:true });
+  const r4 = calcularCotizacion({
+    maquina:maqX2D, gramos:100, precioKg:18000, gramosIncluyenPurga:false, desperdicioPct:8,
+    horas:5, minutos:0, cantidad:1, minPrep:15, minPost:0, horasDiseno:0,
+    empaque:0, envio:0, margen:200
+  }, cfgIva);
+  const ok4 = aprox(r4.manoObra,1375,1) && aprox(r4.costoTotal,4679,2) && aprox(r4.precioFinal,17220,3);
+
+  const style = s => 'color:'+(s?'#149c6e':'#e0483d')+';font-weight:bold';
+  console.log('%cTAGO Cotizador — autotest', 'color:#4063F9;font-weight:bold;font-size:13px');
+  console.log('%cCaso 1 (100g PLA, 5h, con IVA): '+(ok1?'✓ OK':'✗ FALLA'), style(ok1),
+    {material:r1.material, maquina:r1.maquina, costoTotal:Math.round(r1.costoTotal), precioFinal:Math.round(r1.precioFinal)});
+  console.log('%cCaso 2 (250g PETG multi, 4 pza): '+(ok2?'✓ OK':'✗ FALLA'), style(ok2),
+    {costoTotal:Math.round(r2.costoTotal), precioFinal:Math.round(r2.precioFinal), porPieza:Math.round(r2.precioPorPieza)});
+  console.log('%cCaso 3 (pedido chico < mínimo): '+(ok3?'✓ OK':'✗ FALLA'), style(ok3),
+    {precioFinal:Math.round(r3.precioFinal), minimo:cfg.precioMinimo});
+  console.log('%cCaso 4 (Caso 1 con IVA descontado): '+(ok4?'✓ OK':'✗ FALLA'), style(ok4),
+    {manoObra:Math.round(r4.manoObra), costoTotal:Math.round(r4.costoTotal), precioFinal:Math.round(r4.precioFinal)});
+})();
+</script>
+</body>
+</html>
