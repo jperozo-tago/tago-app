@@ -1648,7 +1648,7 @@ function agregarCategoria(){
 }
 function eliminarCategoria(id,ev){
   ev.stopPropagation();
-  if(currentUser?.email!=="j.perozo@tago.cl"){ toast("No tienes autorización para eliminar esta categoría. Contacta a José Perozo.","error"); return; }
+  if(!ADMINS_ELIMINAR_CATEGORIA.includes(currentUser?.email)){ toast("No tienes autorización para eliminar esta categoría. Contacta a José Perozo o Andreina Rodriguez.","error"); return; }
   if(!confirm("¿Eliminar esta categoría? Los pedidos que la tengan asignada quedarán sin categoría válida."))return;
   firebase.database().ref("tago_categorias_custom/"+id).remove()
     .catch(()=>toast("No se pudo eliminar la categoría","error"));
@@ -1670,6 +1670,7 @@ let categoriasColapsadas=new Set();
 let envioCostosAbierto=false;
 function toggleEnvioCostos(){ envioCostosAbierto=!envioCostosAbierto; renderStatsView(); }
 const ADMINS_FINANCIEROS=['j.perozo@tago.cl','a.rodriguez@tago.cl','c.oviedo@tago.cl'];
+const ADMINS_ELIMINAR_CATEGORIA=['j.perozo@tago.cl','a.rodriguez@tago.cl'];
 function esAdminFinanciero(){ return ADMINS_FINANCIEROS.includes(currentUser?.email); }
 function esAdminPedidos(){ return esAdminFinanciero(); }
 let selectedPersonas=[],selectedTintas=[];
@@ -3814,7 +3815,7 @@ function sbCrearElemento(espacio,tipo,v,carpeta){
 function sbEliminar(tipo,id){
   sbConfirmar=null;
   if(tipo==="categoria"){
-    if(currentUser?.email!=="j.perozo@tago.cl"){ toast("No tienes autorización para eliminar esta categoría. Contacta a José Perozo.","error"); renderSidebar(); return; }
+    if(!ADMINS_ELIMINAR_CATEGORIA.includes(currentUser?.email)){ toast("No tienes autorización para eliminar esta categoría. Contacta a José Perozo o Andreina Rodriguez.","error"); renderSidebar(); return; }
     firebase.database().ref("tago_categorias_custom/"+id).remove().catch(()=>toast("No se pudo eliminar la categoría","error"));
     if(categoriaSeleccionada===id){ categoriaSeleccionada="todos"; render(); }
     return;

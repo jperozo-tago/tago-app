@@ -37,7 +37,7 @@
     "tago_categorias_custom": {
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
       "$catId": {
-        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')) || (!newData.exists() && auth.token.email == 'j.perozo@tago.cl'))"
+        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')) || (!newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl')))"
       }
     },
     "tago_notificaciones": {
