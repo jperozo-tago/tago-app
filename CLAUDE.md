@@ -71,6 +71,16 @@ Firestore).
 - `tago_mail_alertas` — correos detectados como pedidos
 - `tago_permitidos` — lista de emails autorizados a entrar (control de acceso)
 - `tago_admins` — quiénes son admin (para el módulo de Tareas)
+- `tago_espacios` / `tago_listas` / `tago_carpetas` / `tago_elementos` —
+  espacios de trabajo de la barra lateral (rediseño de septiembre 2026): sus
+  listas de tareas, carpetas, y los documentos / paneles / pizarras /
+  formularios. **Todavía no están en `database.rules.json`**: hay que
+  agregarlos (mismo criterio que `tago_chats`) antes de usarlos en
+  producción, porque la regla `$other` bloquea todo nodo desconocido.
+  Campos opcionales nuevos: en `tago_mensajes` `reacciones`, `audio`,
+  `audioSeg`; en `tago_tareas` `lista`, `pedidoId`, `origenFormulario`; en
+  `tago_listas` `carpeta`. Los audios e imágenes del chat van en base64
+  dentro de la base — conviene pasarlos a Storage.
 
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de
@@ -99,8 +109,12 @@ cuenta como atrasado (se asume que la producción ya está lista y solo falta
 que el cliente pase a buscarlo); si la entrega es despacho (OTS/Bluexpress/
 Chilexpress) sí sigue contando como atrasado hasta que se marque Entregado.
 
-**Vistas de Pedidos:** Tabla (agrupada por categoría/estado) y Tablero
-(kanban con 5 columnas). El arrastrar-y-soltar del Tablero usa el API nativo
+**Vistas de Pedidos:** Lista (agrupada por categoría/estado, columnas
+ordenables y ajustables, edición en la celda), Tablero (kanban con 5
+columnas), Calendario (por fecha de entrega) y Carga (por persona). Cada
+vista recuerda sus filtros en `localStorage` (`tago_vistas_config`). El
+pedido se abre en una ficha lateral (`abrirFicha`) que reemplaza al modal
+de edición; el estado solo avanza, nunca retrocede. El arrastrar-y-soltar del Tablero usa el API nativo
 de HTML5 (`draggable`), que **no funciona con el dedo en celular** — en
 móvil solo sirve para tocar y abrir el pedido; para cambiar de estado ahí
 toca usar la Tabla.
@@ -115,7 +129,9 @@ Safari normal; una vez logueado ahí, la app instalada reconoce la sesión
 sola.
 
 **Móvil:** por debajo de 900px de ancho, la barra lateral deja de mostrarse
-fija y se convierte en un panel deslizable (☰ arriba a la izquierda).
+fija y se convierte en un panel deslizable (☰ arriba a la izquierda). Por
+debajo de 700px cada pedido de la Lista se muestra como tarjeta
+(`grid-template-areas` sobre las 10 celdas de `.table-row`).
 
 ## Convenciones al trabajar en este código
 
