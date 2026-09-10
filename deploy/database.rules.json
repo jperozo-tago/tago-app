@@ -65,6 +65,22 @@
         }
       }
     },
+    "tago_espacios": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_listas": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_carpetas": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()"
+    },
+    "tago_elementos": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+    },
     "$other": { ".read": false, ".write": false }
   }
 }

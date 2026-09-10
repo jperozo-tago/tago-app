@@ -74,9 +74,11 @@ Firestore).
 - `tago_espacios` / `tago_listas` / `tago_carpetas` / `tago_elementos` —
   espacios de trabajo de la barra lateral (rediseño de septiembre 2026): sus
   listas de tareas, carpetas, y los documentos / paneles / pizarras /
-  formularios. **Todavía no están en `database.rules.json`**: hay que
-  agregarlos (mismo criterio que `tago_chats`) antes de usarlos en
-  producción, porque la regla `$other` bloquea todo nodo desconocido.
+  formularios. Están en `database.rules.json` (lectura para todo el equipo
+  autorizado; crear espacios, listas y carpetas solo admins; los elementos
+  los edita cualquiera autorizado). Cualquier nodo nuevo que se agregue al
+  JS hay que sumarlo ahí también, porque la regla `$other` bloquea todo
+  nodo desconocido.
   Campos opcionales nuevos: en `tago_mensajes` `reacciones`, `audio`,
   `audioSeg`; en `tago_tareas` `lista`, `pedidoId`, `origenFormulario`; en
   `tago_listas` `carpeta`. Los audios e imágenes del chat van en base64
