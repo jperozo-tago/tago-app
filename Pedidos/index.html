@@ -2439,8 +2439,8 @@ function renderEstadosModal(){
     <div class="admin-user-row">
       <div class="tarea-color-swatch" style="background:${e.color}" title="Click para cambiar color" onclick="cycleEstadoColor('${id}')"></div>
       <input class="estado-nombre-input" value="${esc(e.nombre)}" onchange="renombrarEstado('${id}',this.value)"/>
-      <button class="toggle-btn btn" onclick="moverEstado('${id}',-1)">↑</button>
-      <button class="toggle-btn btn" onclick="moverEstado('${id}',1)">↓</button>
+      <button class="toggle-btn btn" onclick="moverEstadoTarea('${id}',-1)">↑</button>
+      <button class="toggle-btn btn" onclick="moverEstadoTarea('${id}',1)">↓</button>
       <button class="btn btn-danger" onclick="borrarEstado('${id}')">✕</button>
     </div>`).join("");
 }
@@ -2451,7 +2451,7 @@ function cycleEstadoColor(id){
   tareasEstadosRef.child(id).update({color:next.valor});
 }
 function renombrarEstado(id,nombre){ nombre=nombre.trim(); if(!nombre)return; tareasEstadosRef.child(id).update({nombre}); }
-function moverEstado(id,dir){
+function moverEstadoTarea(id,dir){
   const ordered=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
   const idx=ordered.findIndex(([eid])=>eid===id);
   const swapIdx=idx+dir;
