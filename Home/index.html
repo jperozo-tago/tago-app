@@ -237,7 +237,11 @@
 const APPS = [
   { key:'inventario',  nombre:'Control de Inventario',    desc:'Gestiona el stock de materiales, filamentos e insumos del taller.', icono:'📦', acc:'#49CEAB', estado:'activo',     url:'/inventario/' },
   { key:'calculadora', nombre:'Calculadora 3D',           desc:'Cotiza impresiones 3D: costo real y precio de venta sugerido en CLP.', icono:'🧮', acc:'#4063F9', estado:'activo',     url:'/calculadora/' },
-  { key:'pedidos',     nombre:'Seguimiento de Pedidos',   desc:'Sigue cada pedido de principio a fin: de la cotización a la entrega.', icono:'🚚', acc:'#8F9BFF', estado:'activo',     url:'/pedidos/' }
+  { key:'pedidos',     nombre:'Seguimiento de Pedidos',   desc:'Sigue cada pedido de principio a fin: de la cotización a la entrega.', icono:'🚚', acc:'#8F9BFF', estado:'activo',     url:'/pedidos/' },
+  // privada: la tarjeta solo se dibuja para quien tiene la app en su lista (es información
+  // financiera; los demás ni la ven). El acceso real lo imponen las reglas de la base
+  // (tago_tablero/permitidos), no esta lista.
+  { key:'tablero',     nombre:'Tablero de negocio',       desc:'Ventas, publicidad, productos y clientes al día, con la facturación de relBase.', icono:'📊', acc:'#0B1447', estado:'activo', url:'/tablero', privada:true }
 ];
 
 // --- Identidad central (compartida con las apps por la misma clave) ---
@@ -268,8 +272,8 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<
    las reglas de Firestore → seguridad REAL impuesta por el servidor: un extraño
    con el link no puede leer ni escribir nada. */
 const AUTORIZADOS = {
-  'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos'], admin:true },
-  'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos'], admin:true },
+  'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos','tablero'], admin:true },
+  'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos','tablero'], admin:true },
   'c.oviedo@tago.cl':               { nombre:'Carol',    apps:['inventario','calculadora','pedidos'], admin:true },
   'produccion.tago@gmail.com':      { nombre:'Miguel',   apps:['inventario','pedidos'],                admin:false },
   'producciondtf.tago@gmail.com':   { nombre:'Ignacio',  apps:['inventario','pedidos'],                admin:false },
@@ -326,10 +330,11 @@ function renderApps(){
   if(!SESSION) return;
   // Todas las apps del ecosistema se muestran siempre. Si el usuario no tiene
   // permiso para una app activa, la tarjeta queda visible pero bloqueada
-  // ("Sin permisos") en vez de desaparecer.
+  // ("Sin permisos") en vez de desaparecer. Excepción: las marcadas `privada`
+  // (el tablero de negocio) no se dibujan para quien no las tiene.
   const grid = document.getElementById('apps-grid');
   if(APPS.length===0){ grid.innerHTML = '<div class="empty-apps">Aún no hay apps configuradas.</div>'; return; }
-  grid.innerHTML = APPS.map(app=>{
+  grid.innerHTML = APPS.filter(app=> !app.privada || (SESSION.apps||[]).includes(app.key)).map(app=>{
     const tieneAcceso = (SESSION.apps||[]).includes(app.key);
     const enDesarrollo = app.estado!=='activo' || !app.url;
     const activo = !enDesarrollo && tieneAcceso;
