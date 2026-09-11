@@ -978,6 +978,20 @@
     #chat-mic.grabando{background:var(--danger-bg);color:var(--danger-c);animation:chat-pulso 1s infinite}
     #chat-mic-t{font-size:12px}
     @keyframes chat-pulso{0%,100%{box-shadow:0 0 0 0 rgba(192,38,28,.35)}50%{box-shadow:0 0 0 5px rgba(192,38,28,0)}}
+    /* Avisos de chat dentro de la app (arriba a la derecha, como WhatsApp Web) */
+    #chat-avisos{position:fixed;top:14px;right:16px;z-index:300;display:flex;flex-direction:column;gap:8px;width:min(360px,calc(100vw - 32px));pointer-events:none}
+    .chat-aviso{pointer-events:auto;display:grid;grid-template-columns:36px minmax(0,1fr) 22px;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--border);border-left:4px solid #49CEAB;border-radius:12px;padding:10px 10px 10px 12px;box-shadow:0 12px 32px rgba(11,20,71,.18);cursor:pointer;animation:chat-aviso-entra .25s ease-out}
+    .chat-aviso.saliendo{animation:chat-aviso-sale .2s ease-in forwards}
+    .chat-aviso .avatar{width:36px;height:36px;font-size:12px}
+    .chat-aviso-txt{min-width:0}
+    .chat-aviso-quien{font-family:'DM Sans',sans-serif;font-weight:600;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .chat-aviso-quien span{color:var(--text-muted);font-weight:600;font-size:12px}
+    .chat-aviso-texto{font-family:'Open Sans',sans-serif;font-size:13px;color:var(--text-sec);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:1px}
+    .chat-aviso-cerrar{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;padding:0;width:22px;height:22px;border-radius:6px}
+    .chat-aviso-cerrar:hover{background:var(--surface-alt);color:var(--text)}
+    @keyframes chat-aviso-entra{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+    @keyframes chat-aviso-sale{to{opacity:0;transform:translateX(12px)}}
+    @media(max-width:700px){#chat-avisos{top:10px;right:10px;left:10px;width:auto}}
     .chat-composer-hint{margin-left:auto;font-size:11.5px;color:var(--text-muted);font-family:'Open Sans',sans-serif;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .chat-send{padding:7px 14px;display:inline-flex;align-items:center;gap:6px;margin-left:6px}
     .chat-composer .mention-dropdown{bottom:calc(100% - 4px);left:14px;right:auto;width:260px;margin-bottom:0}
@@ -1608,6 +1622,7 @@
   </div>
 </div>
 
+<div id="chat-avisos" aria-live="polite"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -3395,13 +3410,39 @@ function chatNotifica(chatId,c){
 if(navigator.serviceWorker){
   navigator.serviceWorker.addEventListener("message",e=>{ const id=e.data&&e.data.abrirChat; if(id&&currentUser) selectChat(id); });
 }
+/* Aviso dentro de la app (arriba a la derecha, como WhatsApp Web): aparece mientras estás
+   en otra sección o en otra conversación, con quién escribe y qué dice; tocarlo abre el
+   chat; se va solo a los 7 segundos. Si estás mirando esa conversación no aparece. */
+function chatAvisoEnPantalla(chatId,c){
+  if(!chatSonidoPref)return;
+  if(currentTab==="chat"&&currentChatId===chatId)return;
+  const cont=document.getElementById("chat-avisos"); if(!cont)return;
+  const m=c.ultimoMensaje||{};
+  const p=EQUIPO.find(x=>x.nombre===m.autorNombre);
+  const donde=c.tipo==="grupal"?(c.nombre||"Grupo"):"";
+  const el=document.createElement("div");
+  el.className="chat-aviso"; el.setAttribute("role","status");
+  el.innerHTML=`<div class="avatar ${p?p.avClass:"av-prod"}">${p?p.id:"?"}</div>
+    <div class="chat-aviso-txt"><div class="chat-aviso-quien">${esc(m.autorNombre||"Alguien")}${donde?` <span>· ${esc(donde)}</span>`:""}</div>
+    <div class="chat-aviso-texto">${esc(String(m.texto||"").slice(0,160))}</div></div>
+    <button class="chat-aviso-cerrar" title="Cerrar" aria-label="Cerrar aviso">✕</button>`;
+  const cerrar=()=>{ if(el.classList.contains("saliendo"))return; el.classList.add("saliendo"); setTimeout(()=>el.remove(),220); };
+  el.querySelector(".chat-aviso-cerrar").onclick=e=>{ e.stopPropagation(); cerrar(); };
+  el.onclick=()=>{ cerrar(); selectChat(chatId); };
+  // Un aviso por conversación: el nuevo reemplaza al anterior de ese mismo chat.
+  cont.querySelectorAll(`[data-chat="${chatId}"]`).forEach(x=>x.remove());
+  el.dataset.chat=chatId;
+  cont.appendChild(el);
+  while(cont.children.length>3) cont.firstChild.remove();
+  setTimeout(cerrar,7000);
+}
 function chatAvisaNuevos(){
   if(!currentUser)return;
   let hayNuevo=false;
   Object.entries(chatsMeta).forEach(([id,c])=>{
     if(!c.miembros||!c.miembros[currentUser.id])return;
     const ts=(c.ultimoMensaje&&c.ultimoMensaje.ts)||0;
-    if(chatSonidoListo&&ts>(chatUltimoTs[id]||0)&&c.ultimoMensaje.autorNombre!==currentUser.nombre){ hayNuevo=true; chatNotifica(id,c); }
+    if(chatSonidoListo&&ts>(chatUltimoTs[id]||0)&&c.ultimoMensaje.autorNombre!==currentUser.nombre){ hayNuevo=true; chatNotifica(id,c); chatAvisoEnPantalla(id,c); }
     chatUltimoTs[id]=ts;
   });
   chatSonidoListo=true;
