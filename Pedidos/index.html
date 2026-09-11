@@ -1776,6 +1776,10 @@ firebase.auth().onAuthStateChanged(user=>{
   doLogin();
 });
 
+function chatDesdeEnlace(){
+  const m=/^#chat=([\w-]+)/.exec(location.hash||""); if(!m)return;
+  history.replaceState(null,"",location.pathname); setTimeout(()=>selectChat(m[1]),400);
+}
 function doLogin(){
   document.getElementById("login-screen").classList.add("hidden");
   document.getElementById("app").classList.add("show");
@@ -1783,6 +1787,7 @@ function doLogin(){
   aplicarSidebar();
   renderBandejaBadge();
   initFirebaseData();
+  chatDesdeEnlace();
 }
 function puedeVerCorreo(){ return currentUser?.mail!==false; }
 function logout(){ firebase.auth().signOut(); }
@@ -2049,6 +2054,7 @@ const TAB_TITLES={pedidos:"Pedidos",stats:"Estadísticas",tareas:"Tareas",chat:"
 const TAB_ICONS={pedidos:"clipboard-list",stats:"chart-column",tareas:"square-check-big",chat:"message-circle",bandeja:"inbox"};
 function switchTab(tab){
   currentTab=tab;
+  if(tab==="chat") chatPideAvisos();
   if(tab!=="pedidos"&&typeof cerrarFicha==="function")cerrarFicha();
   document.getElementById("view-pedidos").style.display=tab==="pedidos"?"block":"none";
   document.getElementById("view-stats").classList.toggle("show",tab==="stats");
@@ -2125,7 +2131,7 @@ function renderChatHeader(){
     const perfil=Object.values(AUTORIZADOS_PEDIDOS).find(x=>x.id===otherId);
     izq=p?`<div class="avatar ${p.avClass} chat-h-av">${p.id}</div><div class="chat-h-txt"><div class="chat-h-nombre">${esc(p.nombre)}</div><div class="chat-h-sub">${esc(perfil?.rol||ROL_LABEL[p.rol]||"")}</div></div>`:`<div class="chat-h-nombre">Conversación</div>`;
   }
-  el.innerHTML=izq+`<span class="fh-spacer"></span><button class="chat-tool" onclick="chatSonidoToggle()" title="${chatSonidoPref?"Silenciar el chat":"Activar el sonido del chat"}">${ic(chatSonidoPref?"bell":"bell-off")}</button><button class="chat-tool" onclick="chatAbrirBusqueda()" title="Buscar en la conversación">${ic("search")}</button>`;
+  el.innerHTML=izq+`<span class="fh-spacer"></span><button class="chat-tool" onclick="chatSonidoToggle()" title="${chatSonidoPref?"Silenciar el chat (sonido y avisos)":"Activar sonido y avisos del chat"}">${ic(chatSonidoPref?"bell":"bell-off")}</button><button class="chat-tool" onclick="chatAbrirBusqueda()" title="Buscar en la conversación">${ic("search")}</button>`;
 }
 function renderChatSidebar(){
   if(!document.getElementById("chat-dm-list")||!document.getElementById("chat-group-list"))return;
@@ -3309,8 +3315,34 @@ function chatSonidoToggle(){
   chatSonidoPref=!chatSonidoPref;
   try{ localStorage.setItem("tago_chat_sonido",chatSonidoPref?"si":"no"); }catch(e){}
   renderChatHeader();
-  toast(chatSonidoPref?"Sonido del chat activado":"Chat en silencio");
-  if(chatSonidoPref) chatSuena();
+  toast(chatSonidoPref?"Sonido y avisos del chat activados":"Chat en silencio");
+  if(chatSonidoPref){ chatSuena(); chatPideAvisos(); }
+}
+/* ---- Avisos del sistema ----
+   Además del sonido, un aviso del sistema operativo (en el computador y en Android) cuando
+   el mensaje llega y no estás mirando esa conversación: otra pestaña, la ventana
+   minimizada u otra sección de la app. Se pide permiso la primera vez que abres el chat.
+   Lo muestra el service worker, que es lo que permite tocarlo y caer en la conversación.
+   La misma campanita del chat lo apaga junto con el sonido. No es un "push" con la app
+   cerrada: eso necesita un servidor que envíe (Cloud Functions). */
+function chatPideAvisos(){
+  if(!("Notification" in window)||Notification.permission!=="default")return;
+  try{ Notification.requestPermission().then(p=>{ if(p==="granted") toast("Avisos del chat activados"); }).catch(()=>{}); }catch(e){}
+}
+function chatNotifica(chatId,c){
+  if(!chatSonidoPref||!("Notification" in window)||Notification.permission!=="granted")return;
+  if(!document.hidden&&currentTab==="chat"&&currentChatId===chatId)return;
+  const m=c.ultimoMensaje||{};
+  const donde=c.tipo==="grupal"?(c.nombre||"Grupo"):"Mensaje directo";
+  const titulo=`${m.autorNombre||"Alguien"} · ${donde}`;
+  const opciones={body:String(m.texto||"").slice(0,140),icon:"/pedidos/icon-192.png",badge:"/pedidos/icon-192.png",tag:"chat-"+chatId,renotify:true,data:{chatId}};
+  const directo=()=>{ try{ const n=new Notification(titulo,opciones); n.onclick=()=>{ try{ window.focus(); }catch(e){} selectChat(chatId); }; }catch(e){} };
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
+    navigator.serviceWorker.getRegistration("/pedidos/").then(reg=>{ if(reg&&reg.showNotification) return reg.showNotification(titulo,opciones); directo(); }).catch(directo);
+  }else directo();
+}
+if(navigator.serviceWorker){
+  navigator.serviceWorker.addEventListener("message",e=>{ const id=e.data&&e.data.abrirChat; if(id&&currentUser) selectChat(id); });
 }
 function chatAvisaNuevos(){
   if(!currentUser)return;
@@ -3318,7 +3350,7 @@ function chatAvisaNuevos(){
   Object.entries(chatsMeta).forEach(([id,c])=>{
     if(!c.miembros||!c.miembros[currentUser.id])return;
     const ts=(c.ultimoMensaje&&c.ultimoMensaje.ts)||0;
-    if(chatSonidoListo&&ts>(chatUltimoTs[id]||0)&&c.ultimoMensaje.autorNombre!==currentUser.nombre) hayNuevo=true;
+    if(chatSonidoListo&&ts>(chatUltimoTs[id]||0)&&c.ultimoMensaje.autorNombre!==currentUser.nombre){ hayNuevo=true; chatNotifica(id,c); }
     chatUltimoTs[id]=ts;
   });
   chatSonidoListo=true;

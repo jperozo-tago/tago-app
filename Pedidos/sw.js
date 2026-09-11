@@ -1,4 +1,4 @@
-const CACHE_NAME = "tago-pedidos-v1";
+const CACHE_NAME = "tago-pedidos-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -21,5 +21,23 @@ self.addEventListener("fetch", (event) => {
         return res;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// Al tocar un aviso del chat: si Pedidos ya está abierto, lo trae al frente y le pide que
+// abra esa conversación; si no, abre la app directo en ella.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const chatId = event.notification.data && event.notification.data.chatId;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
+      const abierto = lista.find((w) => w.url.includes("/pedidos"));
+      if (abierto) {
+        abierto.focus();
+        if (chatId) abierto.postMessage({ abrirChat: chatId });
+        return;
+      }
+      return self.clients.openWindow("/pedidos/" + (chatId ? "#chat=" + chatId : ""));
+    })
   );
 });
