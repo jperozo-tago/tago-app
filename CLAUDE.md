@@ -6,7 +6,7 @@ el código sin tener que redescubrir cómo está armado todo.
 
 ## Qué es esto
 
-TAGO usa 4 apps internas, todas de una sola página HTML (sin build, sin
+TAGO usa 5 apps internas, todas de una sola página HTML (sin build, sin
 `npm install`, sin framework) que se editan directamente y se despliegan tal
 cual a Firebase Hosting:
 
@@ -16,8 +16,9 @@ cual a Firebase Hosting:
 | Cotizador 3D | `Cotizador 3D/` | `/calculadora` | |
 | Control de inventario | `Control de inventario/` | — | **proyecto Firebase aparte** (`tago-inventario`), tiene su propio `deploy.sh` dentro de esa carpeta. No se publica junto con las demás. |
 | Pedidos (seguimiento de producción) | `Pedidos/` | `/pedidos` | la más activa, ver detalle abajo |
+| Tablero (ventas y marketing) | `Tablero/` | `/tablero` | vive en la rama `tablero`; sin datos incrustados, lee todo de Realtime Database, ver detalle abajo |
 
-Las 3 primeras (Home, Cotizador 3D, Pedidos) viven en el **mismo** proyecto de
+Home, Cotizador 3D, Pedidos y Tablero viven en el **mismo** proyecto de
 Firebase (`tago-app-489c1`) y se publican juntas con un solo script.
 
 ## Cómo desplegar
@@ -33,8 +34,11 @@ Para publicar cualquier cambio:
 cd deploy
 ./deploy.sh
 ```
-Esto copia `Home/`, `Cotizador 3D/` y `Pedidos/` dentro de `deploy/public/`
-(carpeta generada, no se sube a git) y corre `firebase deploy --only hosting`.
+Esto copia `Home/`, `Cotizador 3D/`, `Pedidos/` y, si está en el checkout, el
+`index.html` de `Tablero/` dentro de `deploy/public/` (carpeta generada, no se
+sube a git) y corre `firebase deploy --only hosting`. `./deploy.sh --preview`
+sube lo mismo a un canal de vista previa y `./deploy.sh --solo-reglas` publica
+solo `database.rules.json`.
 
 Si tocas `deploy/database.rules.json` (reglas de seguridad de la base de
 datos), eso se despliega aparte:
@@ -134,6 +138,27 @@ sola.
 fija y se convierte en un panel deslizable (☰ arriba a la izquierda). Por
 debajo de 700px cada pedido de la Lista se muestra como tarjeta
 (`grid-template-areas` sobre las 10 celdas de `.table-row`).
+
+## Tablero — el tablero de negocio
+
+`Tablero/index.html` es el tablero de ventas y marketing de TAGO (facturación
+de relBase, publicidad de Meta, tienda web Shopify, chats de WhatsApp). Se
+publica en `/tablero` con el mismo login de Google del ecosistema y **no lleva
+ningún dato incrustado**: todo lo lee de Realtime Database, del nodo
+`tago_tablero` — `paquete` (el JSON comprimido con toda la historia), `hoy` (la
+venta del día), `estado` (cómo va la última actualización), `metas` / `fijos`
+(lo único que escribe la página) y `config/github` (solo admins; sirve para
+lanzar la actualización).
+
+Quien escribe esos nodos **no es este repo**: es un pipeline en Python que vive
+en `aalizo14/tago-tablero` y corre en GitHub Actions (a demanda desde el botón
+"Actualizar" del tablero), entrando a la base con una cuenta de servicio. Aquí
+solo están la página y las reglas: los nodos de `tago_tablero` y quién puede
+leer o escribir cada uno están en `deploy/database.rules.json`
+(`tago_tablero/permitidos` y `tago_tablero/admins` son las listas de acceso y
+se editan únicamente desde la consola de Firebase). `./deploy.sh --preview`
+sube el sitio a un canal de vista previa y `./deploy.sh --solo-reglas` publica
+solo las reglas.
 
 ## Convenciones al trabajar en este código
 
