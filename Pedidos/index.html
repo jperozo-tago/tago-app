@@ -745,8 +745,15 @@
     .sb-logo{align-items:flex-start;padding:18px 16px 12px}
     .sb-logo-marca{display:flex;flex-direction:column;gap:4px;min-width:0}
     .sb-logo-sub{font-size:11px;letter-spacing:0;text-transform:none;color:var(--claro-2);margin:0;white-space:nowrap}
+    /* Vuelta al panel de apps, bajo el logo. Sobre oscuro el sistema solo admite el
+       botón fantasma: borde fino claro, sin relleno ni sombra. */
+    .sb-volver{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:6px;
+      border-radius:100px;border:1.5px solid rgba(255,255,255,.4);color:#fff;text-decoration:none;
+      font-family:'DM Sans',sans-serif;font-weight:600;font-size:11px;letter-spacing:.03em;
+      padding:5px 12px;white-space:nowrap;transition:background .2s,border-color .2s}
+    .sb-volver:hover{background:rgba(255,255,255,.1);border-color:#fff}
     @media(min-width:901px){
-      body.sb-colapsada .logo-tago,body.sb-colapsada .sb-logo-sub{display:none}
+      body.sb-colapsada .logo-tago,body.sb-colapsada .sb-logo-sub,body.sb-colapsada .sb-volver{display:none}
       body.sb-colapsada .logo-tago-icono{display:block}
       body.sb-colapsada .sb-logo{align-items:center}
     }
@@ -1143,6 +1150,7 @@
         <svg class="logo-tago" role="img" aria-label="TAGO"><use href="#logo-tago"/></svg>
         <svg class="logo-tago-icono" aria-hidden="true"><use href="#logo-tago-icono"/></svg>
         <div class="sb-logo-sub">Control de producción</div>
+        <a href="/" class="sb-volver" title="Volver al panel de apps">← Volver al panel</a>
       </div>
       <button class="sb-collapse" id="sb-collapse" onclick="toggleSidebarColapsada()" title="Recoger barra">«</button>
       <button class="sb-close" onclick="closeSidebar()">✕</button>
@@ -1168,7 +1176,6 @@
       </div>
     </div>
     <div class="header-right">
-      <a href="/" class="btn btn-secondary" title="Volver al panel de apps" style="text-decoration:none">← Volver al panel</a>
       <span class="sync-label" id="sync-label"></span>
       <button class="btn btn-secondary" id="bandeja-btn" onclick="switchTab('bandeja')" title="Bandeja: notificaciones y correos" style="position:relative"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span id="bandeja-badge-count" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger-c);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;font-weight:600"></span></button>
       <span id="mail-badge-btn" hidden><span id="mail-badge-count"></span></span><span id="notif-badge-btn" hidden><span id="notif-badge-count"></span></span>
