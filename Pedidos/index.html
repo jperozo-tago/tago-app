@@ -925,6 +925,40 @@
     .chat-m:hover .chat-m-tools{display:flex}
     .chat-m-tools button{background:none;border:none;border-radius:6px;padding:3px 6px;cursor:pointer;font-size:15px;color:var(--text-sec);font-family:inherit;line-height:1}
     .chat-m-tools button:hover{background:var(--surface-alt)}
+    /* ── Chat en burbujas (como WhatsApp): lo mío a la derecha, lo de los demás a la izquierda ── */
+    .chat-m{display:grid;grid-template-columns:36px minmax(0,1fr);gap:0 8px;padding:2px 10px;align-items:end;border-radius:0}
+    .chat-m:hover{background:transparent}
+    .chat-m.agrupado{padding-top:1px;padding-bottom:1px}
+    .chat-m-av{align-self:end;padding-bottom:2px}
+    .chat-m-av .avatar{width:30px;height:30px;font-size:11px}
+    .chat-m-cuerpo{max-width:min(74%,560px);justify-self:start;background:var(--surface);border:1px solid var(--border);border-radius:14px 14px 14px 4px;padding:6px 10px 4px;position:relative}
+    .chat-m.agrupado .chat-m-cuerpo{border-radius:14px 14px 14px 6px}
+    .chat-m.mio{grid-template-columns:minmax(0,1fr)}
+    .chat-m.mio .chat-m-cuerpo{justify-self:end;background:rgba(73,206,171,.18);border-color:rgba(73,206,171,.35);border-radius:14px 14px 4px 14px}
+    .chat-m.mio.agrupado .chat-m-cuerpo{border-radius:14px 14px 6px 14px}
+    .chat-m-head{margin-bottom:1px}
+    .chat-m-autor{font-size:13px}
+    .chat-m-pie{display:flex;justify-content:flex-end;margin-top:1px;line-height:1}
+    .chat-m-pie .chat-m-hora{font-size:10.5px;font-weight:600;color:var(--text-muted)}
+    .chat-m.mio .chat-m-pie .chat-m-hora{color:#1C7A63}
+    .chat-m.coincide .chat-m-cuerpo{box-shadow:0 0 0 2px rgba(64,99,249,.35)}
+    .chat-m.coincide{box-shadow:none}
+    .chat-m.actual-busca{background:transparent}
+    .chat-m.actual-busca .chat-m-cuerpo{box-shadow:0 0 0 2px var(--azul)}
+    .chat-m-tools{top:-12px;right:14px}
+    .chat-m.mio .chat-m-tools{right:auto;left:14px}
+    .chat-m-img img{max-width:300px}
+    /* Lista de conversaciones con el último mensaje y la hora */
+    .sb-chat-body .chat-list-item{align-items:center;gap:9px;padding:6px 8px 6px 10px}
+    .sb-chat-body .chat-list-item span:first-child{flex:none;white-space:normal;overflow:visible}
+    .sb-chat-body .cli-hash{width:22px;text-align:center;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;color:var(--claro-2);flex:none}
+    .sb-chat-body .cli-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+    .sb-chat-body .cli-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+    .sb-chat-body .cli-nombre{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--claro)}
+    .sb-chat-body .cli-hora{flex:none;font-size:10.5px;color:var(--claro-2);font-family:'DM Sans',sans-serif;font-weight:600}
+    .sb-chat-body .cli-prev{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;color:var(--claro-2);font-family:'Open Sans',sans-serif;font-weight:400}
+    .sb-chat-body .chat-list-item.sin-leer .cli-nombre,.sb-chat-body .chat-list-item.sin-leer .cli-prev{color:#fff}
+    .sb-chat-body .chat-list-item.sin-leer .cli-prev{font-weight:600}
     .chat-vacio{margin:auto;text-align:center;color:var(--text-muted);font-size:14px;font-family:'Open Sans',sans-serif;font-weight:400}
     .chat-vacio .ic{font-size:34px;color:var(--claro-2);margin-bottom:8px;display:block;margin-left:auto;margin-right:auto}
     .chat-vacio-sub{font-size:12.5px}
@@ -1623,6 +1657,10 @@ const EQUIPO=[
   {id:"JP",nombre:"José Perozo",       rol:"sup", avClass:"av-ger"},
 ];
 const ROL_LABEL={prod:"Producción",dis:"Diseño",vend:"Vendedoras",sup:"Supervisores / Gerencia"};
+// Un color fijo por persona para su nombre en los grupos del chat (como en WhatsApp):
+// así se distingue quién habla sin leer el nombre. Todos legibles sobre blanco.
+const COLOR_PERSONA={MG:"#1C7A63",IP:"#0E7C86",AL:"#4063F9",EM:"#6B4FD8",MR:"#C2417D",AQ:"#B4532A",CO:"#9A6B00",AR:"#0B1447",JP:"#2B6CB0"};
+const colorPersona=id=>COLOR_PERSONA[id]||"#545B7E";
 const UNIT={"DTF Textil":"metros","DTF UV":"metros","DTF Flúor":"metros"};
 const getUnit=t=>UNIT[t]||"unidades";
 // Licencia aprobada por Andreina (2026-09-10): cada tipo de producto lleva un color propio para reconocerlo rápido.
@@ -2136,21 +2174,28 @@ function renderChatHeader(){
 }
 function renderChatSidebar(){
   if(!document.getElementById("chat-dm-list")||!document.getElementById("chat-group-list"))return;
+  // Cada conversación muestra su último mensaje y la hora, para saber de qué va sin abrirla.
+  const horaCorta=ts=>{ if(!ts)return""; const d=new Date(ts), hoy=new Date(); return d.toDateString()===hoy.toDateString()?d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("es-CL",{day:"2-digit",month:"2-digit"}); };
+  const previa=(meta,conAutor)=>{ const u=meta&&meta.ultimoMensaje; if(!u)return"";
+    const quien=conAutor&&u.autorNombre?(u.autorNombre===currentUser.nombre?"Tú":u.autorNombre.split(" ")[0])+": ":"";
+    return esc(quien+String(u.texto||"").replace(/\s+/g," ").slice(0,60)); };
   const dmList=EQUIPO.filter(p=>p.id!==currentUser.id);
   document.getElementById("chat-dm-list").innerHTML=dmList.map(p=>{
     const chatId=getDmChatId(p.id);
     const meta=chatsMeta[chatId];
     const unread=meta&&meta.ultimoMensaje&&(!meta.leidoHasta||!meta.leidoHasta[currentUser.id]||meta.leidoHasta[currentUser.id]<meta.ultimoMensaje.ts);
-    return`<div class="chat-list-item ${currentChatId===chatId?"active":""}" onclick="openDm('${p.id}')">
-      <div class="avatar ${p.avClass}">${p.id}</div><span>${esc(p.nombre)}</span>
+    return`<div class="chat-list-item ${currentChatId===chatId?"active":""}${unread?" sin-leer":""}" onclick="openDm('${p.id}')">
+      <div class="avatar ${p.avClass}">${p.id}</div>
+      <div class="cli-txt"><div class="cli-top"><span class="cli-nombre">${esc(p.nombre)}</span><span class="cli-hora">${horaCorta(meta?.ultimoMensaje?.ts)}</span></div>${meta?.ultimoMensaje?`<div class="cli-prev">${previa(meta,true)}</div>`:""}</div>
       ${unread?'<span class="chat-dot"></span>':""}
     </div>`;
   }).join("");
   const groupEntries=Object.entries(chatsMeta).filter(([,c])=>c.tipo==="grupal"&&c.miembros&&c.miembros[currentUser.id]);
   document.getElementById("chat-group-list").innerHTML=groupEntries.length?groupEntries.map(([id,c])=>{
     const unread=c.ultimoMensaje&&(!c.leidoHasta||!c.leidoHasta[currentUser.id]||c.leidoHasta[currentUser.id]<c.ultimoMensaje.ts);
-    return`<div class="chat-list-item ${currentChatId===id?"active":""}" onclick="selectChat('${id}')">
-      <span># ${esc(c.nombre)}</span>
+    return`<div class="chat-list-item ${currentChatId===id?"active":""}${unread?" sin-leer":""}" onclick="selectChat('${id}')">
+      <span class="cli-hash">#</span>
+      <div class="cli-txt"><div class="cli-top"><span class="cli-nombre">${esc(c.nombre)}</span><span class="cli-hora">${horaCorta(c.ultimoMensaje?.ts)}</span></div>${c.ultimoMensaje?`<div class="cli-prev">${previa(c,true)}</div>`:""}</div>
       ${unread?'<span class="chat-dot"></span>':""}
     </div>`;
   }).join(""):`<div class="chat-empty-hint">Sin grupos</div>`;
@@ -2174,13 +2219,18 @@ function renderChatMessages(){
     const coincide=q&&(m.texto||"").toLowerCase().includes(q); if(coincide) coincidencias++;
     const texto=m.texto?resaltar(linkify(m.texto)).replace(/@([A-Za-zÀ-ÿ]+)/g,'<span class="mencion">@$1</span>'):"";
     const reac=m.reacciones?Object.entries(m.reacciones).filter(([,u])=>u&&Object.keys(u).length).map(([e,u])=>`<button class="chat-reac${u[currentUser.id]?" mia":""}" onclick="chatReaccionar('${id}','${e}')" title="${esc(Object.keys(u).map(uid=>EQUIPO.find(x=>x.id===uid)?.nombre||uid).join(", "))}">${e} ${Object.keys(u).length}</button>`).join(""):"";
-    html+=`<div class="chat-m${agrupado?" agrupado":""}${coincide?" coincide":""}" id="msg-${id}" data-coincide="${coincide?coincidencias:""}" onclick="chatTocarMensaje(this,event)">
-      <div class="chat-m-av">${agrupado?`<span class="chat-m-hora-mini">${hora}</span>`:`<div class="avatar ${p?p.avClass:"av-prod"}">${p?p.id:"?"}</div>`}</div>
+    // Como en WhatsApp: lo mío a la derecha en verde, lo de los demás a la izquierda con su
+    // avatar y, en los grupos, el nombre en su color. La hora va dentro de cada burbuja.
+    const mio=m.autor?.id===currentUser.id;
+    const esGrupo=chatsMeta[currentChatId]?.tipo==="grupal";
+    html+=`<div class="chat-m${mio?" mio":""}${agrupado?" agrupado":""}${coincide?" coincide":""}" id="msg-${id}" data-coincide="${coincide?coincidencias:""}" onclick="chatTocarMensaje(this,event)">
+      ${mio?"":`<div class="chat-m-av">${agrupado?"":`<div class="avatar ${p?p.avClass:"av-prod"}" title="${esc(m.autor?.nombre||"")}">${p?p.id:"?"}</div>`}</div>`}
       <div class="chat-m-cuerpo">
-        ${agrupado?"":`<div class="chat-m-head"><span class="chat-m-autor">${esc(m.autor?.nombre||"?")}</span><span class="chat-m-hora">${hora}</span></div>`}
+        ${(mio||agrupado||!esGrupo)?"":`<div class="chat-m-head"><span class="chat-m-autor" style="color:${colorPersona(m.autor?.id)}">${esc(m.autor?.nombre||"?")}</span></div>`}
         ${m.imagen?`<div class="chat-m-img"><img src="${m.imagen}" alt="Imagen adjunta" title="Ver en grande" onclick="chatAbrirImagen(this.src,'${esc(nombreImagen(m,d))}')"/></div>`:""}
         ${m.audio?`<div class="chat-m-audio-wrap">${ic("mic")}<audio controls preload="metadata" class="chat-m-audio" src="${m.audio}" onplay="this.playbackRate=chatVelocidadPref"></audio><button type="button" class="chat-audio-vel" onclick="chatVelocidadAudio()" title="Velocidad de reproducción">${chatFmtVel(chatVelocidadPref)}</button>${m.audioSeg?`<span class="chat-m-audio-seg">${chatFmtSeg(m.audioSeg)}</span>`:""}</div>`:""}
         ${texto?`<div class="chat-m-texto">${texto}</div>`:""}
+        <div class="chat-m-pie"><span class="chat-m-hora">${hora}</span></div>
         ${reac?`<div class="chat-reacs">${reac}</div>`:""}
       </div>
       <div class="chat-m-tools">${CHAT_REACCIONES_RAPIDAS.map(e=>`<button onclick="chatReaccionar('${id}','${e}')" title="Reaccionar">${e}</button>`).join("")}<button class="reac-mas" onclick="chatAbrirReacciones('${id}',this)" title="Más reacciones">${ic("smile")}<span>+</span></button><button onclick="chatResponder('${esc(m.autor?.nombre||"")}')" title="Responder">${ic("reply")}</button></div>
