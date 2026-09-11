@@ -81,6 +81,41 @@
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
       ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
     },
+    "tago_tablero": {
+      "paquete": {
+        ".read": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".write": false
+      },
+      "hoy": {
+        ".read": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".write": false
+      },
+      "estado": {
+        ".read": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".write": false
+      },
+      "metas": {
+        ".read": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".write": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".validate": "!newData.exists() || newData.hasChildren()",
+        "$mes": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+      },
+      "fijos": {
+        ".read": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".write": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".validate": "!newData.exists() || newData.hasChildren()",
+        "$mes": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+      },
+      "config": {
+        ".read": "auth != null && root.child('tago_tablero/admins').child(auth.token.email.replace('.', '_')).exists()",
+        ".write": false
+      },
+      "cache": { ".read": false, ".write": false },
+      "insumos": { ".read": false, ".write": false },
+      "permitidos": { ".read": false, ".write": false },
+      "admins": { ".read": false, ".write": false },
+      "$other": { ".read": false, ".write": false }
+    },
     "$other": { ".read": false, ".write": false }
   }
 }
