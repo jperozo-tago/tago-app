@@ -78,6 +78,15 @@
     font-family: var(--font-heading); font-weight:900; font-size: 22px;
     color: #fff; letter-spacing: 1px;
   }
+  .marca-col{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+  /* Vuelta al panel de apps, bajo el logo: botón fantasma sobre el azul oscuro. */
+  .hd-volver{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1.5px solid rgba(255,255,255,.4); border-radius:999px; color:#fff; text-decoration:none;
+    font-family:var(--font-heading); font-weight:600; font-size:11px; letter-spacing:.03em;
+    padding:4px 11px; white-space:nowrap; transition:background .2s, border-color .2s;
+  }
+  .hd-volver:hover{ background:rgba(255,255,255,.1); border-color:#fff; }
   .header-titles{ display:flex; flex-direction:column; line-height:1.15; }
   .header-titles .app-name{ font-family: var(--font-heading); font-weight:700; font-size: 16px; }
   .header-titles .app-sub{ font-size: 12px; color: var(--lavanda); }
@@ -462,11 +471,14 @@
 <!-- ==================== HEADER ==================== -->
 <header>
   <div class="header-row">
-    <div class="logo-box">
-      <!-- Coloca el logo oficial en assets/logo.svg o assets/logo.png (fondo transparente).
-           Prueba svg, luego png, y si no existe muestra el respaldo textual "TAGO". -->
-      <img id="logo-img" src="assets/logo.svg" alt="TAGO"
-           onerror="if(this.dataset.step!=='png'){this.dataset.step='png';this.src='assets/logo.png';}else{tagoLogoFallback(this);}">
+    <div class="marca-col">
+      <div class="logo-box">
+        <!-- Coloca el logo oficial en assets/logo.svg o assets/logo.png (fondo transparente).
+             Prueba svg, luego png, y si no existe muestra el respaldo textual "TAGO". -->
+        <img id="logo-img" src="assets/logo.svg" alt="TAGO"
+             onerror="if(this.dataset.step!=='png'){this.dataset.step='png';this.src='assets/logo.png';}else{tagoLogoFallback(this);}">
+      </div>
+      <a href="/" class="hd-volver" id="home-btn" title="Volver al panel de apps">&larr; Volver al panel</a>
     </div>
     <div class="header-titles">
       <span class="app-name">Cotizador 3D</span>
@@ -474,7 +486,6 @@
     </div>
     <div class="header-spacer"></div>
     <div class="user-chip">
-      <button class="home-btn" id="home-btn" title="Volver al panel de apps">&larr; Volver al panel</button>
       <span class="user-name" id="header-user-name"></span>
       <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
     </div>

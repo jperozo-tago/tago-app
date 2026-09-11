@@ -259,10 +259,21 @@
   }
 
   .app-header-logo { height: 65px; width: auto; display: block; }
+  .app-header-marca { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  /* Vuelta al panel de apps, bajo el logo: botón fantasma sobre el azul oscuro. */
+  .hd-volver {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1.5px solid rgba(255,255,255,.4); border-radius: 999px; color: #fff;
+    text-decoration: none; font-family: var(--font-heading); font-weight: 600;
+    font-size: 12px; letter-spacing: .03em; padding: 5px 12px; white-space: nowrap;
+    transition: background .2s, border-color .2s;
+  }
+  .hd-volver:hover { background: rgba(255,255,255,.1); border-color: #fff; }
 
   @media (max-width: 480px) {
     .app-header { flex-wrap: wrap; justify-content: center; row-gap: 10px; }
     .app-header-logo { margin: 0 auto; }
+    .app-header-marca { width: 100%; align-items: center; }
     .app-user { width: 100%; justify-content: center; }
   }
 
@@ -1154,9 +1165,11 @@
 <!-- ============ APP SHELL ============ -->
 <div id="app-shell">
   <header class="app-header">
-    <img src="assets/tago_logo_blanco.png" alt="TAGO" class="app-header-logo">
+    <div class="app-header-marca">
+      <img src="assets/tago_logo_blanco.png" alt="TAGO" class="app-header-logo">
+      <a href="/" class="hd-volver" id="home-btn" title="Volver al panel de apps">&larr; Volver al panel</a>
+    </div>
     <div class="app-user">
-      <a href="/" class="logout-btn" id="home-btn" title="Volver al panel de apps" style="text-decoration:none;">&larr; Volver al panel</a>
       <span id="current-user-name"></span>
       <button type="button" class="icon-btn" id="changelog-btn" title="Control de cambios" aria-label="Control de cambios">🕓</button>
       <button type="button" class="icon-btn" id="config-btn" title="Configuración" aria-label="Configuración">⚙</button>
