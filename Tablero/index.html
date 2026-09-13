@@ -399,6 +399,24 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
  padding:8px 15px;font-size:.84rem;font-weight:600;color:var(--tinta2)}
 .mas:hover{border-color:var(--azul);color:var(--azul)}
 
+/* Estado de resultado: la tabla del estudio de Finanzas TAGO, mes a mes. */
+.er table{min-width:980px}
+.er tbody td{padding:8px 12px;font-size:.84rem}
+.er tbody td:first-child{font-family:"Open Sans",sans-serif;font-weight:400;color:var(--tinta2);white-space:normal;min-width:250px}
+.er tr.h td{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta);background:var(--papel2);
+ text-transform:uppercase;font-size:11.5px;letter-spacing:.08em;padding-top:12px}
+.er tr.k td,.er tr.k td:first-child{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta)}
+.er tr.s td{background:rgba(73,206,171,.07)} .er tr.s td:first-child{color:var(--verde)}
+.er tr.p td{color:var(--gris);font-size:.76rem;padding-top:4px;padding-bottom:6px}
+.er tr.m td,.er tr.m td:first-child{color:var(--tinta2);font-weight:400}
+.er td.neg{color:var(--rojo)} .er td.tot{background:var(--papel2);font-weight:700}
+.er td.txt{font-size:.78rem;line-height:1.35;min-width:360px;max-width:560px}
+.er-hero .granNum{font-size:2.5rem;white-space:nowrap} .er-hero .medNum{white-space:nowrap}
+.er .pend{margin:0;padding-left:18px;color:var(--tinta2);font-size:.9rem;line-height:1.55} .er .pend li{margin-bottom:6px}
+.er .enlaces{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.er .enlaces a{background:var(--papel);border:1px solid var(--linea2);border-radius:var(--pill);padding:8px 15px;
+ font-family:"DM Sans",sans-serif;font-size:.84rem;font-weight:600;color:var(--tinta2);text-decoration:none}
+.er .enlaces a:hover{border-color:var(--azul);color:var(--azul)}
 .barras{display:flex;flex-direction:column;gap:2px}
 .barra{display:grid;grid-template-columns:1fr 128px;gap:14px;align-items:center;
  background:none;border:0;border-radius:8px;padding:7px 9px;width:100%;text-align:left}
@@ -512,6 +530,8 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
   fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
 <g id="i-venta"><path d="M3 20h18M6.5 20v-8M11.5 20V5M16.5 20v-6" fill="none"
   stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+<g id="i-resultado"><path d="M6.5 3.5h8l4 4v13h-12zM14 3.5v4.5h4.5M9.5 12h6M9.5 15.5h6M9.5 19h3.5"
+  fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
 <g id="i-plata"><path d="M12 3v18M8 7.5h6.5a2.75 2.75 0 0 1 0 5.5h-5a2.75 2.75 0 0 0 0 5.5H16"
   fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
 <g id="i-prod"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9zM3 7.5 12 12l9-4.5M12 12v9" fill="none"
@@ -3352,6 +3372,14 @@ function sConfianza() {
         notas se muestran aparte solo para que sepas cuántas hubo. Quedan fuera las dos
         ventas de máquinas del historial, porque no son del giro:${
         D.avisos.maquinas.map(m => ` ${m.que} de ${esc(m.cliente)} (${clp(m.monto)})`).join(" y")}.</p>
+      ${D.avisos.siiEnero ? `<p class="bajo">Del ${dNum(D.avisos.siiEnero.desde)} al ${dNum(D.avisos.siiEnero.hasta)} de
+        enero de 2026 relBase no tiene documentos (empezó a emitir el 13; lo anterior era otro sistema).
+        Esos días vienen del registro del SII: ${D.avisos.siiEnero.facturas} facturas por
+        ${clp(D.avisos.siiEnero.neto)} neto, una por una con su cliente (folios «SII-…»), y
+        ${D.avisos.siiEnero.boletas} boletas por ${clp(D.avisos.siiEnero.boletasNeto)} que el SII solo
+        entrega como total del mes, así que van como un solo bloque el 12 de enero: en la tabla de
+        documentos aparece como «BOLETAS (SII, bloque)» y cuenta como un documento, no como
+        ${D.avisos.siiEnero.boletas}.</p>` : ""}
       <p class="bajo"><b>${rbHoyVivo() ? "La venta de hoy está en vivo, leída a las "
         + esc(rbHoyVivo().leidoA) : "Datos " + sRb.txt}.</b> La actualización completa la vuelve
         a traer desde relBase; la venta del día llega sola cada vez que el pipeline la lee.</p></div>
@@ -3570,6 +3598,95 @@ function tipoResultado(txt) {
   return { et: txt || "resultados", clase: "otro" };
 }
 /* ═════════ navegación ═════════ */
+/* ═════════ Estado de resultado ═════════
+   El estudio de Finanzas TAGO, mes a mes, tal como se armó con los registros del SII
+   (ventas y compras), las boletas de honorarios, los F29, las liquidaciones, la cartola y la
+   tarjeta. Llega en el paquete como D.finanzas.resultado (insumos/finanzas.json). Siempre
+   sin IVA: no depende del interruptor de IVA del tablero. */
+function sResultado() {
+  const R = FIN.resultado;
+  if (!R || !R.lineas) return `<div class="aviso"><b>Todavía no llega el estado de resultado.</b>
+    El estudio de Finanzas TAGO se agrega al paquete en la próxima corrida del botón Actualizar.</div>`;
+  const M = R.meses, N = M.length;
+  const mc = m => MESC[+m.slice(5) - 1];
+  const li = et => R.lineas.find(l => l.et === et) || { mes: Array(N).fill(0), tot: 0 };
+  const V = li("Ventas netas, Registro de Ventas del SII"), MB = li("Margen bruto"),
+        EB = li("Resultado operacional antes de depreciación e intereses"),
+        RAI = li("Resultado antes de impuesto"), PE = li("Punto de equilibrio contable"),
+        PEK = li("Punto de equilibrio de caja");
+  const pct = v => (v < 0 ? "−" : "") + Math.abs(Math.round(v * 100)) + "%";
+  const celda = (v, extra) => v == null ? `<td class="num ${extra||""}">—</td>`
+    : `<td class="num ${extra||""} ${v < 0 ? "neg" : ""}">${clp(v)}</td>`;
+  const meses = M.map(m => mc(m).charAt(0).toUpperCase() + mc(m).slice(1));
+  const primero = MESL[+M[0].slice(5) - 1], ultimo = MESL[+M[N-1].slice(5) - 1];
+  const ganaron = M.filter((m, i) => RAI.mes[i] > 0).map(m => MESL[+m.slice(5) - 1]);
+  const iPeor = RAI.mes.indexOf(Math.min(...RAI.mes));
+  const col = v => v >= 0 ? "var(--verde)" : "var(--rojo)";
+
+  const filas = R.lineas.map(l => {
+    if (l.h) return `<tr class="h"><td>${esc(l.h)}</td>${"<td></td>".repeat(N + 1)}</tr>`;
+    if (l.t === "p") return `<tr class="p"><td>${esc(l.et)}</td>${l.mes.map(v =>
+      `<td class="num">${pct(v)}</td>`).join("")}<td class="num tot">${l.tot == null ? "" : pct(l.tot)}</td></tr>`;
+    const esEq = l.et.startsWith("Punto de equilibrio");
+    return `<tr class="${l.t || ""}"><td>${esc(l.et)}</td>${l.mes.map(v => celda(v)).join("")}${
+      celda(l.tot, "tot")}</tr>`
+      .replace(esEq ? /<td class="num tot [^"]*">/ : /$^/, '<td class="num tot" title="promedio de los ' + N + ' meses">');
+  }).join("");
+
+  const ventas = R.ventas.map(v => `<tr><td>${esc(MESL[+v.mes.slice(5) - 1])}</td>
+    <td class="num">${v.nfact}</td><td class="num">${v.nbol}</td>${celda(v.fact)}${celda(v.bol)}${celda(-v.nc)}${
+    celda(-v.ajuste)}${celda(v.neto, "tot")}${celda(v.relbase)}${celda(v.dif)}<td class="txt">${esc(v.porque)}</td></tr>`).join("");
+
+  const etGanaron = !ganaron.length ? "ningún mes ganó"
+    : ganaron.length === 1 ? `solo ganó ${ganaron[0]}`
+    : `ganaron ${ganaron.slice(0, -1).join(", ")} y ${ganaron[ganaron.length - 1]}`;
+  return `<div class="heroe er-hero">
+    <div class="caja"><span class="rot">Resultado antes de impuesto, ${primero} a ${ultimo}</span>
+      <span class="granNum" style="color:${col(RAI.tot)}">${clp(RAI.tot)}</span>
+      <span class="bajo">${clp(RAI.tot / N)} al mes en promedio · ${etGanaron};
+        ${MESL[+M[iPeor].slice(5) - 1]} fue el peor mes, con ${clp(RAI.mes[iPeor])}</span></div>
+    <div class="caja"><span class="rot">Vendí sin IVA</span>
+      <span class="medNum">${clp(V.tot)}</span>
+      <span class="bajo">${N} meses según el Registro de Ventas del SII · ${clp(V.tot / N)} al mes</span></div>
+    <div class="caja"><span class="rot">Margen bruto</span>
+      <span class="medNum">${pct(MB.tot / V.tot)}</span>
+      <span class="bajo">${clp(MB.tot)} después de insumos y materiales</span></div>
+    <div class="caja"><span class="rot">Punto de equilibrio</span>
+      <span class="medNum">${clp(PE.tot)}</span>
+      <span class="bajo">venta neta al mes para no perder, promedio; ${clp(PEK.tot)} para que
+        alcance la caja con las cuotas de los tres créditos</span></div>
+  </div>
+
+  <div class="sec"><h2>Mes a mes, sin IVA.</h2>
+    <p>lo que dejó cada mes después de insumos, sueldos, arriendo, publicidad, máquinas e intereses</p></div>
+  <div class="tw er"><table><thead><tr><th>Línea</th>${meses.map(m => `<th class="num">${m}</th>`).join("")}
+    <th class="num">${meses[0]}–${meses[N-1]}</th></tr></thead><tbody>${filas}</tbody></table></div>
+  <div class="explica"><b>Cómo leerlo.</b> Ventas y compras salen de los registros del SII, documento a
+    documento; los honorarios, de las boletas de honorarios recibidas; el IVA y el PPM, de los F29 declarados.
+    Los sueldos son las liquidaciones de agosto prorrateadas por fecha de contratación; el arriendo, la luz, las
+    cuotas de los créditos y las personas que ya no están, la cartola de la cuenta corriente; el software,
+    Google Ads y LinkedIn, la tarjeta de crédito. Las máquinas no son gasto del mes: entran como
+    depreciación en 60 meses. Es resultado devengado, no caja: no dice si la plata entró.</div>
+
+  <div class="sec"><h2>Ventas: el SII frente a relBase.</h2>
+    <p>las boletas del SII vienen como total del mes, sin detalle</p></div>
+  <div class="tw er"><table><thead><tr><th>Mes</th><th class="num">Facturas</th><th class="num">Boletas</th>
+    <th class="num">Neto facturas</th><th class="num">Neto boletas</th><th class="num">Notas de crédito</th>
+    <th class="num">Ferrostaal</th><th class="num">Ventas netas SII</th><th class="num">relBase</th>
+    <th class="num">Diferencia</th><th>Por qué</th></tr></thead><tbody>${ventas}</tbody></table></div>
+
+  <div class="sec"><h2>Pendiente de confirmar con el contador.</h2>
+    <p>lo que los registros del SII dejan a la vista</p></div>
+  <div class="panel"><ul class="pend">${(R.pendientes || []).map(x =>
+    `<li><b>${esc(x.mes)}:</b> ${esc(x.que)}${x.monto ? ` <span style="color:var(--gris)">(${clp(x.monto)})</span>` : ""}</li>`).join("")}</ul>
+    <div class="enlaces">
+      <a href="${esc(R.enlaces.compacto)}" target="_blank" rel="noopener">Ver el estado de resultado completo ↗</a>
+      <a href="${esc(R.enlaces.informe)}" target="_blank" rel="noopener">Ver el informe con recomendaciones ↗</a>
+    </div>
+    <p class="bajo" style="margin-top:12px">Fuente: ${esc(R.fuente)}. Generado el ${esc(String(R.generado || "").replace("T", " a las ").slice(0, 22))}.</p>
+  </div>`;
+}
+
 const SEC = {
   hoy:        { et: "Hoy", ic: "i-hoy", q: "¿Cómo voy este mes y qué está pasando ahora?",
                 fn: sHoy, sinFiltro: true },
@@ -3577,6 +3694,8 @@ const SEC = {
                 fn: sVentas },
   queda:      { et: "Lo que me queda", ic: "i-plata",
                 q: "¿Ya pagué el mes o todavía voy poniendo plata?", fn: sQueda, sinFiltro: true },
+  resultado:  { et: "Estado de resultado", ic: "i-resultado",
+                q: "¿Cuánto ganó o perdió TAGO cada mes, según el SII?", fn: sResultado, sinFiltro: true },
   productos:  { et: "Mis productos", ic: "i-prod", q: "¿Qué me deja plata de verdad?",
                 fn: sProductos },
   clientes:   { et: "Mis clientes", ic: "i-cli", q: "¿Quiénes me sostienen y cómo llegaron?",
@@ -3591,7 +3710,7 @@ const SEC = {
                 fn: sConfianza, sinFiltro: true },
 };
 const GRUPOS = [
-  ["Mi negocio", ["hoy", "ventas", "queda"]],
+  ["Mi negocio", ["hoy", "ventas", "queda", "resultado"]],
   ["Qué y a quién", ["productos", "clientes", "llamar", "donde"]],
   ["Cómo llegan", ["publicidad"]],
 ];
@@ -3691,7 +3810,10 @@ function pinta() {
     fbar.innerHTML = seccion === "hoy" ? ""
       : seccion === "queda"
       ? `<span class="efecto" style="margin:0">El resultado se calcula siempre sobre el mes en
-         curso.</span>` : "";
+         curso.</span>`
+      : seccion === "resultado"
+      ? `<span class="efecto" style="margin:0">Enero a agosto de 2026, en pesos sin IVA, tal como lo
+         armó el estudio de Finanzas TAGO con los registros del SII.</span>` : "";
   } else {
     const act = presetActivo();
     const abierto = eligeF || !act;
