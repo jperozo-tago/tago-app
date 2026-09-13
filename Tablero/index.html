@@ -1163,16 +1163,29 @@ const enPortada = () => seccion === "hoy";
 const metaNeta = k => METAS[k] != null ? METAS[k] : D.metaMes;
 const metaDe = k => conIva ? metaNeta(k) * 1.19 : metaNeta(k);
 /* Los gastos fijos y el margen salen del estudio de Finanzas TAGO (Resultado TAGO 2026),
-   que se arma con el registro de compras del SII, las liquidaciones y las cuentas.
-   Si Andreina ajusta un mes a mano, manda lo que ella puso. */
+   que se arma con el registro de compras del SII, las liquidaciones y las cuentas
+   confirmadas. Manda el estudio: el mes si ya está cerrado ahí y, si no, el promedio de
+   los últimos tres meses cerrados. La cifra escrita a mano (fijos/AAAA-MM) solo se usa
+   cuando el estudio no tiene nada. Andreina, 13-09-2026: "quiero que trabajemos con datos
+   verificados, no con lo que yo creo". */
 const FIN = D.finanzas || {};
 const finMes = k => (FIN.meses || {})[k] || null;
 const finProm = () => FIN.promedio || null;
+function fijosEstudio(k) {
+  const f = finMes(k) || finProm();
+  return f && f.fijos > 0 ? f.fijos : null;
+}
 function fijosNeto(k) {
+  const e = fijosEstudio(k);
+  if (e != null) return e;
   return FIJOS[k] != null ? FIJOS[k] : D.fijos;
 }
 /* De dónde salió la cifra de gastos fijos de ese mes, para poder decirlo. */
 function fuenteFijos(k) {
+  if (fijosEstudio(k) != null)
+    return { et: finMes(k) ? "del estudio de Finanzas TAGO, con el mes cerrado"
+                           : "del estudio de Finanzas TAGO, promedio de los últimos tres meses cerrados",
+             estudio: true };
   return FIJOS[k] != null ? { et: "lo cambiaste tú", propio: true }
                           : { et: "tu cifra de gastos fijos del negocio" };
 }
@@ -2263,20 +2276,20 @@ function bloqueMeta(v, obj, equil, falta, porDiaFalta, porDiaReal, hFalta, proy)
                  <button class="mas" style="margin:0" id="guardaFijos">Guardar</button>
                  <button class="porque" style="margin:0" id="cancelaFijos">Cancelar</button></span>`
             : `<span class="medNum" style="font-size:1.5rem">${clp(fijosMostrar)}</span>
-               <button class="porque" style="margin:0" id="editaFijos">Cambiar</button>`}
+               ${fijosEstudio(MES) == null
+                 ? `<button class="porque" style="margin:0" id="editaFijos">Cambiar</button>`
+                 : `<span class="bajo" style="font-size:.83rem">${fuenteFijos(MES).et}</span>`}`}
         </div>
-        <p class="bajo" style="margin-top:5px;font-size:.88rem">arriendo, sueldos, máquinas y
-          todo lo que no es material · ${conIva ? "con IVA" : "sin IVA"}, son
+        <p class="bajo" style="margin-top:5px;font-size:.88rem">arriendo, sueldos, servicios,
+          publicidad, depreciación de las máquinas e intereses · verificado con el registro de
+          compras del SII y las liquidaciones · ${conIva ? "con IVA" : "sin IVA"}, son
           ${clp(conIva ? eq.fijos : eq.fijos * 1.19)} ${conIva ? "sin" : "con"} IVA ·
           <b>esto lo pagas vendas lo que vendas</b></p>
-        ${(() => { const f = finMes(MES) || finProm();
-          if (!f) return "";
-          const d = fijosNeto(MES) - f.fijos;
-          if (Math.abs(d) < fijosNeto(MES) * .02) return "";
-          return `<p class="bajo" style="margin-top:4px;font-size:.83rem">Tu estudio de Finanzas
-            TAGO calcula ${clp(conIva ? f.fijos * 1.19 : f.fijos)} para este mes — ${
-            clp(Math.abs(conIva ? d * 1.19 : d))} ${d < 0 ? "más" : "menos"} que esta cifra,
-            porque ahí se incluyen depreciación e intereses.</p>`; })()}
+        ${(() => { const e = fijosEstudio(MES), tuyo = FIJOS[MES];
+          if (e == null || tuyo == null || Math.abs(tuyo - e) < e * .02) return "";
+          return `<p class="bajo" style="margin-top:4px;font-size:.83rem">Tú habías puesto
+            ${clp(conIva ? tuyo * 1.19 : tuyo)}; esa cifra ya no se usa: el tablero trabaja con
+            el gasto verificado del estudio.</p>`; })()}
         <div style="height:8px;background:var(--papel3);border-radius:99px;overflow:hidden;
           margin-top:10px;max-width:520px">
           <i style="display:block;height:100%;border-radius:99px;
@@ -2596,8 +2609,9 @@ function sQueda() {
   </div>
   <div class="aviso" style="margin-top:14px"><b>Este número es aproximado, por dos razones.</b>
     Solo conocemos el costo real del <b>${Math.round(r.m.cobertura*100)}%</b> de lo que vendes;
-    el resto se estima aplicando el mismo margen. Y los gastos fijos son la cifra que tú pusiste
-    (${clp(fijosNeto(MES))} al mes sin IVA), no el gasto real de cada mes. Mientras más costos de producto
+    el resto se estima aplicando el mismo margen. Y los gastos fijos son los del estudio de Finanzas
+    TAGO (${clp(fijosNeto(MES))} al mes sin IVA, ${fuenteFijos(MES).et}), no el gasto real de este
+    mes, que se conoce al cerrarlo. Mientras más costos de producto
     cargues, más se acerca a la realidad.</div></div>
 
   <div class="sec"><h2>Cómo te ha ido cada mes.</h2>
