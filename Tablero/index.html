@@ -417,6 +417,27 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
 .er .enlaces a{background:var(--papel);border:1px solid var(--linea2);border-radius:var(--pill);padding:8px 15px;
  font-family:"DM Sans",sans-serif;font-size:.84rem;font-weight:600;color:var(--tinta2);text-decoration:none}
 .er .enlaces a:hover{border-color:var(--azul);color:var(--azul)}
+.er-sel{display:flex;gap:3px;flex-wrap:wrap;background:var(--papel);border:1px solid var(--linea);
+ border-radius:10px;padding:4px;margin-bottom:18px}
+.er-sel button{border:0;background:transparent;border-radius:7px;padding:6px 11px;font:inherit;
+ font-size:.86rem;color:var(--tinta2);cursor:pointer;text-align:center;min-width:64px}
+.er-sel button small{display:block;font-size:.72rem;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
+.er-sel button small.pos{color:var(--verde)} .er-sel button small.neg{color:var(--rojo)}
+.er-sel button:hover{background:var(--papel3)}
+.er-sel button[aria-pressed="true"]{background:var(--tinta);color:var(--film)}
+.er-sel button[aria-pressed="true"] small{color:var(--film);opacity:.85}
+.er-pnl{display:flex;flex-direction:column}
+.er-pnl>div{display:grid;grid-template-columns:1fr auto;gap:14px;padding:9px 2px;border-bottom:1px solid var(--linea);align-items:baseline}
+.er-pnl>div.h{display:block;padding-top:18px;padding-bottom:6px;border-bottom:1px solid var(--linea2);
+ font-family:"DM Sans",sans-serif;font-weight:600;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta)}
+.er-pnl .e{font-size:.92rem;color:var(--tinta2)} .er-pnl .e small{display:block;color:var(--gris);font-size:.76rem;margin-top:2px}
+.er-pnl .v{font-variant-numeric:tabular-nums;font-weight:600;font-size:1rem;white-space:nowrap;color:var(--tinta)}
+.er-pnl .v.neg{color:var(--rojo)}
+.er-pnl>div.k .e,.er-pnl>div.s .e{color:var(--tinta);font-weight:700} .er-pnl>div.k .v,.er-pnl>div.s .v{font-size:1.15rem;font-weight:700}
+.er-pnl>div.s{background:rgba(73,206,171,.07);padding-left:8px;padding-right:8px;border-radius:6px}
+.er-pnl>div.k{border-top:2px solid var(--tinta);margin-top:4px;padding-top:12px}
+.er-pnl>div.p .e,.er-pnl>div.p .v{color:var(--gris);font-size:.8rem;font-weight:400}
+.er-pnl>div.m .v{font-weight:400;color:var(--tinta2)}
 .barras{display:flex;flex-direction:column;gap:2px}
 .barra{display:grid;grid-template-columns:1fr 128px;gap:14px;align-items:center;
  background:none;border:0;border-radius:8px;padding:7px 9px;width:100%;text-align:left}
@@ -683,6 +704,7 @@ let paqueteVersion = null;    // versión del paquete que está en pantalla
 let abriendoN = 0;            // para ignorar una descompresión que quedó vieja
 let ultimoIHOY = null, ultimoIMAX = null;   // para reubicar los rangos al recargar
 let seccion = "hoy";
+let mesRes = "todo";   // Estado de resultado: "todo" = enero a agosto; "2026-03" = un solo mes
 /* Por defecto los montos van SIN IVA: es lo que de verdad entra al negocio. */
 let conIva = false;
 const F = { a: null, b: null, prod: null, fam: null, cli: null, comuna: null, origen: null,
@@ -3609,6 +3631,7 @@ function sResultado() {
     El estudio de Finanzas TAGO se agrega al paquete en la próxima corrida del botón Actualizar.</div>`;
   const M = R.meses, N = M.length;
   const mc = m => MESC[+m.slice(5) - 1];
+  const ml = m => MESL[+m.slice(5) - 1];
   const li = et => R.lineas.find(l => l.et === et) || { mes: Array(N).fill(0), tot: 0 };
   const V = li("Ventas netas, Registro de Ventas del SII"), MB = li("Margen bruto"),
         EB = li("Resultado operacional antes de depreciación e intereses"),
@@ -3617,12 +3640,76 @@ function sResultado() {
   const pct = v => (v < 0 ? "−" : "") + Math.abs(Math.round(v * 100)) + "%";
   const celda = (v, extra) => v == null ? `<td class="num ${extra||""}">—</td>`
     : `<td class="num ${extra||""} ${v < 0 ? "neg" : ""}">${clp(v)}</td>`;
-  const meses = M.map(m => mc(m).charAt(0).toUpperCase() + mc(m).slice(1));
-  const primero = MESL[+M[0].slice(5) - 1], ultimo = MESL[+M[N-1].slice(5) - 1];
-  const ganaron = M.filter((m, i) => RAI.mes[i] > 0).map(m => MESL[+m.slice(5) - 1]);
-  const iPeor = RAI.mes.indexOf(Math.min(...RAI.mes));
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+  const meses = M.map(m => cap(mc(m)));
   const col = v => v >= 0 ? "var(--verde)" : "var(--rojo)";
+  if (mesRes !== "todo" && !M.includes(mesRes)) mesRes = "todo";
 
+  /* El selector: cada mes con su resultado, y el período completo. */
+  const sel = `<div class="er-sel" role="tablist" aria-label="Mes">${M.map((m, i) =>
+    `<button data-mesres="${m}" aria-pressed="${mesRes === m}">${cap(mc(m))}<small class="${
+      RAI.mes[i] >= 0 ? "pos" : "neg"}">${corto(RAI.mes[i])}</small></button>`).join("")}
+    <button data-mesres="todo" aria-pressed="${mesRes === "todo"}">${meses[0]}–${meses[N-1]}<small class="${
+      RAI.tot >= 0 ? "pos" : "neg"}">${corto(RAI.tot)}</small></button></div>`;
+  const enlaces = `<div class="enlaces">
+      <a href="${esc(R.enlaces.compacto)}" target="_blank" rel="noopener">Ver el estado de resultado completo ↗</a>
+      <a href="${esc(R.enlaces.informe)}" target="_blank" rel="noopener">Ver el informe con recomendaciones ↗</a>
+    </div>
+    <p class="bajo" style="margin-top:12px">Fuente: ${esc(R.fuente)}. Generado el ${esc(String(R.generado || "").replace("T", " a las ").slice(0, 22))}.</p>`;
+  const comoLeer = `<div class="explica"><b>Cómo leerlo.</b> Ventas y compras salen de los registros del SII, documento a
+    documento; los honorarios, de las boletas de honorarios recibidas; el IVA y el PPM, de los F29 declarados.
+    Los sueldos son las liquidaciones de agosto prorrateadas por fecha de contratación; el arriendo, la luz, las
+    cuotas de los créditos y las personas que ya no están, la cartola de la cuenta corriente; el software,
+    Google Ads y LinkedIn, la tarjeta de crédito. Las máquinas no son gasto del mes: entran como
+    depreciación en 60 meses. Es resultado devengado, no caja: no dice si la plata entró.</div>`;
+
+  /* ── Un mes completo, en vertical ── */
+  if (mesRes !== "todo") {
+    const i = M.indexOf(mesRes), nombre = cap(ml(mesRes));
+    const v = V.mes[i], r = RAI.mes[i], eq = PE.mes[i], eqk = PEK.mes[i];
+    const prev = i > 0 ? RAI.mes[i-1] : null;
+    const venta = (R.ventas || []).find(x => x.mes === mesRes);
+    const filas = R.lineas.map(l => {
+      if (l.h) return `<div class="h">${esc(l.h)}</div>`;
+      const x = l.mes[i];
+      if (l.t === "p") return `<div class="p"><span class="e">${esc(l.et)}</span><span class="v">${pct(x)}</span></div>`;
+      const esEq = l.et.startsWith("Punto de equilibrio");
+      const prom = l.tot == null ? null : (esEq ? l.tot : l.tot / N);
+      return `<div class="${l.t || ""}"><span class="e">${esc(l.et)}${prom == null ? "" :
+        `<small>promedio de los ${N} meses: ${clp(prom)}</small>`}</span>
+        <span class="v ${x < 0 ? "neg" : ""}">${clp(x)}</span></div>`;
+    }).join("");
+    return `${sel}<div class="heroe er-hero">
+      <div class="caja"><span class="rot">Resultado antes de impuesto de ${ml(mesRes)}</span>
+        <span class="granNum" style="color:${col(r)}">${clp(r)}</span>
+        <span class="bajo">${r >= 0 ? "el mes ganó plata" : "el mes perdió plata"}${prev == null ? ""
+          : `; ${ml(M[i-1])} había ${prev >= 0 ? "ganado" : "perdido"} ${clp(Math.abs(prev))}`}</span></div>
+      <div class="caja"><span class="rot">Vendí sin IVA</span>
+        <span class="medNum">${clp(v)}</span>
+        <span class="bajo">${v >= V.tot / N ? "sobre" : "bajo"} el promedio de ${clp(V.tot / N)} al mes</span></div>
+      <div class="caja"><span class="rot">Margen bruto</span>
+        <span class="medNum">${pct(MB.mes[i] / (v || 1))}</span>
+        <span class="bajo">${clp(MB.mes[i])} después de insumos y materiales</span></div>
+      <div class="caja"><span class="rot">Punto de equilibrio de ${ml(mesRes)}</span>
+        <span class="medNum">${clp(eq)}</span>
+        <span class="bajo">${v >= eq ? `lo pasaste por ${clp(v - eq)}` : `te faltaron ${clp(eq - v)} de venta`};
+          de caja, ${clp(eqk)}</span></div>
+    </div>
+    <div class="sec"><h2>${nombre} de 2026, línea por línea.</h2>
+      <p>sin IVA · con el promedio de los ${N} meses debajo de cada línea, para comparar</p></div>
+    <div class="panel"><div class="er-pnl">${filas}</div></div>
+    ${venta ? `<div class="explica"><b>Ventas del mes según el SII:</b> ${venta.nfact} facturas por ${clp(venta.fact)} y
+      ${venta.nbol} boletas por ${clp(venta.bol)}${venta.nc ? `, menos ${clp(venta.nc)} en notas de crédito` : ""}${
+      venta.ajuste ? `, sin la operación Ferrostaal (${clp(venta.ajuste)})` : ""}: ${clp(venta.neto)} netos.
+      relBase dice ${clp(venta.relbase)}${venta.dif ? ` (${venta.dif > 0 ? "+" : "−"}${clp(Math.abs(venta.dif))}): ${esc(venta.porque)}` : ": calza al peso."}</div>` : ""}
+    ${comoLeer}
+    <div class="panel er" style="margin-top:22px">${enlaces}</div>`;
+  }
+
+  /* ── Los ocho meses juntos ── */
+  const primero = ml(M[0]), ultimo = ml(M[N-1]);
+  const ganaron = M.filter((m, i) => RAI.mes[i] > 0).map(ml);
+  const iPeor = RAI.mes.indexOf(Math.min(...RAI.mes));
   const filas = R.lineas.map(l => {
     if (l.h) return `<tr class="h"><td>${esc(l.h)}</td>${"<td></td>".repeat(N + 1)}</tr>`;
     if (l.t === "p") return `<tr class="p"><td>${esc(l.et)}</td>${l.mes.map(v =>
@@ -3632,19 +3719,17 @@ function sResultado() {
       celda(l.tot, "tot")}</tr>`
       .replace(esEq ? /<td class="num tot [^"]*">/ : /$^/, '<td class="num tot" title="promedio de los ' + N + ' meses">');
   }).join("");
-
-  const ventas = R.ventas.map(v => `<tr><td>${esc(MESL[+v.mes.slice(5) - 1])}</td>
+  const ventas = R.ventas.map(v => `<tr><td>${esc(ml(v.mes))}</td>
     <td class="num">${v.nfact}</td><td class="num">${v.nbol}</td>${celda(v.fact)}${celda(v.bol)}${celda(-v.nc)}${
     celda(-v.ajuste)}${celda(v.neto, "tot")}${celda(v.relbase)}${celda(v.dif)}<td class="txt">${esc(v.porque)}</td></tr>`).join("");
-
   const etGanaron = !ganaron.length ? "ningún mes ganó"
     : ganaron.length === 1 ? `solo ganó ${ganaron[0]}`
     : `ganaron ${ganaron.slice(0, -1).join(", ")} y ${ganaron[ganaron.length - 1]}`;
-  return `<div class="heroe er-hero">
+  return `${sel}<div class="heroe er-hero">
     <div class="caja"><span class="rot">Resultado antes de impuesto, ${primero} a ${ultimo}</span>
       <span class="granNum" style="color:${col(RAI.tot)}">${clp(RAI.tot)}</span>
       <span class="bajo">${clp(RAI.tot / N)} al mes en promedio · ${etGanaron};
-        ${MESL[+M[iPeor].slice(5) - 1]} fue el peor mes, con ${clp(RAI.mes[iPeor])}</span></div>
+        ${ml(M[iPeor])} fue el peor mes, con ${clp(RAI.mes[iPeor])}</span></div>
     <div class="caja"><span class="rot">Vendí sin IVA</span>
       <span class="medNum">${clp(V.tot)}</span>
       <span class="bajo">${N} meses según el Registro de Ventas del SII · ${clp(V.tot / N)} al mes</span></div>
@@ -3658,15 +3743,10 @@ function sResultado() {
   </div>
 
   <div class="sec"><h2>Mes a mes, sin IVA.</h2>
-    <p>lo que dejó cada mes después de insumos, sueldos, arriendo, publicidad, máquinas e intereses</p></div>
+    <p>lo que dejó cada mes después de insumos, sueldos, arriendo, publicidad, máquinas e intereses · toca un mes arriba para verlo completo</p></div>
   <div class="tw er"><table><thead><tr><th>Línea</th>${meses.map(m => `<th class="num">${m}</th>`).join("")}
     <th class="num">${meses[0]}–${meses[N-1]}</th></tr></thead><tbody>${filas}</tbody></table></div>
-  <div class="explica"><b>Cómo leerlo.</b> Ventas y compras salen de los registros del SII, documento a
-    documento; los honorarios, de las boletas de honorarios recibidas; el IVA y el PPM, de los F29 declarados.
-    Los sueldos son las liquidaciones de agosto prorrateadas por fecha de contratación; el arriendo, la luz, las
-    cuotas de los créditos y las personas que ya no están, la cartola de la cuenta corriente; el software,
-    Google Ads y LinkedIn, la tarjeta de crédito. Las máquinas no son gasto del mes: entran como
-    depreciación en 60 meses. Es resultado devengado, no caja: no dice si la plata entró.</div>
+  ${comoLeer}
 
   <div class="sec"><h2>Ventas: el SII frente a relBase.</h2>
     <p>las boletas del SII vienen como total del mes, sin detalle</p></div>
@@ -3677,13 +3757,9 @@ function sResultado() {
 
   <div class="sec"><h2>Pendiente de confirmar con el contador.</h2>
     <p>lo que los registros del SII dejan a la vista</p></div>
-  <div class="panel"><ul class="pend">${(R.pendientes || []).map(x =>
+  <div class="panel er"><ul class="pend">${(R.pendientes || []).map(x =>
     `<li><b>${esc(x.mes)}:</b> ${esc(x.que)}${x.monto ? ` <span style="color:var(--gris)">(${clp(x.monto)})</span>` : ""}</li>`).join("")}</ul>
-    <div class="enlaces">
-      <a href="${esc(R.enlaces.compacto)}" target="_blank" rel="noopener">Ver el estado de resultado completo ↗</a>
-      <a href="${esc(R.enlaces.informe)}" target="_blank" rel="noopener">Ver el informe con recomendaciones ↗</a>
-    </div>
-    <p class="bajo" style="margin-top:12px">Fuente: ${esc(R.fuente)}. Generado el ${esc(String(R.generado || "").replace("T", " a las ").slice(0, 22))}.</p>
+    ${enlaces}
   </div>`;
 }
 
@@ -4025,6 +4101,8 @@ document.addEventListener("click", e => {
     else { editandoMeta = false; pinta(); }
     return;
   }
+  const mr = e.target.closest("[data-mesres]");
+  if (mr) { mesRes = mr.dataset.mesres; pinta(); return; }
   const p = e.target.closest("#filtros [data-p]");
   if (p) {
     if (p.dataset.p === "elegir") { eligeF = !eligeF; pinta(); abreCalendario("desde"); return; }
