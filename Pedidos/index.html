@@ -2565,12 +2565,12 @@ function renderTareas(){
   const grupos=estadosOrdenados.slice();
   const huerfanas=visibles.filter(([,t])=>!idsEstados.has(t.estado));
   if(huerfanas.length) grupos.push(["_sin_estado",{nombre:"Sin estado",color:"#858AA3",_huerfano:true}]); // su estado no es de este espacio: se abren y se les elige uno
-  const mezcla=tareaFiltro.tipo==="todas"||tareaFiltro.tipo==="mias"||tareaFiltro.tipo==="sinlista";
+  const mezcla=tareaFiltro.tipo==="todas"||tareaFiltro.tipo==="mias";
   if(tareaFiltro.tipo==="mias"){
-    const conTareas=grupos.filter(([estId,est])=>est._huerfano?huerfanas.length:visibles.some(([,t])=>t.estado===estId));
+    const conTareas=grupos.filter(([estId,est])=>!est.espacio||(est._huerfano?huerfanas.length:visibles.some(([,t])=>t.estado===estId))); // generales siempre; los de un espacio, solo con tareas
     grupos.length=0; grupos.push(...conTareas);
   }
-  cont.innerHTML=(tareaFiltro.tipo==="mias"&&!grupos.length)?`<div class="empty">No tienes tareas asignadas. Cuando alguien te asigne una, aparece aquí; también puedes crearla con «+ Nueva tarea».</div>`:ttDescripcionLista()+grupos.map(([estId,est])=>{
+  cont.innerHTML=ttDescripcionLista()+grupos.map(([estId,est])=>{
     const tareasDelEstado=est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId);
     const abierto=!ttPlegados.has(estId);
     const espNombre=mezcla&&est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:"";
@@ -2583,7 +2583,7 @@ function renderTareas(){
       ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
         ${head}
         ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cols)).join("")}
-        ${est._huerfano?"":ttFilaNueva(estId)}
+        ${est._huerfano||(tareaFiltro.tipo==="mias"&&est.espacio)?"":ttFilaNueva(estId)}
       </div></div>`:""}
     </div>`;
   }).join("");
@@ -2606,7 +2606,7 @@ function ttAnchoCampo(c){ return c.tipo==="casilla"?"96px":(c.tipo==="parrafo"||
 function ttColumnas(){ // columnas de la vista: las de la lista; en «Todas» / «Todo el espacio», las de siempre + la unión de los campos de las listas presentes
   const cols=[], enLista=tareaFiltro.tipo==="lista";
   const cfg=enLista?ttCfg(tareaFiltro.id):cpConfig(null);
-  if(tareaFiltro.tipo==="mias"||tareaFiltro.tipo==="sinlista") cols.push({k:"listaDe",tipo:"int",t:"Lista",w:"minmax(170px,1fr)"}); // de dónde es cada tarea
+  if(tareaFiltro.tipo==="mias") cols.push({k:"listaDe",tipo:"int",t:"Lista",w:"minmax(170px,1fr)"}); // de dónde es cada tarea
   TT_ORDEN.filter(k=>cfg.integrados[k]).forEach(k=>cols.push({k,tipo:"int",t:TT_INT[k].t,w:TT_INT[k].w}));
   const vistos=new Set();
   const agregar=c=>{ if(vistos.has(c.cid))return; vistos.add(c.cid); cols.push({k:"c:"+c.cid,tipo:"campo",cid:c.cid,c,t:c.etiqueta,w:ttAnchoCampo(c)}); };
@@ -2739,7 +2739,7 @@ function ttFilaNueva(estId){
 }
 function ttAgregar(estId){
   const enLista=tareaFiltro.tipo==="lista";
-  if(tareaFiltro.tipo==="espacio"||tareaFiltro.tipo==="mias"||tareaFiltro.tipo==="sinlista"||(enLista&&ttCfg(tareaFiltro.id).personalizados.some(c=>c.requerido))){ openTareaModal(null,estId); return; }
+  if(tareaFiltro.tipo==="espacio"||(enLista&&ttCfg(tareaFiltro.id).personalizados.some(c=>c.requerido))){ openTareaModal(null,estId); return; } // en Mis tareas se crea ahí mismo, sin lista y asignada a uno
   ttNuevo=estId; renderTareas();
   setTimeout(()=>document.getElementById("tt-add-input")?.focus(),30);
 }
@@ -2891,7 +2891,7 @@ function idToEmail(id){ return Object.keys(AUTORIZADOS_PEDIDOS).find(email=>AUTO
 function saveTarea(){
   const nombre=gv("f-tarea-nombre").trim();
   if(!nombre){ toast("Ponle un nombre a la tarea","error"); return; }
-  if(!gv("f-tarea-lista")&&Object.keys(listas).length){ toast("Elige la lista donde va la tarea","error"); document.getElementById("f-tarea-lista")?.focus(); return; }
+  if(!gv("f-tarea-lista")&&!selectedTareaAsignados.length){ toast("Elige una lista o asigna a alguien: si no, la tarea no tendría dónde verse","error"); return; }
   const asignados={},asignadosEmails={};
   selectedTareaAsignados.forEach(id=>{
     asignados[id]=true;
@@ -4726,7 +4726,6 @@ function actualizarTituloTareas(){
   if(currentTab!=="tareas")return;
   let ctx="";
   if(tareaFiltro.tipo==="mias"){ document.getElementById("topbar-title").innerHTML=ic("square-check-big","ic-titulo")+"Mis tareas"; return; }
-  if(tareaFiltro.tipo==="sinlista"){ document.getElementById("topbar-title").innerHTML=ic("square-check-big","ic-titulo")+"Tareas sin lista"; return; }
   if(tareaFiltro.tipo==="espacio"){ const e=espacios[tareaFiltro.id]; ctx=e?` · ${e.nombre}`:""; }
   if(tareaFiltro.tipo==="lista"){ const l=listas[tareaFiltro.id]; const e=l&&espacios[l.espacio]; ctx=l?` · ${e?e.nombre+" / ":""}${l.nombre}`:""; }
   document.getElementById("topbar-title").innerHTML=ic("square-check-big","ic-titulo")+"Tareas"+esc(ctx);
@@ -4737,15 +4736,13 @@ function tareaEnFiltro(t){
   if(tareaFiltro.tipo==="lista") return t.lista===tareaFiltro.id;
   if(tareaFiltro.tipo==="espacio") return !!t.lista&&listas[t.lista]?.espacio===tareaFiltro.id;
   if(tareaFiltro.tipo==="mias") return tareaEsMia(t);
-  if(tareaFiltro.tipo==="sinlista") return tareaSinLista(t);
   return true;
 }
-function tareaSinLista(t){ return !t.lista||!listas[t.lista]; } // sin lista, o con una lista que ya se borró
 function buildListaSelect(sel){
   const el=document.getElementById("f-tarea-lista"); if(!el)return;
   const grupos=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,nombre:e.nombre}));
   if(Object.values(listas).some(l=>l&&l.espacio==="tareas")) grupos.unshift({id:"tareas",nombre:"Tareas"}); // listas antiguas del espacio fijo, si quedara alguna
-  el.innerHTML=`<option value="">— Elige una lista —</option>`+grupos.map(g=>{
+  el.innerHTML=`<option value="">— Sin lista —</option>`+grupos.map(g=>{
     const ls=Object.entries(listas).filter(([,l])=>l.espacio===g.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
     return ls.length?`<optgroup label="${esc(g.nombre)}">${ls.map(([id,l])=>`<option value="${id}"${id===sel?" selected":""}>${esc(l.nombre)}</option>`).join("")}</optgroup>`:"";
   }).join("");
@@ -4827,8 +4824,6 @@ function renderSidebar(){
   let h=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="bandeja"?" active":""}" onclick="switchTab('bandeja')" title="Bandeja"><span class="sb-caret"></span><span class="sb-ic">${ic("inbox")}</span><span class="sb-label">Bandeja</span><span class="sb-count${nBj?" sb-unread":""}">${nBj||""}</span></div>`;
   const nAsig=Object.values(tareas).filter(tareaEsMia).length;
   h+=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="tareas"&&tareaFiltro.tipo==="mias"?" active":""}" onclick="irATareas({tipo:'mias'})" title="Mis tareas: ${nMias} pendiente${nMias===1?"":"s"} de ${nAsig} asignada${nAsig===1?"":"s"}"><span class="sb-caret"></span><span class="sb-ic">${ic("square-check-big")}</span><span class="sb-label">Mis tareas</span><span class="sb-count">${nMias||""}</span></div>`;
-  const nSinLista=Object.values(tareas).filter(t=>puedeVerTarea(t)&&tareaSinLista(t)).length; // tareas antiguas sin lista o con lista borrada: solo se ofrece el nodo si hay alguna
-  if(nSinLista) h+=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="tareas"&&tareaFiltro.tipo==="sinlista"?" active":""}" onclick="irATareas({tipo:'sinlista'})" title="Tareas que no están en ninguna lista: ábrelas y elígeles una"><span class="sb-caret"></span><span class="sb-ic">${ic("triangle-alert")}</span><span class="sb-label">Sin lista</span><span class="sb-count">${nSinLista}</span></div>`;
   h+=`<div class="sb-sep"></div>`;
   // Pedidos: sus listas son las categorías
   const pedAbierto=sbAbiertos.has("pedidos")&&!col;

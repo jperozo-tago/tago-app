@@ -79,10 +79,11 @@ Firestore).
   tareas cuyo estado no es de su espacio caen en «Sin estado». La vista personal
   es «Mis tareas» (bajo Bandeja, `tareaFiltro.tipo==="mias"`: solo las
   asignadas a quien mira, con columna «Lista»); ya no existe el espacio fijo
-  «Tareas» ni «Todas las tareas». Toda tarea nueva exige lista; las antiguas
-  sin lista (o con lista borrada) se ven en el nodo «Sin lista» de la barra,
-  que solo aparece cuando hay alguna. La columna «Estado» va por defecto en
-  toda lista, después de Nombre, y se cambia desde la celda.
+  «Tareas» ni «Todas las tareas». En Mis tareas siempre están los grupos
+  generales con «+ Agregar tarea» en línea (la tarea nace sin lista y asignada a
+  uno mismo); una tarea necesita lista o alguien asignado, si no no tendría
+  dónde verse. La columna «Estado» va por defecto en toda lista, después de
+  Nombre, y se cambia desde la celda.
 - `tago_mail_alertas` — correos detectados como pedidos
 - `tago_permitidos` — lista de emails autorizados a entrar (control de acceso)
 - `tago_admins` — quiénes son admin (para el módulo de Tareas)
