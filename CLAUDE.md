@@ -148,7 +148,7 @@ Firestore).
   `tago_tareas_orden`.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
-  `{cliente, tipo:"textil"|"uv", metros, codigo, documento (n° boleta o
+  `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o
   factura), fechaCompra, vence, precio, notas, cerrado?, alias{<nombre
   normalizado>:true}, consumos{<cid>:{fecha, metros, nota, quien, ts}},
   createdAt/By, updatedAt/By}`; los 45 de la planilla llevan
@@ -158,14 +158,18 @@ Firestore).
   (`packResumen`) como metros − consumos a mano − cantidad de los pedidos
   con `packId` (solo si su unidad es metros), así nunca se desfasa aunque el
   pedido se edite o se borre. Un pedido guarda `packId`; en su ficha, si el
-  producto va en metros (DTF Textil y Flúor → packs textil; DTF UV → packs
-  UV), la fila «Pack DTF» lista los packs abiertos del tipo ordenados por
-  parecido con el nombre del cliente (`packSimilitud`: sin tildes ni
-  puntuación, sin SpA/Ltda…, palabras y pares de letras) y en un pedido
-  nuevo preselecciona si hay un único candidato con parecido ≥ 0,85; al
-  enlazar con un nombre distinto el pack aprende el `alias`. Cambiar el
-  producto a uno en unidades o al otro tipo de DTF desenlaza el pack
-  (`packAjustarEnlace`). Estados derivados: activo, por vencer (≤ 15 días),
+  producto va en metros (cada DTF con su propio pack: Textil → textil, UV →
+  uv, Flúor → fluor), la fila «Pack DTF» es una casilla «¿Tiene pack?»
+  (Andreina no quiso desplegable ni preselección automática): al marcarla,
+  la app busca el nombre del cliente entre los packs vigentes del tipo
+  (`packSimilitud`: sin tildes ni puntuación, sin SpA/Ltda…, palabras y
+  pares de letras; parecido ≥ 0,5) y pregunta uno por uno «¿Es este?» con
+  Sí / No; si no hay parecidos o dicen que no a todos, ofrece elegirlo de la
+  lista de vigentes (`fichaPackHtml`, `fichaPackToggle`,
+  `fichaPackResponder`; estado en `fichaPackBuscando` /
+  `fichaPackRechazados`). Al enlazar con un nombre distinto el pack aprende
+  el `alias`. Cambiar el producto a uno en unidades o a otro tipo de DTF
+  desenlaza el pack (`packAjustarEnlace`). Estados derivados: activo, por vencer (≤ 15 días),
   agotado (saldo ≤ 0, con sobregiro en rojo), vencido, cerrado (a mano).
   Vista «Packs DTF» bajo Pedidos en la barra (`renderPacks`) y ficha propia
   `#ficha-pack` (`abrirPack`/`renderPack`, movimientos y «Registrar

@@ -686,7 +686,7 @@
     .packs-avisos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
     .packs-avisos:empty{display:none}
     .packs-avisos .alert-pill{flex:0 0 auto;min-width:0;padding:5px 12px;font-size:12px;border-radius:999px;gap:6px;cursor:pointer;border:1px solid transparent}
-    .packs-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+    .packs-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
     .packs-kpis .stat-num{font-size:28px}
     .packs-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
     .packs-top .search-input{flex:0 1 240px}
@@ -734,8 +734,17 @@
     .fi-pack-hint.mal{color:var(--danger-c)}
     .fi-pack-hint .pk-link{margin-left:6px}
     .job-pack{color:var(--teal-dark);font-size:12px;margin-left:4px;vertical-align:-1px}
+    .fi-check{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap}
+    .fi-check input{width:15px;height:15px;margin:0;accent-color:var(--azul);cursor:pointer}
+    .fi-pack-sel{font-size:12.5px;color:var(--text);font-family:'DM Sans',sans-serif;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+    .fi-pack-q{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;margin:4px 0 8px;background:var(--panel);border-radius:10px;font-size:12.5px;color:var(--text)}
+    .fi-pack-q b{font-family:'DM Sans',sans-serif;font-weight:600}
+    .fi-pack-q .btn{padding:5px 14px;font-size:12px}
+    .fi-pack-q select.fi{width:auto;max-width:100%;border-color:var(--border);background-color:var(--surface)}
+    .fi-pack-q-txt{flex:1;min-width:160px}
     @media(max-width:700px){
       .packs-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .packs-kpis .stat-card:first-child{grid-column:1/-1}
       .pk-head{display:none}
       .pk-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cli est" "tipo tam" "barra barra" "vence doc";min-width:0;gap:6px 10px}
       .pk-row>div:nth-child(1){grid-area:cli}.pk-row>div:nth-child(2){grid-area:tipo}.pk-row>div:nth-child(3){grid-area:tam;justify-self:end}.pk-row>div:nth-child(4){grid-area:barra}.pk-row>div:nth-child(5){grid-area:vence}.pk-row>div:nth-child(6){grid-area:doc;justify-self:end}.pk-row>div:nth-child(7){grid-area:est;justify-self:end}
@@ -1678,6 +1687,7 @@
       <span class="fh-spacer"></span>
       <button class="chip-toggle" id="packs-tipo-textil" onclick="packsToggleTipo('textil')" title="Solo packs de DTF Textil"><svg class="ic" aria-hidden="true"><use href="#i-printer"/></svg>Textil</button>
       <button class="chip-toggle" id="packs-tipo-uv" onclick="packsToggleTipo('uv')" title="Solo packs de DTF UV"><svg class="ic" aria-hidden="true"><use href="#i-droplets"/></svg>UV</button>
+      <button class="chip-toggle" id="packs-tipo-fluor" onclick="packsToggleTipo('fluor')" title="Solo packs de DTF Flúor"><svg class="ic" aria-hidden="true"><use href="#i-sparkles"/></svg>Flúor</button>
     </div>
     <div class="table-wrap" id="packs-tabla"></div>
   </div>
@@ -1991,7 +2001,7 @@ const CATEGORIAS_PRODUCTO=[
 const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||"impresiones";
 const categoriaDePedido=j=>j.categoria||categoriaDeTipo(j.tipoDtf);
 let categoriasCustom={},categoriaSeleccionada="impresiones";
-var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackManual=false, packsFiltro="abiertos", packsTipo=null; // Packs DTF
+var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackBuscando=false, fichaPackRechazados=new Set(), packsFiltro="abiertos", packsTipo=null; // Packs DTF
 function todasLasCategorias(){
   const custom=Object.entries(categoriasCustom).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,c])=>({key:id,label:c.nombre,icono:c.icono||""}));
   return[...CATEGORIAS_PRODUCTO,...custom];
@@ -5513,7 +5523,7 @@ const fiVal=v=>(v===undefined||v===null)?"":String(v);
 function openModal(id=null){ abrirFicha(id); }
 function abrirFicha(id=null){
   if(typeof cerrarPack==="function") cerrarPack();
-  fichaNuevo=!id; fichaAsigAbierto=false; fichaPackManual=false;
+  fichaNuevo=!id; fichaAsigAbierto=false; fichaPackBuscando=false; fichaPackRechazados=new Set();
   fichaId=id||"__nuevo__";
   if(fichaNuevo) fichaDraft={pedido:"",cliente:"",tipoDtf:"DTF Textil",categoria:"impresiones",cantidad:"",precio:"",drive:"",documento:"NO",tipoEntrega:"Retiro",responsable:"",estado:"recibido",prioridad:"normal",fechaLimite:"",notas:"",personas:[]};
   document.getElementById("ficha").classList.add("open");
@@ -5563,9 +5573,8 @@ function fichaCampo(campo,valor){
   if(campo==="cliente"&&!fichaNuevo&&!valor){ toast("El cliente es obligatorio","error"); renderFicha(true); return; }
   fichaSetPath(nuevo,campo,valor);
   if(campo==="tipoDtf"){ nuevo.unidad=getUnit(valor); if(!j.categoria||j.categoria===categoriaDeTipo(j.tipoDtf)) nuevo.categoria=categoriaDeTipo(valor); packAjustarEnlace(nuevo); }
-  if(campo==="packId"){ fichaPackManual=true; if(!valor) delete nuevo.packId; else packAprender(valor,nuevo.cliente); }
+  if(campo==="packId"){ fichaPackBuscando=false; fichaPackRechazados=new Set(); if(!valor) delete nuevo.packId; else packAprender(valor,nuevo.cliente); }
   if(campo==="cliente"&&!fichaNuevo&&nuevo.packId) packAprender(nuevo.packId,valor);
-  if(campo==="cliente"&&fichaNuevo&&!fichaPackManual){ packSugerirEnDraft(nuevo); }
   fichaAplicar(nuevo,j,FICHA_ESTRUCTURAL.has(campo));
   if((campo==="cliente"||campo==="cantidad")&&!FICHA_ESTRUCTURAL.has(campo)){ const fila=document.getElementById("fc-pack-fila"); if(fila) fila.outerHTML=fichaPackHtml(nuevo); } // la fila del pack se refresca sola, sin rearmar la ficha (el foco sigue donde estaba)
 }
@@ -5768,7 +5777,7 @@ function renderFicha(forzar){
 }
 
 // ══ PACKS DTF: metros comprados por adelantado, con vigencia y descuento automático desde los pedidos ══
-const PACK_TIPO={textil:{l:"Textil",color:"#4063F9",tipoDtf:"DTF Textil"},uv:{l:"UV",color:"#1C7A63",tipoDtf:"DTF UV"}};
+const PACK_TIPO={textil:{l:"Textil",color:"#4063F9",tipoDtf:"DTF Textil"},uv:{l:"UV",color:"#1C7A63",tipoDtf:"DTF UV"},fluor:{l:"Flúor",color:"#C026D3",tipoDtf:"DTF Flúor"}}; // cada DTF tiene su propio pack
 const PACK_ESTADO={activo:"Activo",por_vencer:"Por vencer",agotado:"Agotado",vencido:"Vencido",cerrado:"Cerrado"};
 const PACK_DIAS_AVISO=15, PACK_POCO=2;
 const fmtM=n=>(Math.round((+n||0)*100)/100).toLocaleString("es-CL",{maximumFractionDigits:2})+" m";
@@ -5779,7 +5788,7 @@ function packVence(fechaCompra,metros){ // 3 meses de vigencia; 4 para los de 10
   return ymdLocal(d);
 }
 function packNombre(id){ const p=packs[id]; if(!p) return id; return `${p.cliente}${p.codigo?" · "+p.codigo:""} · ${fmtM(p.metros)} ${PACK_TIPO[p.tipo]?PACK_TIPO[p.tipo].l:p.tipo}`; }
-function packTipoDePedido(j){ const t=j&&j.tipoDtf; if(t==="DTF UV")return"uv"; if(t==="DTF Textil"||t==="DTF Flúor")return"textil"; return null; }
+function packTipoDePedido(j){ const t=j&&j.tipoDtf; if(t==="DTF UV")return"uv"; if(t==="DTF Flúor")return"fluor"; if(t==="DTF Textil")return"textil"; return null; }
 function packMetrosPedido(j){ return (j.unidad||getUnit(j.tipoDtf))==="metros"?(parseFloat(j.cantidad)||0):0; }
 function packMovs(id,sinPedido){ // movimientos del pack: consumos a mano + pedidos enlazados
   const p=packs[id]; if(!p)return[];
@@ -5812,10 +5821,6 @@ function packCandidatos(j,sinPedido){ // packs abiertos del tipo del pedido, del
   const tipo=packTipoDePedido(j); if(!tipo)return[];
   return Object.keys(packs).filter(id=>packs[id].tipo===tipo&&(packAbierto(id)||id===j.packId)).map(id=>({id,p:packs[id],r:packResumen(id,sinPedido),s:packPuntaje(packs[id],j.cliente)})).sort((a,b)=>b.s-a.s||(a.p.vence||"").localeCompare(b.p.vence||""));
 }
-function packSugerirEnDraft(n){ // pedido nuevo: se preselecciona solo si el parecido es claro y hay un único candidato
-  const c=packCandidatos(n).filter(x=>x.s>=.85);
-  if(c.length===1) n.packId=c[0].id; else delete n.packId;
-}
 function packAjustarEnlace(n){ // si el producto ya no va en metros o cambió de textil a UV, el pack deja de corresponder
   if(!n.packId)return; const p=packs[n.packId]; const tipo=packTipoDePedido(n);
   if(!tipo||(p&&p.tipo!==tipo)) delete n.packId;
@@ -5825,23 +5830,49 @@ function packAprender(id,nombre){ // el pack aprende el nombre con que se escrib
   if(packSimilitud(p.cliente,nombre)>=1||(p.alias&&p.alias[k]))return;
   firebase.database().ref("tago_packs/"+id+"/alias/"+k).set(true).catch(err=>console.error(err));
 }
-function fichaPackHtml(j){ // fila «Pack DTF» de la ficha del pedido (solo productos en metros)
+function packEtiqueta(x){ return `<b>${esc(x.p.cliente)}</b>${x.p.codigo?" · "+esc(x.p.codigo):""} · ${fmtM(x.p.metros)} ${PACK_TIPO[x.p.tipo]?PACK_TIPO[x.p.tipo].l:""} · quedan ${fmtM(x.r.disponible)}${x.r.estado==="por_vencer"?` · vence en ${x.r.dias} día${x.r.dias===1?"":"s"}`:""}`; }
+function fichaPackHtml(j){ // fila «Pack DTF» de la ficha del pedido (solo productos en metros): casilla + pregunta Sí / No
   const tipo=packTipoDePedido(j); if(!tipo) return `<span id="fc-pack-fila" style="display:none"></span>`;
-  const sinPedido=fichaNuevo?null:fichaId, cand=packCandidatos(j,sinPedido), sel=j.packId||"";
-  const opts=[["","— Sin pack —"],...cand.map(x=>[x.id,`${x.p.cliente}${x.p.codigo?" · "+x.p.codigo:""} · quedan ${fmtM(x.r.disponible)}${x.r.estado==="por_vencer"?" · vence pronto":x.r.estado==="agotado"?" · agotado":x.r.estado==="vencido"?" · vencido":x.r.estado==="cerrado"?" · cerrado":""}`])];
-  if(sel&&!packs[sel]) opts.push([sel,"Pack eliminado"]);
-  let hint="", mal=false;
-  if(sel&&packs[sel]){
-    const r=packResumen(sel,sinPedido), m=packMetrosPedido(j), queda=Math.round((r.disponible-m)*100)/100;
-    if(r.vencido) { hint=`Este pack venció el ${packFecha(packs[sel].vence)}`; mal=true; }
-    else if(queda<0){ hint=`Este pedido supera el pack por ${fmtM(-queda)} (quedaban ${fmtM(r.disponible)})`; mal=true; }
-    else hint=`Quedan ${fmtM(queda)} en el pack con este pedido${r.dias!==null&&r.dias<=PACK_DIAS_AVISO?` · vence en ${r.dias} día${r.dias===1?"":"s"}`:""}`;
-    hint+=`<span class="pk-link" onclick="verPack('${esc(sel)}')">Ver pack</span>`;
+  const sinPedido=fichaNuevo?null:fichaId, cand=packCandidatos(j,sinPedido).filter(x=>packAbierto(x.id)), sel=j.packId||"";
+  const marcada=!!sel||fichaPackBuscando;
+  let derecha="", abajo="";
+  if(sel){
+    const p=packs[sel];
+    if(!p) derecha=`<span class="fi-pack-sel" style="color:var(--text-muted)">Pack eliminado</span><span class="pk-link" onclick="fichaCampo('packId','')">Quitar</span>`;
+    else {
+      const r=packResumen(sel,sinPedido), m=packMetrosPedido(j), queda=Math.round((r.disponible-m)*100)/100;
+      derecha=`<span class="fi-pack-sel" title="${esc(packNombre(sel))}">${esc(p.cliente)}${p.codigo?" · "+esc(p.codigo):""}</span><span class="pk-link" onclick="verPack('${esc(sel)}')">Ver</span><span class="pk-link" onclick="fichaCampo('packId','')">Quitar</span>`;
+      let hint="", mal=false;
+      if(r.vencido){ hint=`Este pack venció el ${packFecha(p.vence)}`; mal=true; }
+      else if(queda<0){ hint=`Este pedido supera el pack por ${fmtM(-queda)} (quedaban ${fmtM(r.disponible)})`; mal=true; }
+      else hint=`Quedan ${fmtM(queda)} en el pack con este pedido${r.dias!==null&&r.dias<=PACK_DIAS_AVISO?` · vence en ${r.dias} día${r.dias===1?"":"s"}`:""}`;
+      abajo=`<div class="fi-pack-hint${mal?" mal":""}">${hint}</div>`;
+    }
+  } else if(fichaPackBuscando){
+    const nombre=(j.cliente||"").trim();
+    const parecidos=cand.filter(x=>x.s>=.5&&!fichaPackRechazados.has(x.id));
+    const lista=`<select class="fi fi-sel" onchange="if(this.value)fichaPackResponder(this.value,true)"><option value="">— Elegir de la lista de packs vigentes —</option>${cand.map(x=>`<option value="${esc(x.id)}">${esc(x.p.cliente)}${x.p.codigo?" · "+esc(x.p.codigo):""} · quedan ${fmtM(x.r.disponible)}</option>`).join("")}</select>`;
+    if(!nombre) abajo=`<div class="fi-pack-q"><span class="fi-pack-q-txt">Escribe primero el nombre del cliente para buscar su pack.</span></div>`;
+    else if(parecidos.length){ const x=parecidos[0]; abajo=`<div class="fi-pack-q"><span class="fi-pack-q-txt">Encontré un pack vigente parecido a «${esc(nombre)}». ¿Es este? ${packEtiqueta(x)}</span><button class="btn btn-teal" onclick="fichaPackResponder('${esc(x.id)}',true)">Sí, es este</button><button class="btn btn-secondary" onclick="fichaPackResponder('${esc(x.id)}',false)">No</button></div>`; }
+    else if(!cand.length) abajo=`<div class="fi-pack-q"><span class="fi-pack-q-txt">No hay packs ${PACK_TIPO[tipo].l} vigentes. Si el cliente compró uno, créalo en Packs DTF y vuelve a marcar la casilla.</span></div>`;
+    else abajo=`<div class="fi-pack-q"><span class="fi-pack-q-txt">${fichaPackRechazados.size?"No encontré otro pack vigente parecido a":"No encontré un pack vigente a nombre de"} «${esc(nombre)}». Si es otro nombre, elígelo aquí:</span>${lista}</div>`;
   } else if(cand.length&&cand[0].s>=.6){
-    const c=cand.filter(x=>x.s>=.6);
-    hint=c.length===1?`Sugerido: ${esc(c[0].p.cliente)}${c[0].p.codigo?" · "+esc(c[0].p.codigo):""} · quedan ${fmtM(c[0].r.disponible)}<span class="pk-link" onclick="fichaCampo('packId','${esc(c[0].id)}')">Enlazar</span>`:`Este cliente tiene ${c.length} packs abiertos: elige uno`;
+    abajo=`<div class="fi-pack-hint">Hay un pack vigente a nombre de ${esc(cand[0].p.cliente)}: marca la casilla si este pedido descuenta de ahí.</div>`;
   }
-  return `<div id="fc-pack-fila" style="display:contents">${fiFila(ic("package")+" Pack DTF",fiSelect("packId",sel,opts),true)}${hint?`<div class="fi-pack-hint${mal?" mal":""}">${hint}</div>`:""}</div>`;
+  const ctl=`<label class="fi-check" title="Marca si este pedido descuenta metros de un pack comprado por adelantado"><input type="checkbox"${marcada?" checked":""} onchange="fichaPackToggle(this.checked)"/>¿Tiene pack?</label>${derecha}`;
+  return `<div id="fc-pack-fila" style="display:contents">${fiFila(ic("package")+" Pack DTF",ctl,true)}${abajo}</div>`;
+}
+function fichaPackRefrescar(){ const fila=document.getElementById("fc-pack-fila"); if(fila) fila.outerHTML=fichaPackHtml(fichaJob()); }
+function fichaPackToggle(on){
+  const j=fichaJob(); if(!j)return;
+  fichaPackRechazados=new Set();
+  if(!on){ fichaPackBuscando=false; if(j.packId){ fichaCampo('packId',''); return; } }
+  else fichaPackBuscando=true;
+  fichaPackRefrescar();
+}
+function fichaPackResponder(id,si){
+  if(si){ fichaCampo('packId',id); toast("Pack asociado ✓","ok"); }
+  else { fichaPackRechazados.add(id); fichaPackRefrescar(); }
 }
 function verPack(id){ switchTab("packs"); abrirPack(id); }
 // ── Vista Packs ──
@@ -5855,7 +5886,7 @@ function renderPacks(){
   const disp=t=>abiertos.filter(x=>x.p.tipo===t).reduce((a,x)=>a+x.r.disponible,0);
   const nVencer=todos.filter(x=>x.r.estado==="por_vencer").length, pocos=abiertos.filter(x=>x.r.disponible<PACK_POCO), sobre=todos.filter(x=>x.r.disponible<0&&!x.p.cerrado);
   document.getElementById("packs-kpis").innerHTML=[
-    ["Packs abiertos",abiertos.length,"var(--teal)"],["Metros textil disponibles",fmtM(disp("textil")),PACK_TIPO.textil.color],["Metros UV disponibles",fmtM(disp("uv")),PACK_TIPO.uv.color],[`Vencen en ${PACK_DIAS_AVISO} días`,nVencer,nVencer?"var(--azul)":"var(--border)"],
+    ["Packs abiertos",abiertos.length,"var(--teal)"],["Metros textil disponibles",fmtM(disp("textil")),PACK_TIPO.textil.color],["Metros UV disponibles",fmtM(disp("uv")),PACK_TIPO.uv.color],["Metros flúor disponibles",fmtM(disp("fluor")),PACK_TIPO.fluor.color],[`Vencen en ${PACK_DIAS_AVISO} días`,nVencer,nVencer?"var(--azul)":"var(--border)"],
   ].map(([l,v,c])=>`<div class="stat-card" style="border-top-color:${c}"><div class="stat-num">${v}</div><div class="stat-label">${l}</div></div>`).join("");
   const avisos=[];
   if(nVencer) avisos.push(`<span class="alert-pill ap-stale" onclick="packsSetFiltro('por_vencer')">${ic("timer")} ${nVencer} pack${nVencer===1?"":"s"} vence${nVencer===1?"":"n"} en menos de ${PACK_DIAS_AVISO} días</span>`);
@@ -5867,6 +5898,7 @@ function renderPacks(){
     .map(([f,l,c])=>`<button class="filter-tab${packsFiltro===f?" active":""}" onclick="packsSetFiltro('${f}')">${c?`<span class="dot" style="background:${c}"></span>`:""}${l} <span class="tab-count">${n(f)}</span></button>`).join("");
   document.getElementById("packs-tipo-textil").classList.toggle("active",packsTipo==="textil");
   document.getElementById("packs-tipo-uv").classList.toggle("active",packsTipo==="uv");
+  document.getElementById("packs-tipo-fluor").classList.toggle("active",packsTipo==="fluor");
   const ordenEst={por_vencer:0,activo:1,agotado:2,vencido:3,cerrado:4};
   const filas=todos.filter(x=>{
     if(packsFiltro==="abiertos"&&!(x.r.estado==="activo"||x.r.estado==="por_vencer"))return false;
@@ -5980,7 +6012,7 @@ function renderPack(forzar){
   </div>
   <div class="fh-pills">
     ${packNuevo?"":`<span class="pk-estado pk-${r.estado}">${PACK_ESTADO[r.estado]}</span>`}
-    <span class="pk-tipo" style="background:color-mix(in srgb, ${t.color} 18%, white);color:${t.color}">${p.tipo==="uv"?ic("droplets"):ic("printer")} DTF ${esc(t.l)}</span>
+    <span class="pk-tipo" style="background:color-mix(in srgb, ${t.color} 18%, white);color:${t.color}">${p.tipo==="uv"?ic("droplets"):p.tipo==="fluor"?ic("sparkles"):ic("printer")} DTF ${esc(t.l)}</span>
     ${packNuevo?"":`<span class="fh-spacer"></span><button class="fi-pill${p.cerrado?" urg":""}" title="Un pack cerrado no se ofrece en los pedidos" onclick="packToggleCerrado()">${p.cerrado?"Reabrir pack":"Cerrar pack"}</button>`}
   </div>`;
   if(!packNuevo){
