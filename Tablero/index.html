@@ -554,7 +554,9 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
 .lnk{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--azul);cursor:pointer;text-align:left}
 .lnk:hover{text-decoration:underline}
 .encargos .caja{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.encargos .segT{font-family:"DM Sans",sans-serif;font-weight:600;font-size:1.05rem;color:var(--tinta);line-height:1.2}
 .encargos .medNum .de{font-size:.95rem;color:var(--gris);font-weight:600}
+.encargos .plata{font-size:.82rem;color:var(--tinta2);font-family:"DM Sans",sans-serif;font-weight:600}
 .encargos .mas{margin-top:auto;align-self:flex-start}
 select.stR{padding:5px 8px;border:1px solid var(--linea2);border-radius:8px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.82rem;min-width:140px}
 select.stR.s-cont,select.stR.s-cot{border-color:var(--azul);background:var(--azul-suave)}
@@ -3371,43 +3373,28 @@ function sLlamar() {
   const nombres = (l, n) => l.slice(0, n).map(x => `<button class="lnk" data-ficha="${x.ci}">${esc(x.nombre)}</button>`).join(", ")
     + (l.length > n ? ` y ${num(l.length - n)} más` : "");
   const nC = RUTA.C ? RUTA.C.length : null;
-  return `<div class="heroe">
-    <div class="caja"><span class="rot">Se están callando</span>
-      <span class="granNum" style="color:var(--rojo)">${num(S.R.length)}</span>
-      <span class="bajo">compraban cada semana y llevan de dos a seis semanas sin comprar · ${clp(plata(S.R, "gasto12"))} en 12 meses</span></div>
-    <div class="caja"><span class="rot">Compraban mucho y ya no</span>
-      <span class="medNum">${num(S.A.length)}</span>
-      <span class="bajo">${clp(plata(S.A, "gasto12"))} en 12 meses</span></div>
-    <div class="caja"><span class="rot">Dormidos</span>
-      <span class="medNum">${num(S.B.length)}</span>
-      <span class="bajo">${clp(plata(S.B, "gasto12"))} en 12 meses</span></div>
-    <div class="caja"><span class="rot">Clientes clave</span>
-      <span class="medNum" style="color:var(--verde)">${num(S.E.length)}</span>
-      <span class="bajo">${clp(plata(S.E, "gasto26"))} en 2026</span></div>
-  </div>
-
-  <div class="sec"><h2>Quién llama a quién esta semana.</h2>
-    <span class="tocable der">Andreina no llama: decide qué ofrecerles</span></div>
-  <div class="rej4 encargos">
-    <div class="caja"><span class="rot">Las vendedoras, con Carol</span>
-      <span class="medNum" style="color:var(--rojo)">${num(S.R.length)}</span>
-      <span class="bajo">en riesgo: llamarlos esta semana, antes de que se vayan</span>
-      <button class="mas" data-verseg="R">Ver la lista</button></div>
-    <div class="caja"><span class="rot">Carol, con las vendedoras</span>
-      <span class="medNum">${num(Math.min(10, S.A.length))}<span class="de"> de ${num(S.A.length)}</span></span>
-      <span class="bajo">los primeros que compraban mucho y ya no. Una sola pregunta: por qué dejaron de comprar</span>
-      <button class="mas" data-verseg="A">Ver la lista</button></div>
-    <div class="caja"><span class="rot">Las vendedoras, después</span>
-      <span class="medNum">${num(S.B.length)}<span class="de"> + ${num(S.D.length)}</span></span>
-      <span class="bajo">dormidos de mayor a menor gasto, y los que compraron una vez: se les pregunta qué faltó</span>
-      <button class="mas" data-verseg="B">Ver la lista</button></div>
-    <div class="caja"><span class="rot">Carol</span>
-      <span class="medNum" style="color:var(--verde)">10<span class="de"> de ${num(S.E.length)}</span></span>
-      <span class="bajo">clientes clave: ofrecerles el plan mensual de DTF. Si tres aceptan, ya hay producto</span>
-      <button class="mas" data-verseg="E">Ver la lista</button></div>
+  const P = [
+    { seg: "R", n: S.R.length, de: null, plata: `${clp(plata(S.R, "gasto12"))} en 12 meses`, color: "var(--rojo)",
+      t: "Se están yendo", d: "Compraban cada semana y llevan de dos a seis semanas callados. Llamarlos esta semana, antes de que se vayan." },
+    { seg: "A", n: Math.min(10, S.A.length), de: S.A.length, plata: `${clp(plata(S.A, "gasto12"))} en 12 meses, entre los ${num(S.A.length)}`, color: "var(--tinta)",
+      t: "Compraban mucho y ya no", d: "Los diez primeros. Una sola pregunta: por qué dejaron de comprar. La respuesta vale más que la venta." },
+    { seg: "E", n: Math.min(10, S.E.length), de: S.E.length, plata: `${clp(plata(S.E, "gasto26"))} en 2026, entre los ${num(S.E.length)}`, color: "var(--verde)",
+      t: "Clientes clave", d: "Son la mitad de la venta y siguen activos. Ofrecerles el plan mensual de DTF: si tres aceptan, ya hay producto." },
+    { seg: "B", n: S.B.length, de: null, plata: `${clp(plata(S.B, "gasto12"))} en 12 meses, más ${num(S.D.length)} que compraron una vez`, color: "var(--tinta)",
+      t: "Dormidos", d: "Se salieron de su ritmo y llevan más de un mes callados. De mayor a menor gasto. A los que compraron una sola vez se les pregunta qué faltó." },
+  ];
+  return `<div class="sec" style="margin-top:0"><h2>Por dónde empezar a llamar.</h2>
+    <span class="tocable der">en orden de prioridad</span></div>
+  <div class="rej4 encargos">${P.map((c, i) => `<div class="caja">
+      <span class="rot">Prioridad ${i+1}</span>
+      <b class="segT">${c.t}</b>
+      <span class="medNum" style="color:${c.color}">${num(c.n)}${c.de ? `<span class="de"> de ${num(c.de)}</span>` : ""}</span>
+      <span class="plata">${c.plata}</span>
+      <span class="bajo">${c.d}</span>
+      <button class="mas" data-verseg="${c.seg}">Ver la lista</button></div>`).join("")}
   </div>
   <div class="panel" style="margin-top:12px">
-    <p>${nC !== null ? `Las vendedoras hacen seguimiento a los <b>${num(nC)} potenciales</b> que escribieron por WhatsApp y no compraron: a los 30, 60 y 90 días. ` : ""}El plan completo, semana a semana, está en la <a href="/ruta">Ruta TAGO</a>.</p>
+    <p>${nC !== null ? `Aparte, <b>${num(nC)} potenciales</b> escribieron por WhatsApp y no compraron: se les hace seguimiento a los 30, 60 y 90 días. ` : ""}Quién llama a cada lista y en qué semana está en la <a href="/ruta">Ruta TAGO</a>.</p>
     ${explicable("ruta", `Las listas se arman con las mismas reglas de la Ruta TAGO, sobre los documentos de relBase que
       ya tiene el tablero (montos netos, sin las dos máquinas, un cliente por RUT). <b>En riesgo</b>: compraban
       seguido, llevan más del doble de su ritmo sin comprar, menos de 45 días, y más de $500 mil en el año.
