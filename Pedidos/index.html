@@ -1130,6 +1130,15 @@
     .chat-emojis button:hover{background:var(--surface-alt)}
     @media(max-width:700px){.chat-composer-hint{display:none}.chat-m{grid-template-columns:34px minmax(0,1fr)}.chat-m-tools{position:static;display:none;grid-column:2;margin-top:4px;width:fit-content}.chat-m.activo .chat-m-tools{display:flex}.chat-emojis{width:236px}.chat-emojis-grid{grid-template-columns:repeat(6,34px)}.chat-h-sub{white-space:normal}}
     /* ══ ESPACIOS (propuesta, copia local): menú "+", carpetas y elementos ══ */
+    .esp-modos{display:flex;flex-direction:column;gap:8px}
+    .esp-modo{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer}
+    .esp-modo:has(input:checked){border-color:var(--azul);background:var(--azul-glow)}
+    .esp-modo input{margin-top:3px;accent-color:var(--azul);width:auto}
+    .esp-modo b{font-family:'DM Sans',sans-serif;font-weight:600;font-size:13.5px;display:block}
+    .esp-modo small{font-size:12px;color:var(--text-sec);font-family:'Open Sans',sans-serif}
+    .persona-chip.fija{opacity:.7;cursor:default}
+    .sb-lock{color:rgba(255,255,255,.45);display:inline-flex;margin-left:2px}
+    .sb-lock .ic{font-size:11px}
     .sb-esp-av{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-weight:600;font-size:11px;color:#fff;line-height:1}
     .sb-plus{display:none;font-size:16px;padding:0 3px;line-height:1;color:rgba(255,255,255,.55)}
     .sb-node:hover .sb-plus{display:inline}
@@ -1565,6 +1574,27 @@
 
 <!-- PANEL «CAMPOS» DE UNA LISTA (referencia: ClickUp) -->
 <aside class="cp-panel" id="cp-panel" aria-label="Campos de la lista"></aside>
+
+<!-- MODAL ESPACIO: quién puede verlo -->
+<div class="modal-overlay" id="modal-espacio" onclick="ovc(event,'modal-espacio')">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title"><div class="modal-bar"></div><span id="esp-modal-title">Quién puede ver este espacio</span></div>
+      <button class="modal-close" onclick="cerrarConfigEspacio()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="esp-modos">
+        <label class="esp-modo"><input type="radio" name="esp-modo" value="todos" onchange="espModoCambio()"/> <span><b>Todo el equipo</b><small>Cualquier persona autorizada en la app entra a este espacio.</small></span></label>
+        <label class="esp-modo"><input type="radio" name="esp-modo" value="algunos" onchange="espModoCambio()"/> <span><b>Solo estas personas</b><small>Las demás no lo ven en la barra ni pueden abrir sus listas, documentos ni tareas.</small></span></label>
+      </div>
+      <div id="esp-miembros-bloque"><div class="chip-label">Personas con acceso</div><div class="persona-grid" id="esp-miembros-grid"></div><div class="fi-muted" style="margin-top:6px">Los administradores (José y Andreina) siempre tienen acceso.</div></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="cerrarConfigEspacio()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarConfigEspacio()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL GRUPO -->
 <div class="modal-overlay" id="modal-grupo" onclick="ovc(event,'modal-grupo')">
@@ -2912,6 +2942,73 @@ function toggleTareaAsignado(id){
   buildTareaAsignadosGrid();
 }
 function sanitizeEmailKey(email){ return String(email||"").toLowerCase().replace(/\./g,"_"); }
+// ── Privacidad por espacio: `miembros` en tago_espacios/<id>; sin miembros, lo ve todo el equipo; los admins, siempre ──
+function espacioPrivado(spId){ const e=espacios[spId]; return !!(e&&e.miembros&&Object.keys(e.miembros).length); }
+function espacioVisible(spId){
+  if(spId==="tareas")return true;
+  const e=espacios[spId]; if(!e)return false;
+  if(currentUser&&currentUser.isAdmin)return true;
+  if(!espacioPrivado(spId))return true;
+  return !!(currentUser&&e.miembros[sanitizeEmailKey(currentUser.email)]);
+}
+function puedeConfigurarEspacio(spId){ const e=espacios[spId]; return !!(currentUser&&e&&(currentUser.isAdmin||e.creadoPor===currentUser.id)); }
+var espDatosListeners={}, espDatos={listas:{},carpetas:{},elementos:{}}; // no-admins: una consulta por espacio y por colección
+function recomponerEspacioDatos(){
+  const junta=col=>{ const m={}; Object.values(espDatos[col]).forEach(x=>Object.assign(m,x)); return m; };
+  listas=junta("listas"); carpetas=junta("carpetas"); elementos=junta("elementos");
+  if(typeof syncTareasListas==="function") syncTareasListas();
+  renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); if(typeof cpRefrescar==="function") cpRefrescar();
+  if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); }
+}
+function syncEspaciosDatos(){ // se llama cada vez que cambia tago_espacios
+  if(!currentUser||currentUser.isAdmin)return;
+  const visibles=new Set(Object.keys(espacios).filter(espacioVisible)); visibles.add("tareas");
+  Object.keys(espDatosListeners).forEach(sp=>{ if(!visibles.has(sp)){ espDatosListeners[sp].forEach(({q,cb})=>{ try{ q.off("value",cb); }catch(e){} }); delete espDatosListeners[sp]; ["listas","carpetas","elementos"].forEach(col=>delete espDatos[col][sp]); } });
+  visibles.forEach(sp=>{
+    if(espDatosListeners[sp])return;
+    espDatosListeners[sp]=[["listas","tago_listas"],["carpetas","tago_carpetas"],["elementos","tago_elementos"]].map(([col,nodo])=>{
+      const q=firebase.database().ref(nodo).orderByChild("espacio").equalTo(sp);
+      const cb=snap=>{ espDatos[col][sp]=snap.val()||{}; recomponerEspacioDatos(); };
+      q.on("value",cb,err=>console.error(nodo,sp,err));
+      return {q,cb};
+    });
+  });
+  recomponerEspacioDatos();
+}
+// ── Modal «Quién puede ver este espacio» ──
+var espConfigId=null, espMiembrosSel=[];
+function abrirConfigEspacio(spId){
+  const e=espacios[spId]; if(!e||!puedeConfigurarEspacio(spId)){ toast("Solo quien creó el espacio o un administrador puede cambiar quién lo ve","error"); return; }
+  espConfigId=spId;
+  document.getElementById("esp-modal-title").textContent=`Quién puede ver «${e.nombre}»`;
+  const privado=espacioPrivado(spId);
+  document.querySelector('input[name="esp-modo"][value="'+(privado?"algunos":"todos")+'"]').checked=true;
+  const admins=EQUIPO.filter(p=>AUTORIZADOS_PEDIDOS[idToEmail(p.id)]?.isAdmin).map(p=>p.id);
+  espMiembrosSel=privado?Object.keys(e.miembros).map(k=>{ const email=Object.keys(AUTORIZADOS_PEDIDOS).find(m=>sanitizeEmailKey(m)===k); return email?AUTORIZADOS_PEDIDOS[email].id:null; }).filter(Boolean):[];
+  admins.forEach(id=>{ if(!espMiembrosSel.includes(id)) espMiembrosSel.push(id); });
+  espModoCambio(); document.getElementById("modal-espacio").classList.add("open");
+}
+function cerrarConfigEspacio(){ document.getElementById("modal-espacio").classList.remove("open"); espConfigId=null; }
+function espModoCambio(){
+  const algunos=document.querySelector('input[name="esp-modo"]:checked')?.value==="algunos";
+  document.getElementById("esp-miembros-bloque").style.display=algunos?"":"none";
+  const admins=new Set(EQUIPO.filter(p=>AUTORIZADOS_PEDIDOS[idToEmail(p.id)]?.isAdmin).map(p=>p.id));
+  document.getElementById("esp-miembros-grid").innerHTML=EQUIPO.map(p=>{ const fija=admins.has(p.id), sel=fija||espMiembrosSel.includes(p.id); return `<div class="persona-chip${sel?" selected":""}${fija?" fija":""}" title="${fija?"Administrador: siempre tiene acceso":"Clic para dar o quitar acceso"}" onclick="${fija?"":`espToggleMiembro('${p.id}')`}"><div class="chip-av ${p.avClass}">${p.id}</div>${esc(p.nombre)}</div>`; }).join("");
+}
+function espToggleMiembro(id){ espMiembrosSel=espMiembrosSel.includes(id)?espMiembrosSel.filter(x=>x!==id):[...espMiembrosSel,id]; espModoCambio(); }
+function guardarConfigEspacio(){
+  const e=espacios[espConfigId]; if(!e)return;
+  const algunos=document.querySelector('input[name="esp-modo"]:checked')?.value==="algunos";
+  let miembros=null;
+  if(algunos){
+    miembros={};
+    const admins=EQUIPO.filter(p=>AUTORIZADOS_PEDIDOS[idToEmail(p.id)]?.isAdmin).map(p=>p.id);
+    [...new Set([...espMiembrosSel,...admins])].forEach(id=>{ const email=idToEmail(id); if(email) miembros[sanitizeEmailKey(email)]=true; });
+  }
+  firebase.database().ref("tago_espacios/"+espConfigId+"/miembros").set(miembros)
+    .then(()=>{ toast(algunos?`«${e.nombre}» ahora solo lo ven ${Object.keys(miembros).length} personas`:`«${e.nombre}» lo ve todo el equipo`,"ok"); cerrarConfigEspacio(); })
+    .catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
 function idToEmail(id){ return Object.keys(AUTORIZADOS_PEDIDOS).find(email=>AUTORIZADOS_PEDIDOS[email].id===id)||null; }
 function saveTarea(){
   const nombre=gv("f-tarea-nombre").trim();
@@ -3050,11 +3147,11 @@ function initFirebaseData(){
   try{
     initChat();
     initTareas();
-    firebase.database().ref("tago_espacios").on("value",snap=>{ espacios=snap.val()||{}; renderSidebar(); actualizarTituloTareas(); },err=>console.error(err));
-    firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; if(typeof syncTareasListas==="function") syncTareasListas(); renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); cpRefrescar(); },err=>console.error(err));
+    firebase.database().ref("tago_espacios").on("value",snap=>{ espacios=snap.val()||{}; if(!currentUser.isAdmin) syncEspaciosDatos(); renderSidebar(); actualizarTituloTareas(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); },err=>console.error(err));
+    if(currentUser.isAdmin) firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; if(typeof syncTareasListas==="function") syncTareasListas(); renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); cpRefrescar(); },err=>console.error(err));
     firebase.database().ref("tago_campos").on("value",snap=>{ camposCat=snap.val()||{}; if(currentTab==="tareas")renderTareas(); cpRefrescar(); if(document.getElementById("modal-tarea")?.classList.contains("open")) aplicarCamposModal(gv("f-tarea-lista")||null); },err=>{ console.error(err); if(currentUser?.isAdmin) toast("No se pudieron cargar los campos personalizados de las listas: "+err.message,"error"); });
-    firebase.database().ref("tago_carpetas").on("value",snap=>{ carpetas=snap.val()||{}; renderSidebar(); },err=>console.error(err));
-    firebase.database().ref("tago_elementos").on("value",snap=>{ elementos=snap.val()||{}; renderSidebar(); if(currentTab==="elemento")renderElemento(); if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); } },err=>console.error(err));
+    if(currentUser.isAdmin) firebase.database().ref("tago_carpetas").on("value",snap=>{ carpetas=snap.val()||{}; renderSidebar(); },err=>console.error(err));
+    if(currentUser.isAdmin) firebase.database().ref("tago_elementos").on("value",snap=>{ elementos=snap.val()||{}; renderSidebar(); if(currentTab==="elemento")renderElemento(); if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); } },err=>console.error(err));
     dbRef=firebase.database().ref("tago_pedidos");
     dbRef.on("value",
       snap=>{ jobs=snap.val()||{}; render(); if(currentTab==="stats")renderStatsView(); renderNotifBadge(); if(notifPanelOpen)renderNotifPanel(); },
@@ -4775,7 +4872,7 @@ function tareaEnFiltro(t){
 }
 function buildListaSelect(sel){
   const el=document.getElementById("f-tarea-lista"); if(!el)return;
-  const grupos=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,nombre:e.nombre}));
+  const grupos=Object.entries(espacios).filter(([id])=>espacioVisible(id)).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,nombre:e.nombre}));
   if(Object.values(listas).some(l=>l&&l.espacio==="tareas")) grupos.unshift({id:"tareas",nombre:"Tareas"}); // listas antiguas del espacio fijo, si quedara alguna
   el.innerHTML=`<option value="">— Sin lista —</option>`+grupos.map(g=>{
     const ls=Object.entries(listas).filter(([,l])=>l.espacio===g.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
@@ -4877,7 +4974,7 @@ function renderSidebar(){
   // Espacios: Tareas y los espacios creados por el equipo (sus listas son listas de tareas)
   h+=`<div class="sb-sep"></div><div class="sb-section-title"><span>Espacios</span>${puedeEsp&&!col?`<button class="sb-add" title="Nuevo espacio" onclick="sbEditando={tipo:'espacio'};renderSidebar()">+</button>`:""}</div>`;
 
-  const spaces=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,...e}));
+  const spaces=Object.entries(espacios).filter(([id])=>espacioVisible(id)).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,...e}));
   if([listas,elementos,carpetas].some(col=>Object.values(col).some(x=>x&&x.espacio==="tareas"))) spaces.unshift({id:"tareas",nombre:"Tareas",icono:"✅",fijo:true}); // solo si quedara algo antiguo ahí
   spaces.forEach(sp=>{
     const abierto=sbAbiertos.has(sp.id)&&!col;
@@ -4894,7 +4991,7 @@ function renderSidebar(){
     const filaLista=([id,l],sub)=>{ const activo=currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&tareaFiltro.id===id; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="irATareas({tipo:'lista',id:'${id}'})"><span class="sb-ic sb-ic-sm">${ic("list")}</span><span class="sb-label">${esc(l.nombre)}</span><span class="sb-count">${nLista(id)}</span>${puedeEsp?`<button class="sb-del" title="Campos de la lista" onclick="event.stopPropagation();abrirCampos('${id}')">${ic("columns-3")}</button>`:""}${puedeEsp?delBtn("lista",id):""}${confirmar("lista",id)}</div>`; };
     const filaElem=([id,e],sub)=>{ const activo=currentTab==="elemento"&&elementoActual===id; const n=e.tipo==="formulario"?Object.values(tareas).filter(t=>t.origenFormulario===id).length:""; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="abrirElemento('${id}')"><span class="sb-ic sb-ic-sm">${ic(ELEM_TIPOS[e.tipo]?.icono||"file-text")}</span><span class="sb-label">${esc(e.nombre)}</span><span class="sb-count">${n||""}</span>${puedeEsp?delBtn("elemento",id):""}${confirmar("elemento",id)}</div>`; };
     const filaEditando=(carpeta)=>{ const ed=sbEditando; if(!ed||ed.espacio!==sp.id||(ed.carpeta||null)!==(carpeta||null)||!["lista","carpeta","elemento"].includes(ed.tipo)) return ""; const c=carpeta?`'${carpeta}'`:"null"; const ph=ed.tipo==="lista"?"Nombre de la lista":ed.tipo==="carpeta"?"Nombre de la carpeta":"Nombre del "+(ELEM_TIPOS[ed.etipo]?.nombre||"elemento").toLowerCase(); const fn=ed.tipo==="lista"?`sbCrearLista('${sp.id}',this.value,${c})`:ed.tipo==="carpeta"?`sbCrearCarpeta('${sp.id}',this.value)`:`sbCrearElemento('${sp.id}','${ed.etipo}',this.value,${c})`; return inputInline(ph,fn,"sbEditando=null;renderSidebar()",true); };
-    h+=`<div class="sb-space${activoSp||elemActivoSp?" active":""}"><div class="sb-node sb-space-head" onclick="${col?irSp:`sbToggleEspacio('${sp.id}')`}" title="${esc(sp.nombre)}"><span class="sb-caret">${abierto?"▾":"▸"}</span><span class="sb-ic">${sp.fijo?ic("square-check-big"):sbAvatarEspacio(sp)}</span><span class="sb-label">${esc(sp.nombre)}</span><span class="sb-count">${nSp}</span>${plusBtn(null)}${!sp.fijo&&puedeEsp?delBtn("espacio",sp.id):""}${confirmar("espacio",sp.id)}</div>`;
+    h+=`<div class="sb-space${activoSp||elemActivoSp?" active":""}"><div class="sb-node sb-space-head" onclick="${col?irSp:`sbToggleEspacio('${sp.id}')`}" title="${esc(sp.nombre)}"><span class="sb-caret">${abierto?"▾":"▸"}</span><span class="sb-ic">${sp.fijo?ic("square-check-big"):sbAvatarEspacio(sp)}</span><span class="sb-label">${esc(sp.nombre)}</span>${!sp.fijo&&espacioPrivado(sp.id)?`<span class="sb-lock" title="Espacio privado: solo lo ven algunas personas">${ic("key-round")}</span>`:""}<span class="sb-count">${nSp}</span>${plusBtn(null)}${!sp.fijo&&puedeConfigurarEspacio(sp.id)&&!col?`<button class="sb-del" title="Quién puede ver este espacio" onclick="event.stopPropagation();abrirConfigEspacio('${sp.id}')">${ic("settings-2")}</button>`:""}${!sp.fijo&&puedeEsp?delBtn("espacio",sp.id):""}${confirmar("espacio",sp.id)}</div>`;
     if(abierto){
       h+=`<div class="sb-node sb-list${todoActivo?" active":""}" onclick="${irSp}"><span class="sb-label">${sp.fijo?"Todas las tareas":"Todo el espacio"}</span><span class="sb-count">${nSp}</span></div>`;
       misCarpetas.forEach(([cid,c])=>{

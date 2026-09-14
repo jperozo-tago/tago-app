@@ -87,6 +87,13 @@ Firestore).
 - `tago_mail_alertas` — correos detectados como pedidos
 - `tago_permitidos` — lista de emails autorizados a entrar (control de acceso)
 - `tago_admins` — quiénes son admin (para el módulo de Tareas)
+- Privacidad por espacio (septiembre 2026): `tago_espacios/<id>/miembros =
+  {<emailKey>: true}` hace privado el espacio (solo esas personas; los admins
+  siempre). Sin `miembros`, lo ve todo el equipo. Las reglas de listas,
+  carpetas, elementos y tareas exigen a los no-admins leer por consulta
+  (`orderByChild('espacio')` / `orderByChild('lista')`) y comprueban la
+  membresía del espacio; en la app, `espacioVisible`, `syncEspaciosDatos`
+  (una consulta por espacio y colección) y el modal «Quién puede ver».
 - `tago_espacios` / `tago_listas` / `tago_carpetas` / `tago_elementos` —
   espacios de trabajo de la barra lateral (rediseño de septiembre 2026): sus
   listas de tareas, carpetas, y los documentos / paneles / pizarras /
