@@ -729,7 +729,7 @@ function escuchaRuta() {
      administradores de la base pueden leer tago_tareas entero, y son los mismos que entran al tablero. */
   const r2 = firebase.database().ref("tago_tareas");
   const cb2 = r2.on("value", x => { const m = {};
-      Object.entries(x.val() || {}).forEach(([id, t]) => { if (!t || !t.lista || !PEDC.listaSeg[t.lista] || !t.campos) return;
+      Object.entries(x.val() || {}).forEach(([id, t]) => { if (!t || t.padre || !t.lista || !PEDC.listaSeg[t.lista] || !t.campos) return;   /* las subtareas (padre) no cuentan */
         const k = t.campos[PEDC.cid.rut]; if (!k) return;
         m[k] = { k, tareaId: id, estado: PEDC.codigo[t.estado] || "por", nota: t.campos[PEDC.cid.nota] || "", cuando: t.updatedAt || "", quien: (t.updatedBy || {}).nombre || "" }; });
       RUTA.cli = m; if (seccion === "llamar" && T) T.pintaTablaRuta(); }, e => console.warn("tareas", e));
@@ -3444,9 +3444,11 @@ function guardaCliRuta(k, patch) {
   const c = RUTA.cli[k]; RUTA.cli[k] = Object.assign({}, c || { k }, patch, { cuando: now });
   const up = {};
   if (c && c.tareaId) {
-    const b = "tago_tareas/" + c.tareaId + "/";
-    if (patch.estado !== undefined) up[b + "estado"] = PEDC.est[patch.estado] || PEDC.est.por;
-    if (patch.nota !== undefined) up[b + "campos/" + PEDC.cid.nota] = patch.nota || null;
+    const b = "tago_tareas/" + c.tareaId + "/", h = "tago_tareas_historial/" + c.tareaId + "/";
+    /* queda en la Actividad de la tarea en Pedidos */
+    const hist = (campo, antes, despues) => { up[h + firebase.database().ref(h).push().key] = { autor: yo, ts: Date.now(), campo, valorAnterior: antes ?? null, valorNuevo: despues ?? null }; };
+    if (patch.estado !== undefined) { const nuevo = PEDC.est[patch.estado] || PEDC.est.por, viejo = PEDC.est[c.estado] || null; up[b + "estado"] = nuevo; if (viejo !== nuevo) hist("estado", viejo, nuevo); }
+    if (patch.nota !== undefined) { up[b + "campos/" + PEDC.cid.nota] = patch.nota || null; if ((c.nota || "") !== (patch.nota || "")) hist("Nota", c.nota || null, patch.nota || null); }
     up[b + "updatedAt"] = now; up[b + "updatedBy"] = yo;
   } else {
     const f = filaRutaDe(k); if (!f) { console.warn("cliente sin fila", k); return; }

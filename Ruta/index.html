@@ -962,7 +962,7 @@ PED.activo = true;
 function escuchaPedidos(){
   const r1=firebase.database().ref('tago_tareas_estados'); const cb1=r1.on('value', s=>{ const v=s.val()||{}; PED.estados=v; const ord=Object.entries(v).filter(([id,e])=>e&&!e.espacio).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); /* solo los estados generales: los de un espacio (Clientes) no cuentan */ PED.porHacer=ord.length?ord[0][0]:null; PED.listo=ord.length?ord[ord.length-1][0]:null; renderAll(); }, e=>console.warn('estados',e)); escuchas.push([r1,cb1]);
   const r2=firebase.database().ref('tago_tareas'); const cb2=r2.on('value', s=>{ const v=s.val()||{}; const m={}, cli={};
-    Object.entries(v).forEach(([id,t])=>{ if(!t) return; if(t.origenRuta) m[id]=t;
+    Object.entries(v).forEach(([id,t])=>{ if(!t||t.padre) return; if(t.origenRuta) m[id]=t;   /* las subtareas (padre) no cuentan */
       const k=t.lista&&PEDC.listaSeg[t.lista]&&t.campos&&t.campos[PEDC.cid.rut]; if(k) cli[k]={k, tareaId:id, estado:PEDC.codigo[t.estado]||'por', nota:(t.campos[PEDC.cid.nota]||''), cuando:t.updatedAt||'', quien:(t.updatedBy||{}).nombre||''}; });
     state.ped=m; state.cli=cli; renderAll(); }, e=>console.warn('tareas',e)); escuchas.push([r2,cb2]);
 }
@@ -1002,9 +1002,10 @@ function guardarCli(k, patch){
   state.cli[k]=Object.assign({}, c||{k}, patch, {cuando:now});
   const up={};
   if(c&&c.tareaId){
-    const b='tago_tareas/'+c.tareaId+'/';
-    if(patch.estado!==undefined) up[b+'estado']=PEDC.est[patch.estado]||PEDC.est.por;
-    if(patch.nota!==undefined) up[b+'campos/'+PEDC.cid.nota]=patch.nota||null;
+    const b='tago_tareas/'+c.tareaId+'/', h='tago_tareas_historial/'+c.tareaId+'/';
+    const hist=(campo,antes,despues)=>{ up[h+firebase.database().ref(h).push().key]={autor:yo, ts:Date.now(), campo, valorAnterior:antes??null, valorNuevo:despues??null}; };
+    if(patch.estado!==undefined){ const nuevo=PEDC.est[patch.estado]||PEDC.est.por, viejo=PEDC.est[c.estado]||null; up[b+'estado']=nuevo; if(viejo!==nuevo) hist('estado',viejo,nuevo); }
+    if(patch.nota!==undefined){ up[b+'campos/'+PEDC.cid.nota]=patch.nota||null; if((c.nota||'')!==(patch.nota||'')) hist('Nota',c.nota||null,patch.nota||null); }
     up[b+'updatedAt']=now; up[b+'updatedBy']=yo;
   } else {
     const f=filaCliente(k); if(!f){ console.warn('cliente sin fila',k); return; }
