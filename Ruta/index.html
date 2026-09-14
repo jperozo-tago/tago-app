@@ -308,6 +308,9 @@ button.pfila.on .pl{color:var(--azul);font-family:"DM Sans",sans-serif;font-weig
 .asignar .personas{display:flex;gap:8px 14px;flex-wrap:wrap;margin:10px 0}
 .asignar .personas label{display:inline-flex;align-items:center;gap:6px;font-size:14px}
 
+/* aviso de espejo o de solo lectura, bajo la cabecera */
+.avisoLectura{margin:10px 0 0;padding:10px 14px;border:1px solid var(--linea2);border-radius:12px;background:var(--papel);color:var(--tinta2);font-size:13.5px;max-width:70ch}
+
 /* hechas de la semana, plegadas al final */
 .hechasWk{margin-top:12px}
 .tt2{background:none;border:0;padding:12px 18px;width:100%;text-align:left;font-family:"DM Sans",sans-serif;font-weight:600;font-size:13.5px;color:var(--tinta2);cursor:pointer}
@@ -404,6 +407,7 @@ input:disabled,select:disabled{cursor:default;opacity:.7}
       <div class="marca"><svg class="logo" viewBox="0 0 585.18 116.62" role="img" aria-label="TAGO"><use href="#logo-tago"/></svg><span>Ruta</span><a class="volver" href="/">← Volver al panel</a></div>
       <h1>Doce semanas, una cosa a la vez.</h1>
       <div class="sub">Del 14 de septiembre al 6 de diciembre de 2026. Cada fecha importante arranca dos meses antes; Navidad, tres.</div>
+      <p class="avisoLectura" id="avisoEspejo" hidden></p>
     </div>
     <div class="pillrow">
       <span class="pill" id="pillSemana"><b>Semana 1 de 12</b></span>
@@ -705,6 +709,9 @@ const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzT
 PEDC.codigo = Object.fromEntries(Object.entries(PEDC.est).map(([c,id])=>[id,c]));
 PEDC.listaSeg = Object.fromEntries(Object.entries(PEDC.listas).map(([k,id])=>[id,k]));
 const CLI_RO = () => !PED.activo;   // sin Control de producción a mano, el seguimiento no se edita
+/* Espejo: la copia de Claude trae lo que Andreina lleva en la app de TAGO (estado_app.py). Cuando hay
+   espejo, esta copia es de solo lectura: se tacha y se asigna en la app, y aquí se ve. */
+const SNAP = null;
 const ESTADOS = [['por','Por contactar'],['cont','Contactado'],['cot','Cotizando'],['rec','Compró o volvió'],['no','Sin interés'],['ya','Ya es cliente'],['sin','Dato inválido']];
 const FIN = new Set(['rec','no','ya','sin']);
 
