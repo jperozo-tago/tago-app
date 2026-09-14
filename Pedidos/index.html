@@ -487,20 +487,55 @@
     .cp-confirm button.si{background:var(--danger-c);color:#fff;border-color:var(--danger-c)}
     .cp-nota{padding:10px 18px 0;font-size:12px;color:var(--teal-dark);display:flex;gap:6px;align-items:flex-start}
     .cp-nota .ic{margin-top:3px;flex-shrink:0}
-    /* pastillas de campos en la fila de la tarea */
-    .tarea-row-campos{display:flex;flex-wrap:wrap;gap:4px 5px;margin-top:5px}
-    .tc-pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);color:var(--text-sec);cursor:pointer;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;font-family:'DM Sans',sans-serif;font-weight:600;line-height:1.5}
-    .tc-pill b{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-    .tc-pill.vacio{color:var(--text-muted);border-style:dashed;background:transparent}
-    .tc-pill:hover{border-color:var(--text-muted)}
-    .tc-pill.retirada b{color:var(--text-muted);text-decoration:line-through}
-    .tc-pill .ic{font-size:12px}
-    .tarea-row-meta{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text-muted);white-space:nowrap;padding:2px 0}
-    .tarea-row-meta .ic{font-size:11px}
-    .tarea-row-id{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text-muted);padding:2px 0}
-    .tarea-row-nombre{min-width:0}
+    /* ══ LISTA DE TAREAS EN COLUMNAS (referencia: vista Lista de ClickUp) ══ */
+    .tarea-grupo-header{cursor:pointer;user-select:none}
+    .tt-caret{font-size:11px;color:var(--text-muted);width:12px;text-align:center}
+    .tarea-tabla-wrap{overflow-x:auto;overscroll-behavior-x:contain}
+    .tarea-tabla{min-width:max-content;width:100%}
+    .tt-row{display:grid;grid-template-columns:var(--tt-cols);align-items:center;border-bottom:1px solid var(--border-soft);min-height:42px;background:var(--surface)}
+    .tt-row:last-child{border-bottom:none}
+    .tt-row:not(.tt-head):not(.tt-add-row):hover{background:var(--surface-alt)}
+    .tt-head{min-height:34px;border-bottom:1px solid var(--border)}
+    .tt-head .tt-cell{font-family:'DM Sans',sans-serif;font-weight:600;font-size:11.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
+    .tt-cell{padding:6px 12px;font-size:13px;color:var(--text);min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden;min-height:42px;contain:inline-size} /* contain: el texto largo no ensancha su columna, así todos los grupos alinean igual */
+    .tt-head .tt-cell{min-height:34px}
+    .tt-cell.tt-nombre{position:sticky;left:0;z-index:1;background:inherit;padding-left:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;box-shadow:inset -1px 0 0 var(--border-soft)}
+    .tt-nombre-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tt-edit{cursor:pointer}
+    .tt-edit:hover{box-shadow:inset 0 0 0 1px var(--claro-2)}
+    .tt-vacio{color:var(--text-muted)}
+    .tt-fecha{font-variant-numeric:tabular-nums;font-size:12.5px;white-space:nowrap}
+    .tt-fecha.overdue{color:var(--danger-c);font-weight:600}
+    .tt-prio{font-size:12.5px;font-family:'DM Sans',sans-serif;font-weight:600;display:inline-flex;gap:5px;align-items:center;white-space:nowrap}
+    .tt-avatars{display:inline-flex}
+    .tt-avatars .avatar{margin-right:-7px}
+    .tt-avatars .avatar:last-child{margin-right:0}
+    .tt-opcion{display:inline-block;padding:3px 10px;border-radius:6px;background:var(--azul-oscuro);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+    .tt-opcion.retirada{background:var(--grey-bg);color:var(--text-muted);text-decoration:line-through}
+    .tt-check{color:var(--text-muted);font-size:17px;display:inline-flex}
+    .tt-check.on{color:var(--teal-dark)}
+    .tt-persona{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap;overflow:hidden}
+    .tt-persona .avatar{width:22px;height:22px;font-size:10px}
+    .tt-link{color:var(--azul);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tt-link:hover{text-decoration:underline}
+    .tt-num{font-variant-numeric:tabular-nums}
+    .tt-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tt-acc{justify-content:flex-end;padding-right:10px}
+    .tt-plus{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);cursor:pointer;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;padding:0}
+    .tt-plus:hover{color:var(--azul-oscuro);border-color:var(--azul-oscuro)}
+    .tt-del{display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:6px;font-family:inherit}
+    .tt-row:hover .tt-del{display:inline-block}
+    .tt-del:hover{color:var(--danger-c);background:var(--danger-bg)}
+    @media(hover:none){.tt-del{display:inline-block}}
+    .tt-add-row{min-height:38px}
+    .tt-add{color:var(--text-muted);font-weight:400;font-size:12.5px;font-family:'Open Sans',sans-serif}
+    .tt-add:hover{color:var(--teal-dark)}
+    .tt-add-input{width:100%;border:1px solid var(--azul);border-radius:8px;padding:6px 10px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;outline:none;box-shadow:0 0 0 3px var(--azul-glow);background:var(--surface)}
+    .tt-pop-personas{max-width:300px}
+    .tarea-row-id{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text-muted)}
+    @media(max-width:700px){.tt-row{grid-template-columns:var(--tt-cols-m,var(--tt-cols))}.tt-cell{padding:6px 8px}.tt-cell.tt-nombre{padding-left:12px}}
     #tarea-campos-extra{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media(max-width:700px){.cp-panel{width:100vw;border-left:none}.tarea-toolbar .btn-txt{display:none}#tarea-campos-extra{grid-template-columns:1fr}.tarea-row{flex-wrap:wrap;row-gap:6px}.tarea-row-nombre{flex-basis:100%}.tarea-row-fecha{min-width:0;text-align:left}.tarea-row .btn-danger{margin-left:auto}body.cp-abierta #btn-nuevo{display:none}}
+    @media(max-width:700px){.cp-panel{width:100vw;border-left:none}.tarea-toolbar .btn-txt{display:none}#tarea-campos-extra{grid-template-columns:1fr}body.cp-abierta #btn-nuevo{display:none}}
     .tarea-add-row{padding:8px 16px;font-size:12px;color:var(--text-muted);cursor:pointer}
     .tarea-add-row:hover{color:var(--teal-dark)}
     .tarea-color-swatch{width:20px;height:20px;border-radius:6px;cursor:pointer;flex-shrink:0}
@@ -1989,6 +2024,7 @@ function marcarSeleccionadosLeidos(){
   selectedMailIds=new Set();
 }
 function marcarMailLeido(id){ if(mailRef) mailRef.child(id).update({leido:true}); }
+function marcarMailNoLeido(id){ if(mailRef) mailRef.child(id).update({leido:false}); }
 
 // ── Notificaciones propias (asignación en pedidos) ─────────
 function crearNotificacion(destinatarioId,data){
@@ -2462,49 +2498,196 @@ function renderTareas(){
   if(!cont)return;
   if(estadosOrdenados.length===0){ cont.innerHTML=`<div class="empty">Cargando estados...</div>`; return; }
   actualizarBotonCampos();
-  // Una configuración por lista, no por fila. En «Todas las tareas» / «Todo el espacio» conviven listas
-  // distintas: ahí las columnas integradas son las de siempre y solo cambian las pastillas de cada lista.
-  const cfgs=Object.create(null), enLista=tareaFiltro.tipo==="lista", base=cpConfig(null);
-  const cfgDe=lid=>{ const k=lid||""; if(!cfgs[k]){ const c=cpConfig(listas[k]?k:null); cfgs[k]=enLista?c:{integrados:base.integrados,personalizados:c.personalizados}; } return cfgs[k]; };
+  ttCfgCache=Object.create(null);
+  // Si se estaba escribiendo el nombre de una tarea nueva, el repintado no se lo lleva
+  const escribiendo=document.getElementById("tt-add-input"), textoNuevo=escribiendo?escribiendo.value:null;
+  const cols=ttColumnas(), enLista=tareaFiltro.tipo==="lista", admin=!!(currentUser&&currentUser.isAdmin);
+  const resto=`${cols.map(c=>c.w).join(" ")} 44px`, plantilla=`minmax(220px,1.6fr) ${resto}`, plantillaM=`minmax(150px,1.2fr) ${resto}`; // en el celular el nombre cede espacio
+  const head=`<div class="tt-row tt-head"><div class="tt-cell tt-nombre">Nombre</div>${cols.map(c=>`<div class="tt-cell" title="${esc(c.t)}">${esc(c.t)}</div>`).join("")}<div class="tt-cell tt-acc">${enLista&&admin?`<button class="tt-plus" title="Agregar o quitar campos de esta lista" onclick="abrirCampos()">${ic("plus")}</button>`:""}</div></div>`;
   cont.innerHTML=estadosOrdenados.map(([estId,est])=>{
     const tareasDelEstado=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&t.estado===estId&&puedeVerTarea(t)&&tareaEnFiltro(t));
+    const abierto=!ttPlegados.has(estId);
     return`<div class="tarea-grupo">
-      <div class="tarea-grupo-header">
+      <div class="tarea-grupo-header" onclick="ttPlegar('${estId}')" title="${abierto?"Plegar":"Desplegar"}">
+        <span class="tt-caret">${abierto?"▾":"▸"}</span>
         <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${esc(est.nombre)}</span>
         <span class="tarea-grupo-count">${tareasDelEstado.length}</span>
       </div>
-      <div class="tarea-rows">
-        ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cfgDe(t.lista))).join("")}
-        <div class="tarea-add-row" onclick="openTareaModal(null,'${estId}')">+ Añadir tarea</div>
-      </div>
+      ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
+        ${head}
+        ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cols)).join("")}
+        ${ttFilaNueva(estId)}
+      </div></div>`:""}
     </div>`;
   }).join("");
+  if(textoNuevo!==null){ const inp=document.getElementById("tt-add-input"); if(inp){ inp.value=textoNuevo; inp.focus(); } }
   if(typeof fichaId!=="undefined"&&fichaId&&!fichaNuevo) renderFicha();
   if(currentTab==="elemento"&&["panel","formulario"].includes(elementos[elementoActual]?.tipo)) renderElemento();
   if(typeof renderSidebar==="function") renderSidebar();
 }
-function renderTareaRow(id,t,cfg){
-  cfg=cfg||cpConfig(t.lista||null); const I=cfg.integrados;
-  const asignadosHtml=Object.keys(t.asignados||{}).map(pid=>{
-    const p=EQUIPO.find(x=>x.id===pid); if(!p)return"";
-    return`<div class="avatar ${p.avClass}" title="${esc(p.nombre)}">${p.id}</div>`;
-  }).join("");
-  const prioColor={baja:"var(--grey-c)",normal:"var(--text-muted)",alta:"var(--amber-c)",urgente:"var(--danger-c)"}[t.prioridad]||"var(--text-muted)";
-  const prioLabel={baja:"Baja",normal:"Normal",alta:"Alta",urgente:"Urgente"}[t.prioridad]||"";
-  // Campos de la lista (pastillas editables) y propiedades integradas que la lista pide mostrar
-  const extras=cfg.personalizados.map(c=>cpPill(id,t,c));
-  if(I.fechaInicio&&t.fechaInicio) extras.push(`<span class="tarea-row-meta" title="Fecha de inicio">${ic("calendar")} inicio ${fmtDate(t.fechaInicio)}</span>`);
-  if(I.creado&&t.createdAt) extras.push(`<span class="tarea-row-meta" title="Fecha de creación">${ic("clock")} creada ${fmtDate(String(t.createdAt).slice(0,10))}</span>`);
-  if(I.creador&&t.createdBy) extras.push(`<span class="tarea-row-meta" title="Creador">${ic("user-round")} ${esc(t.createdBy.nombre||t.createdBy.id)}</span>`);
-  if(I.actualizado&&t.updatedAt) extras.push(`<span class="tarea-row-meta" title="Fecha de actualización">${ic("refresh-cw")} ${fmtDate(String(t.updatedAt).slice(0,10))}</span>`);
-  if(I.id) extras.push(`<span class="tarea-row-id" title="ID de tarea">#${esc(String(id).slice(-6))}</span>`);
-  return`<div class="tarea-row" onclick="openTareaModal('${id}')">
-    <div class="tarea-row-nombre">${esc(t.nombre)}${I.pedido&&t.pedidoId&&jobs[t.pedidoId]?`<span class="tarea-pedido-chip" title="Abrir pedido" onclick="event.stopPropagation();abrirFicha('${t.pedidoId}')">${ic("clipboard-list")} ${esc(jobs[t.pedidoId].pedido||t.pedidoId)} · ${esc(jobs[t.pedidoId].cliente)}</span>`:""}${extras.length?`<div class="tarea-row-campos">${extras.join("")}</div>`:""}</div>
-    ${I.asignados?`<div class="tarea-row-asignados">${asignadosHtml}</div>`:""}
-    ${I.fechaLimite?`<div class="tarea-row-fecha ${overdueTarea(t)?"overdue":""}">${t.fechaLimite?fmtDate(t.fechaLimite):"—"}</div>`:""}
-    ${I.prioridad?`<div class="tarea-row-prio" style="color:${prioColor}" title="${prioLabel}">${ic("flag")}</div>`:""}
-    <button class="btn btn-danger" style="padding:2px 7px;font-size:11px" onclick="event.stopPropagation();delTarea('${id}')">✕</button>
+// ── Tabla de tareas: columnas según la lista, celdas editables (referencia: vista Lista de ClickUp) ──
+var ttCfgCache=Object.create(null), ttNuevo=null;
+var ttPlegados=new Set(); try{ const v=JSON.parse(localStorage.getItem("tago_tareas_plegados")||"null"); if(Array.isArray(v)) ttPlegados=new Set(v); }catch(e){}
+const PRIO={baja:{label:"Baja",color:"var(--grey-c)"},normal:{label:"Normal",color:"var(--text-muted)"},alta:{label:"Alta",color:"var(--amber-c)"},urgente:{label:"Urgente",color:"var(--danger-c)"}};
+const TT_INT={ // columnas integradas: título y ancho
+  asignados:{t:"Persona asignada",w:"136px"},fechaLimite:{t:"Fecha límite",w:"110px"},prioridad:{t:"Prioridad",w:"108px"},pedido:{t:"Pedido",w:"minmax(170px,1fr)"},
+  fechaInicio:{t:"Fecha de inicio",w:"118px"},creado:{t:"Fecha de creación",w:"128px"},creador:{t:"Creador",w:"118px"},actualizado:{t:"Fecha de actualización",w:"148px"},id:{t:"ID de tarea",w:"96px"},
+};
+const TT_ORDEN=["asignados","fechaLimite","prioridad","pedido","fechaInicio","creado","creador","actualizado","id"];
+function ttCfg(lid){ const k=lid||""; if(!ttCfgCache[k]) ttCfgCache[k]=cpConfig(listas[k]?k:null); return ttCfgCache[k]; }
+function ttAnchoCampo(c){ return c.tipo==="casilla"?"96px":(c.tipo==="parrafo"||c.tipo==="texto"||c.tipo==="url")?"minmax(170px,1.3fr)":(c.tipo==="dinero"||c.tipo==="numero"||c.tipo==="fecha"||c.tipo==="sino")?"116px":"minmax(130px,1fr)"; }
+function ttColumnas(){ // columnas de la vista: las de la lista; en «Todas» / «Todo el espacio», las de siempre + la unión de los campos de las listas presentes
+  const cols=[], enLista=tareaFiltro.tipo==="lista";
+  const cfg=enLista?ttCfg(tareaFiltro.id):cpConfig(null);
+  TT_ORDEN.filter(k=>cfg.integrados[k]).forEach(k=>cols.push({k,tipo:"int",t:TT_INT[k].t,w:TT_INT[k].w}));
+  const vistos=new Set();
+  const agregar=c=>{ if(vistos.has(c.cid))return; vistos.add(c.cid); cols.push({k:"c:"+c.cid,tipo:"campo",cid:c.cid,c,t:c.etiqueta,w:ttAnchoCampo(c)}); };
+  if(enLista) cfg.personalizados.forEach(agregar);
+  else Object.values(tareas).filter(t=>t.lista&&listas[t.lista]&&puedeVerTarea(t)&&tareaEnFiltro(t)).forEach(t=>ttCfg(t.lista).personalizados.forEach(agregar));
+  return cols;
+}
+function ttEditable(t,col){
+  if(col.tipo==="int") return ["asignados","fechaLimite","fechaInicio","prioridad","pedido"].includes(col.k);
+  return !!t.lista&&ttCfg(t.lista).personalizados.some(c=>c.cid===col.cid);
+}
+function ttValor(id,t,col){ // cómo se ve cada celda
+  const vacio=`<span class="tt-vacio">—</span>`;
+  if(col.tipo==="campo"){
+    const c=col.c, v=t.campos?t.campos[c.cid]:undefined;
+    if(!ttEditable(t,col)) return vacio;
+    if(c.tipo==="casilla") return `<span class="tt-check${v?" on":""}">${ic(v?"square-check-big":"square")}</span>`;
+    const txt=cpValorTexto(c,v); if(!txt) return vacio;
+    if(c.tipo==="opcion"){ const ret=!cpOpciones(c).includes(String(v)); return `<span class="tt-opcion${ret?" retirada":""}" title="${ret?"opción retirada de la lista":esc(txt)}">${esc(txt)}</span>`; }
+    if(c.tipo==="persona"){ const p=EQUIPO.find(x=>x.id===v); return p?`<span class="tt-persona"><span class="avatar ${p.avClass}">${p.id}</span>${esc(p.nombre)}</span>`:`<span class="tt-txt">${esc(txt)}</span>`; }
+    if(c.tipo==="url") return `<a class="tt-link" href="${esc(v)}" target="_blank" rel="noopener" title="${esc(v)}" onclick="event.stopPropagation()">${esc(txt)}</a>`;
+    if(c.tipo==="dinero"||c.tipo==="numero") return `<span class="tt-num">${esc(txt)}</span>`;
+    return `<span class="tt-txt" title="${esc(String(v))}">${esc(txt)}</span>`;
+  }
+  switch(col.k){
+    case "asignados": { const ids=Object.keys(t.asignados||{}); if(!ids.length) return `<span class="tt-vacio">${ic("user")}</span>`; return `<span class="tt-avatars">${ids.map(pid=>{ const p=EQUIPO.find(x=>x.id===pid); return p?`<span class="avatar ${p.avClass}" title="${esc(p.nombre)}">${p.id}</span>`:""; }).join("")}</span>`; }
+    case "fechaLimite": return t.fechaLimite?`<span class="tt-fecha${overdueTarea(t)?" overdue":""}">${fmtDate(t.fechaLimite)}</span>`:vacio;
+    case "fechaInicio": return t.fechaInicio?`<span class="tt-fecha">${fmtDate(t.fechaInicio)}</span>`:vacio;
+    case "prioridad": { const p=PRIO[t.prioridad]||PRIO.normal; return `<span class="tt-prio" style="color:${p.color}">${ic("flag")} ${p.label}</span>`; }
+    case "pedido": return t.pedidoId&&jobs[t.pedidoId]?`<span class="tarea-pedido-chip" style="margin-left:0" title="Abrir pedido" onclick="event.stopPropagation();abrirFicha('${t.pedidoId}')">${ic("clipboard-list")} ${esc(jobs[t.pedidoId].pedido||t.pedidoId)} · ${esc(jobs[t.pedidoId].cliente)}</span>`:vacio;
+    case "creado": return t.createdAt?`<span class="tt-fecha">${fmtDate(String(t.createdAt).slice(0,10))}</span>`:vacio;
+    case "creador": return t.createdBy?`<span class="tt-txt">${esc(t.createdBy.nombre||t.createdBy.id)}</span>`:vacio;
+    case "actualizado": return t.updatedAt?`<span class="tt-fecha">${fmtDate(String(t.updatedAt).slice(0,10))}</span>`:vacio;
+    case "id": return `<span class="tarea-row-id">#${esc(String(id).slice(-6))}</span>`;
+  }
+  return "";
+}
+function renderTareaRow(id,t,cols){
+  cols=cols||ttColumnas();
+  const celdas=cols.map(col=>{ const ed=ttEditable(t,col); return `<div class="tt-cell${ed?" tt-edit":""}"${ed?` onclick="ttEditar(event,'${id}','${col.k}')" title="Clic para editar"`:""}>${ttValor(id,t,col)}</div>`; }).join("");
+  return`<div class="tt-row" data-id="${id}">
+    <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
+    ${celdas}
+    <div class="tt-cell tt-acc"><button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button></div>
   </div>`;
+}
+function ttPlegar(estId){ ttPlegados.has(estId)?ttPlegados.delete(estId):ttPlegados.add(estId); try{ localStorage.setItem("tago_tareas_plegados",JSON.stringify([...ttPlegados])); }catch(e){} renderTareas(); }
+// Agregar tarea al pie del grupo: basta el nombre; si la lista tiene campos obligatorios, o no se está en una lista, se abre la ficha completa
+function ttFilaNueva(estId){
+  if(ttNuevo===estId) return `<div class="tt-row tt-add-row"><div class="tt-cell tt-nombre"><input id="tt-add-input" class="tt-add-input" placeholder="Nombre de la tarea · Enter crea · Esc cancela" onkeydown="ttNuevaTecla(event,'${estId}')" onblur="ttNuevaBlur('${estId}')"/></div></div>`;
+  return `<div class="tt-row tt-add-row"><div class="tt-cell tt-nombre tt-add" onclick="ttAgregar('${estId}')">${ic("plus")} Agregar tarea</div></div>`;
+}
+function ttAgregar(estId){
+  const enLista=tareaFiltro.tipo==="lista";
+  if(tareaFiltro.tipo==="espacio"||(enLista&&ttCfg(tareaFiltro.id).personalizados.some(c=>c.requerido))){ openTareaModal(null,estId); return; }
+  ttNuevo=estId; renderTareas();
+  setTimeout(()=>document.getElementById("tt-add-input")?.focus(),30);
+}
+function ttNuevaTecla(ev,estId){
+  if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value; ev.target.value=""; ttCrear(estId,v); }
+  if(ev.key==="Escape"){ ev.preventDefault(); ev.target.value=""; ttNuevo=null; renderTareas(); }
+}
+function ttNuevaBlur(estId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(v.trim()) ttCrear(estId,v); ttNuevo=null; setTimeout(renderTareas,0); }
+function ttCrear(estId,nombre){
+  nombre=(nombre||"").trim(); if(!nombre)return;
+  const now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre};
+  const data={nombre,notas:"",estado:estId,prioridad:"normal",lista:tareaFiltro.tipo==="lista"?tareaFiltro.id:null,pedidoId:null,fechaLimite:"",asignados:{},asignadosEmails:{},createdAt:now,createdBy:quien,creadoPorEmail:currentUser.email,updatedAt:now,updatedBy:quien};
+  const newId=tareasRef.push().key, updates={};
+  updates["tago_tareas/"+newId]=data; updates["tago_tareas_visibilidad/"+sanitizeEmailKey(currentUser.email)+"/"+newId]=true;
+  firebase.database().ref().update(updates).then(()=>toast("Tarea creada ✓","ok")).catch(err=>toast("No se pudo crear: "+err.message,"error"));
+}
+// Edición en la celda de las propiedades integradas (los campos personalizados usan cpEditarEnFila)
+function ttMenu(ops,actual){ return `<div class="celda-menu" role="listbox">${ops.map(o=>`<div class="celda-opcion${String(o.v)===String(actual??"")?" actual":""}" role="option" tabindex="0" data-v="${esc(o.v)}">${o.dot?`<span class="celda-dot" style="background:${o.dot}"></span>`:""}${o.av?`<span class="avatar ${o.av}" style="width:20px;height:20px;font-size:9px">${esc(o.v)}</span>`:""}${esc(o.l)}</div>`).join("")}</div>`; }
+function ttAbrirPop(cel,id,campo){
+  cerrarCeldaPop();
+  const r=cel.getBoundingClientRect();
+  const pop=document.createElement("div"); pop.className="celda-popover"; pop._id=id; pop._campo=campo;
+  document.body.appendChild(pop);
+  pop._colocar=()=>{ const ancho=pop.offsetWidth; pop.style.top=(r.bottom+window.scrollY+6)+"px"; pop.style.left=Math.max(8,Math.min(r.left+window.scrollX,window.scrollX+document.documentElement.clientWidth-ancho-12))+"px"; };
+  celdaPop=pop;
+  return pop;
+}
+function ttEnlazarMenu(pop,guardar){
+  const ops=[...pop.querySelectorAll(".celda-opcion")];
+  ops.forEach((o,i)=>{
+    o.addEventListener("click",()=>guardar(o.dataset.v));
+    o.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); guardar(o.dataset.v); } if(e.key==="ArrowDown"){ e.preventDefault(); (ops[i+1]||ops[0]).focus(); } if(e.key==="ArrowUp"){ e.preventDefault(); (ops[i-1]||ops[ops.length-1]).focus(); } });
+  });
+  (pop.querySelector(".celda-opcion.actual")||ops[0])?.focus();
+}
+function ttEditar(ev,id,k){
+  ev.stopPropagation(); ev.preventDefault();
+  const t=tareas[id]; if(!t)return;
+  if(k.startsWith("c:")) return cpEditarEnFila(ev,id,k.slice(2));
+  if(celdaPop&&celdaPop._id===id&&celdaPop._campo===k){ cerrarCeldaPop(); return; }
+  const pop=ttAbrirPop(ev.currentTarget,id,k);
+  const guardar=v=>{ tareaGuardarCampo(id,k,v); cerrarCeldaPop(); };
+  pop._guardar=guardar;
+  const label=TT_INT[k]?TT_INT[k].t:k;
+  if(k==="asignados"){
+    pop._guardar=null; pop.classList.add("tt-pop-personas");
+    const pintar=()=>{ const sel=new Set(Object.keys((tareas[id]||{}).asignados||{})); pop.innerHTML=`<div class="celda-pop-label">${label}</div><div class="persona-grid">${EQUIPO.map(p=>`<div class="persona-chip${sel.has(p.id)?" selected":""}" data-pid="${p.id}"><div class="chip-av ${p.avClass}">${p.id}</div>${esc(p.nombre)}</div>`).join("")}</div><div class="celda-pop-hint">Un clic asigna o quita · Esc cierra</div>`;
+      pop.querySelectorAll(".persona-chip").forEach(ch=>ch.addEventListener("click",()=>{ const s=new Set(Object.keys((tareas[id]||{}).asignados||{})); s.has(ch.dataset.pid)?s.delete(ch.dataset.pid):s.add(ch.dataset.pid); tareaGuardarAsignados(id,[...s]).then(pintar); })); };
+    pintar(); pop._colocar(); return;
+  }
+  if(k==="prioridad"){
+    pop.innerHTML=`<div class="celda-pop-label">${label}</div>${ttMenu(Object.entries(PRIO).map(([v,p])=>({v,l:p.label,dot:p.color})),t.prioridad||"normal")}<div class="celda-pop-hint">Un clic elige · Esc cancela</div>`;
+    pop._colocar(); ttEnlazarMenu(pop,guardar); return;
+  }
+  let ctl="", hint="Enter guarda · Esc cancela";
+  if(k==="fechaLimite"||k==="fechaInicio"){ ctl=`<input class="celda-input" type="date" value="${esc(t[k]||"")}"/>`; hint="Se guarda al elegir · vacío quita la fecha"; }
+  else if(k==="pedido"){ buildPedidosDatalist(); ctl=`<input class="celda-input" type="text" list="pedidos-list" value="${esc(etiquetaPedidoTarea(t.pedidoId))}" placeholder="# pedido o cliente" autocomplete="off"/>`; hint="Enter guarda · vacío quita el enlace · Esc cancela"; }
+  else { cerrarCeldaPop(); return; }
+  pop.innerHTML=`<div class="celda-pop-label">${label}</div>${ctl}<div class="celda-pop-hint">${hint}</div>`;
+  pop._colocar();
+  const inp=pop.querySelector("input");
+  inp.addEventListener("input",()=>{ inp.dataset.dirty="1"; if(inp.type==="date") guardar(inp.value); });
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); guardar(inp.value); } });
+  inp.focus(); if(inp.select&&inp.type!=="date") try{ inp.select(); }catch(e){}
+}
+function pedidoDesdeTexto(v){ // id del pedido a partir de lo escrito; null = vacío, false = no se encontró
+  v=(v||"").trim(); if(!v)return null;
+  const m=v.match(/TG-\d{4}/); if(m&&jobs[m[0]]) return m[0];
+  const q=v.toLowerCase();
+  const hit=Object.entries(jobs).find(([,j])=>(j.pedido||"").toLowerCase()===q||(j.cliente||"").toLowerCase()===q);
+  return hit?hit[0]:false;
+}
+function tareaGuardarCampo(id,k,v){
+  const t=tareas[id]; if(!t)return;
+  const base="tago_tareas/"+id+"/", updates={};
+  if(k==="prioridad") updates[base+"prioridad"]=PRIO[v]?v:"normal";
+  else if(k==="fechaLimite") updates[base+"fechaLimite"]=v||"";
+  else if(k==="fechaInicio") updates[base+"fechaInicio"]=v||null;
+  else if(k==="pedido"){ const pid=pedidoDesdeTexto(v); if(pid===false){ toast("No encontré ese pedido","error"); return; } updates[base+"pedidoId"]=pid; }
+  else return;
+  updates[base+"updatedAt"]=new Date().toISOString(); updates[base+"updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
+  firebase.database().ref().update(updates).then(()=>toast("Guardado","ok")).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function tareaGuardarAsignados(id,ids){ // misma lógica que saveTarea: asignados, correos y el índice de visibilidad
+  const old=tareas[id]||{}, asignados={}, asignadosEmails={};
+  ids.forEach(pid=>{ asignados[pid]=true; const email=idToEmail(pid); if(email) asignadosEmails[sanitizeEmailKey(email)]=true; });
+  const creadorKey=old.creadoPorEmail?sanitizeEmailKey(old.creadoPorEmail):sanitizeEmailKey(currentUser.email);
+  const oldVis=new Set([creadorKey,...Object.keys(old.asignadosEmails||{})]), newVis=new Set([creadorKey,...Object.keys(asignadosEmails)]);
+  const base="tago_tareas/"+id+"/", updates={};
+  updates[base+"asignados"]=asignados; updates[base+"asignadosEmails"]=asignadosEmails;
+  updates[base+"updatedAt"]=new Date().toISOString(); updates[base+"updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
+  newVis.forEach(ek=>{ if(!oldVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+id]=true; });
+  oldVis.forEach(ek=>{ if(!newVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+id]=null; });
+  return firebase.database().ref().update(updates).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
 }
 function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado=null){
   editTareaId=id;
@@ -3438,13 +3621,9 @@ function buildPedidosDatalist(){
   dl.innerHTML=Object.entries(jobs).sort(abiertosPrimero).map(([id,j])=>`<option value="${esc(etiquetaPedidoTarea(id))}">${esc(ST[j.estado]?.label||"")}</option>`).join("");
 }
 function pedidoDesdeInputTarea(){
-  const v=(gv("f-tarea-pedido")||"").trim(); if(!v)return null;
-  const m=v.match(/TG-\d{4}/); if(m&&jobs[m[0]]) return m[0];
-  const q=v.toLowerCase();
-  const hit=Object.entries(jobs).find(([,j])=>(j.pedido||"").toLowerCase()===q||(j.cliente||"").toLowerCase()===q);
-  if(hit) return hit[0];
-  toast("No encontré ese pedido: la tarea se guardó sin enlace","error");
-  return null;
+  const r=pedidoDesdeTexto(gv("f-tarea-pedido"));
+  if(r===false){ toast("No encontré ese pedido: la tarea se guardó sin enlace","error"); return null; }
+  return r;
 }
 
 // ══ CHAT REDISEÑADO (propuesta, copia local) ══
@@ -3791,7 +3970,7 @@ function bandejaNotif({id,n,leido}){
     <div class="bj-titulo">${esc(j?.cliente||n.cliente||n.pedidoId)}${j?.pedido?`<span class="bj-ref">${esc(j.pedido)}</span>`:""}${!leido?`<span class="bj-nuevo">Nuevo</span>`:""}</div>
     <div class="bj-desc">${desc}</div>
     <div class="bj-meta">${timeAgo(new Date(n.ts).toISOString())}</div></div>
-    <div class="bj-acciones"><button class="btn btn-edit" onclick="abrirNotificacion('${id}','${n.pedidoId}')">Abrir pedido</button>${!leido?`<button class="btn btn-secondary" onclick="if(notifRef)notifRef.child('${id}').update({leido:true})">✓ Leído</button>`:""}</div></div>`;
+    <div class="bj-acciones"><button class="btn btn-edit" onclick="abrirNotificacion('${id}','${n.pedidoId}')">Abrir pedido</button>${!leido?`<button class="btn btn-secondary" onclick="if(notifRef)notifRef.child('${id}').update({leido:true})">✓ Leído</button>`:`<button class="btn btn-secondary" title="Vuelve a la bandeja como pendiente" onclick="if(notifRef)notifRef.child('${id}').update({leido:false})">Marcar como no leído</button>`}</div></div>`;
 }
 function bandejaCorreo({id,m,leido}){
   const esPedido=m.esPedido!==false;
@@ -3803,7 +3982,7 @@ function bandejaCorreo({id,m,leido}){
     ${m.monto?`<div class="bj-meta">${ic("banknote")} ${esc(m.monto)}</div>`:""}
     ${m.origen?`<div class="bj-meta">origen: ${esc(m.origen)}</div>`:""}
     <div class="bj-meta">${m.ts?timeAgo(new Date(m.ts).toISOString()):""}${m.cliente&&m.remitente?` · ${esc(m.remitente)}`:""}</div></div>
-    <div class="bj-acciones">${!leido?`<button class="btn btn-teal" onclick="marcarMailLeido('${id}')">✓ Leído</button>`:""}</div></div>`;
+    <div class="bj-acciones">${!leido?`<button class="btn btn-teal" onclick="marcarMailLeido('${id}')">✓ Leído</button>`:`<button class="btn btn-secondary" title="Vuelve a la bandeja como pendiente" onclick="marcarMailNoLeido('${id}')">Marcar como no leído</button>`}</div></div>`;
 }
 function bandejaMarcarTodo(){
   const lista=bandejaItems().filter(i=>!i.leido&&(bandejaFiltro==="todo"||i.tipo===bandejaFiltro));
@@ -4096,38 +4275,31 @@ function cpGuardarValor(id,cid,v){ // un valor de una tarea, escrito solo en su 
   const updates={}; updates["tago_tareas/"+id+"/campos/"+cid]=val; updates["tago_tareas/"+id+"/updatedAt"]=new Date().toISOString(); updates["tago_tareas/"+id+"/updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
   firebase.database().ref().update(updates).then(()=>toast("Guardado","ok")).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
 }
-function cpPill(id,t,c){ // pastilla del campo en la fila: un clic la edita ahí mismo
-  const v=t.campos?t.campos[c.cid]:undefined, txt=cpValorTexto(c,v);
-  if(c.tipo==="casilla") return `<span class="tc-pill${v?"":" vacio"}" title="${esc(c.etiqueta)}: clic para ${v?"desmarcar":"marcar"}" onclick="event.stopPropagation();cpGuardarValor('${id}','${c.cid}',${v?"null":"true"})">${ic(v?"square-check-big":"square")} ${esc(c.etiqueta)}</span>`;
-  const retirada=c.tipo==="opcion"&&txt&&!cpOpciones(c).includes(String(v));
-  return `<span class="tc-pill${txt?"":" vacio"}${retirada?" retirada":""}" title="${esc(c.etiqueta)}${retirada?" · opción retirada de la lista":""}${c.tipo==="url"&&v?" · "+esc(v):""}" onclick="cpEditarEnFila(event,'${id}','${c.cid}')">${esc(c.etiqueta)}${txt?`: <b>${esc(txt)}</b>`:""}</span>`;
-}
-function cpEditarEnFila(ev,id,cid){ // reutiliza el popover de edición en la celda de Pedidos
+function cpEditarEnFila(ev,id,cid){ // edición de un campo personalizado en la celda (popover de Pedidos)
   ev.stopPropagation(); ev.preventDefault();
   const t=tareas[id], c=camposCat[cid]; if(!t||!c)return;
   if(celdaPop&&celdaPop._id===id&&celdaPop._campo===cid){ cerrarCeldaPop(); return; }
-  cerrarCeldaPop();
-  const cel=ev.currentTarget, r=cel.getBoundingClientRect();
-  const pop=document.createElement("div"); pop.className="celda-popover"; pop._id=id; pop._campo=cid;
+  const actual=t.campos?t.campos[cid]:"";
+  if(c.tipo==="casilla"){ cerrarCeldaPop(); cpGuardarValor(id,cid,actual?null:true); return; }
+  const pop=ttAbrirPop(ev.currentTarget,id,cid);
   const guardar=v=>{ cpGuardarValor(id,cid,v); cerrarCeldaPop(); };
   pop._guardar=guardar;
-  const actual=t.campos?t.campos[cid]:"";
+  if(["opcion","sino","persona"].includes(c.tipo)){ // se elige de una lista abierta, como en ClickUp
+    let ops=[{v:"",l:"— Sin valor —"}];
+    if(c.tipo==="opcion"){ const lista=cpOpciones(c); ops=ops.concat(lista.map(o=>({v:o,l:o}))); if(actual&&!lista.includes(String(actual))) ops.push({v:actual,l:actual+" (opción retirada)"}); }
+    else if(c.tipo==="sino") ops=ops.concat([{v:"Sí",l:"Sí"},{v:"No",l:"No"}]);
+    else ops=ops.concat(EQUIPO.map(p=>({v:p.id,l:p.nombre,av:p.avClass})));
+    pop.innerHTML=`<div class="celda-pop-label">${esc(c.etiqueta)}</div>${ttMenu(ops,actual)}<div class="celda-pop-hint">Un clic elige · Esc cancela</div>`;
+    pop._colocar(); ttEnlazarMenu(pop,guardar); return;
+  }
   let hint="Enter guarda · Esc cancela";
-  if(["opcion","sino","persona"].includes(c.tipo)) hint="Se guarda al elegir · Esc cancela";
   if(c.tipo==="fecha") hint="Se guarda al elegir · vacío quita la fecha";
   if(c.tipo==="parrafo") hint="Enter guarda · Shift+Enter salto de línea · Esc cancela";
   pop.innerHTML=`<div class="celda-pop-label">${esc(c.etiqueta)}</div>${cpControl("cpf-"+cid,c,actual,{clase:"celda-input"})}<div class="celda-pop-hint">${hint}</div>`;
-  document.body.appendChild(pop);
-  const ancho=pop.offsetWidth;
-  pop.style.top=(r.bottom+window.scrollY+6)+"px";
-  pop.style.left=Math.max(8,Math.min(r.left+window.scrollX,window.scrollX+document.documentElement.clientWidth-ancho-12))+"px";
-  celdaPop=pop;
-  const el=pop.querySelector("input,select,textarea"); if(!el)return;
-  if(el.tagName==="SELECT") el.addEventListener("change",()=>guardar(cpLeerControl(el,c)));
-  else{
-    el.addEventListener("input",()=>{ el.dataset.dirty="1"; if(el.type==="date") guardar(cpLeerControl(el,c)); });
-    el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!(c.tipo==="parrafo"&&e.shiftKey)){ e.preventDefault(); guardar(cpLeerControl(el,c)); } });
-  }
+  pop._colocar();
+  const el=pop.querySelector("input,textarea"); if(!el)return;
+  el.addEventListener("input",()=>{ el.dataset.dirty="1"; if(el.type==="date") guardar(cpLeerControl(el,c)); });
+  el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!(c.tipo==="parrafo"&&e.shiftKey)){ e.preventDefault(); guardar(cpLeerControl(el,c)); } });
   el.focus(); if(el.select) try{ el.select(); }catch(e){}
 }
 // ── Modal de tarea: bloques integrados que la lista oculta + campos personalizados ──

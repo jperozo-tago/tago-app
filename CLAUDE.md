@@ -99,7 +99,12 @@ Firestore).
   valores se escriben clave por clave, nunca se reemplaza el objeto entero.
   Solo admins configuran (regla de `tago_campos` y de `tago_listas`); el
   equipo rellena los valores de sus tareas. En el JS: `CP_TIPOS`,
-  `CP_PROPIEDADES`, `cpConfig(listaId)`, panel `abrirCampos`.
+  `CP_PROPIEDADES`, `cpConfig(listaId)`, panel `abrirCampos`. La vista de
+  Tareas es una tabla por estado (`renderTareas`/`renderTareaRow`, funciones
+  `tt*`): una columna por propiedad y por campo, celdas editables con el
+  popover `celdaPop`, «+ Agregar tarea» al pie crea con solo el nombre (si la
+  lista tiene campos obligatorios, abre el modal) y los grupos se pliegan
+  (`localStorage` `tago_tareas_plegados`).
 
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de
