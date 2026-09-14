@@ -308,6 +308,12 @@ button.pfila.on .pl{color:var(--azul);font-family:"DM Sans",sans-serif;font-weig
 .asignar .personas{display:flex;gap:8px 14px;flex-wrap:wrap;margin:10px 0}
 .asignar .personas label{display:inline-flex;align-items:center;gap:6px;font-size:14px}
 
+/* hechas de la semana, plegadas al final */
+.hechasWk{margin-top:12px}
+.tt2{background:none;border:0;padding:12px 18px;width:100%;text-align:left;font-family:"DM Sans",sans-serif;font-weight:600;font-size:13.5px;color:var(--tinta2);cursor:pointer}
+.tt2:hover{color:var(--azul)}
+.hechasWk .tasks{border-top:1px solid var(--linea)}
+
 /* dueños y delegación */
 .own{display:inline-flex;align-items:center;gap:5px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:11.5px;padding:2px 9px;border-radius:var(--pill);background:var(--papel3);color:var(--tinta2);white-space:nowrap}
 .own i{width:7px;height:7px;border-radius:50%;background:var(--c,var(--gris));display:inline-block}
@@ -437,6 +443,7 @@ input:disabled,select:disabled{cursor:default;opacity:.7}
         <div class="card"><ul class="tasks" id="wkTasks"></ul></div>
         <div class="progress" style="margin-top:12px"><i id="wkBar" style="width:0%"></i></div>
         <div class="small faint" style="margin-top:6px" id="wkProg"></div>
+        <div class="card hechasWk" id="wkHechasBox" hidden><button class="tt2" id="wkHechasBtn" data-toghechas="1"></button><ul class="tasks" id="wkHechas" hidden></ul></div>
       </div>
       <aside>
         <div class="card pad routine">
@@ -702,7 +709,7 @@ const ESTADOS = [['por','Por contactar'],['cont','Contactado'],['cot','Cotizando
 const FIN = new Set(['rec','no','ya','sin']);
 
 // ---------- state ----------
-const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R', enlaces:{}, ped:{}, pan:null, detAsignar:false};
+const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R', enlaces:{}, ped:{}, pan:null, detAsignar:false, verHechas:false};
 let soloLectura=false; const RO=()=>soloLectura?' disabled':'';   // quien solo puede mirar no ve controles activos
 let db=null, tareasListo=false, guardando=false;
 const LS='rutaTago';
@@ -744,7 +751,11 @@ function renderSemana(){
   $('#wkTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
   $('#wkHitos').innerHTML=hitosHtml(w);
   $('#wkPrev').disabled=state.week===0; $('#wkNext').disabled=state.week===WEEKS.length-1;
-  $('#wkTasks').innerHTML=w.tareas.map(t=>taskLi(t,false)).join('');
+  const pend=w.tareas.filter(t=>!estaHecha(t.id)), hech=w.tareas.filter(t=>estaHecha(t.id));
+  $('#wkTasks').innerHTML=pend.map(t=>taskLi(t,false)).join('')||`<li class="task"><div class="pvacio">Todo lo de esta semana está tachado. Las hechas quedan abajo, y en el Panel.</div></li>`;
+  $('#wkHechasBox').hidden=!hech.length;
+  $('#wkHechasBtn').textContent=`${state.verHechas?'Ocultar':'Ver'} ${hech.length===1?'la tarea hecha':`las ${hech.length} tareas hechas`} de esta semana`;
+  $('#wkHechas').hidden=!state.verHechas; $('#wkHechas').innerHTML=hech.map(t=>taskLi(t,false)).join('');
   const h=hechas(w.tareas); $('#wkBar').style.width=(w.tareas.length?100*h/w.tareas.length:0)+'%';
   $('#wkProg').textContent=`${h} de ${w.tareas.length} hechas esta semana`;
 }
@@ -810,14 +821,15 @@ function renderCalendario(){
   $('#weeks').innerHTML=WEEKS.map((w,i)=>{ const fin=d(w.fin); const cls= i===state.week?'now':(fin<HOY?'past':''); return `<div class="week ${cls}">
     <div><div class="wn dm num">${i+1}</div><div class="wd">${esc(rangoTxt(w))}</div></div>
     <div>${w.hitos.length?`<div class="hitos">${hitosHtml(w)}</div>`:''}
-    <ul class="wtasks">${w.tareas.map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
+    <ul class="wtasks">${[...w.tareas].sort((a,b)=>estaHecha(a.id)-estaHecha(b.id)).map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
 }
 function renderEquipo(){
   const w=WEEKS[state.week];
   $('#eqTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
   $('#eqPrev').disabled=state.week===0; $('#eqNext').disabled=state.week===WEEKS.length-1;
-  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=w.tareas.filter(t=>t.q===q); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
-  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=w.tareas.filter(t=>t.o===k||t.con===k); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${estaHecha(t.id)?'ok':''}"><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
+  const alFinal=L=>[...L].sort((a,b)=>estaHecha(a.id)-estaHecha(b.id));
+  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=alFinal(w.tareas.filter(t=>t.q===q)); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
+  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=alFinal(w.tareas.filter(t=>t.o===k||t.con===k)); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${estaHecha(t.id)?'ok':''}"><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
 }
 function keyOf(x){ return x.rut || x.ghlId; }
 function estadoDe(x){ return (state.cli[keyOf(x)]||{}).estado||'por'; }
@@ -1038,6 +1050,7 @@ document.addEventListener('click', e=>{
   else if(b.dataset.crear){ const ids=[...document.querySelectorAll('#det input[data-per]:checked')].map(x=>x.dataset.per); if(!ids.length){ alert('Elige al menos una persona.'); return; } asignarEnPedidos(b.dataset.crear,ids); }
   else if(b.dataset.nocrear){ state.detAsignar=false; fillDet(detId); }
   else if(b.dataset.pancerrar){ state.pan=null; renderPanel(); }
+  else if(b.dataset.toghechas){ state.verHechas=!state.verHechas; renderSemana(); }
   else if(b.dataset.pan){ const p=b.dataset.pan; const wHoy=semanaHoy();
     if(p==='semana'){ state.week=wHoy; showView('semana'); renderSemana(); renderEquipo(); renderHeader(); }
     else if(p==='arranque'){ showView('calendario'); }
