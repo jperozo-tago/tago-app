@@ -3790,10 +3790,18 @@ function moverEstado(id,nuevoEstado){
   if(idx>=1&&!j.enviadoProdAt){ upd.enviadoProdAt=now; upd.enviadoProdBy={id:currentUser.id,nombre:currentUser.nombre}; }
   if(idx>=2&&!j.impresionAt){ upd.impresionAt=now; upd.impresionBy={id:currentUser.id,nombre:currentUser.nombre}; }
   if(idx>=3&&!j.listaAt){ upd.listaAt=now; upd.listaBy={id:currentUser.id,nombre:currentUser.nombre}; }
+  // Retroceder: las etapas que se dejan atrás pierden su hito (al volver a avanzar se toma la fecha nueva)
+  const atras=idx<ORDEN_ESTADOS.indexOf(j.estado);
+  if(atras){
+    if(idx<1){ upd.enviadoProdAt=null; upd.enviadoProdBy=null; }
+    if(idx<2){ upd.impresionAt=null; upd.impresionBy=null; }
+    if(idx<3){ upd.listaAt=null; upd.listaBy=null; }
+    if(j.estado==="entregado"&&j.shopify&&!j.shopify.cerradoAt) upd.shopify=null; // aún no se cerró en Shopify: se quita la marca
+  }
   if(nuevoEstado==="entregado") marcarCierreShopify(upd,j,now); // el robot del Tablero lo marca enviado y lo archiva en Shopify
   if(dbRef){ dbRef.child(id).update(upd); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
-  else{ jobs[id]={...j,...upd}; saveLocal(); render(); }
-  toast("→ "+ST[nuevoEstado].label,"ok");
+  else{ jobs[id]={...j,...upd}; Object.keys(upd).forEach(k=>{ if(upd[k]===null) delete jobs[id][k]; }); saveLocal(); render(); }
+  toast((atras?"← ":"→ ")+ST[nuevoEstado].label,"ok");
 }
 
 function del(id){ if(!confirm("¿Eliminar este pedido?"))return; filasAbiertas.delete(id); delete borradoresComentario[id]; delete imagenesPendientesComentario[id]; if(dbRef) dbRef.child(id).remove(); else{ delete jobs[id]; saveLocal(); render(); } toast("Eliminado"); }
@@ -4116,7 +4124,7 @@ function renderRow(id,j){
     <div><div class="job-qty celda-edit" onclick="editarCelda(event,'${id}','cantidad')" title="Clic para editar la cantidad">${qty}${j.packId&&packs[j.packId]?`<span class="job-pack" title="Descuenta del pack ${esc(packNombre(j.packId))}">${ic("package")}</span>`:""}</div><div class="job-unit celda-edit" onclick="editarCelda(event,'${id}','responsable')" title="Clic para cambiar el responsable">Resp: ${j.responsable?esc(j.responsable.split(" ")[0]):"—"}</div></div>
     <div><span class="badge badge-doc-${j.documento==="SI"?"ok":j.documento==="NA"?"na":"no"} celda-edit" onclick="editarCelda(event,'${id}','documento')" title="Clic para cambiar boleta / factura">${j.documento==="SI"?"✓":j.documento==="NA"?"➖":"✗"}</span></div>
     <div>${j.drive?`<a href="${esc(safeUrl(j.drive))}" target="_blank" class="drive-link" onclick="event.stopPropagation()">${ic("folder")}</a>`:`<span class="job-sub celda-edit" style="margin-top:0" onclick="editarCelda(event,'${id}','drive')" title="Clic para agregar el link de Drive">—</span>`}</div>
-    <div><span class="badge badge-${j.estado}">${st.label}</span>${j.shopify&&j.shopify.cerradoAt?`<span class="job-pack" title="Cerrado en Shopify · ${esc(fmtFull(j.shopify.cerradoAt))}">${ic("shopping-cart")}</span>`:j.shopify&&j.shopify.error?`<span class="job-pack" style="color:var(--danger-c)" title="${esc(j.shopify.error)}">${ic("triangle-alert")}</span>`:""}${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
+    <div><span class="badge badge-${j.estado} celda-edit" onclick="editarCelda(event,'${id}','estado')" title="Clic para cambiar el estado (también hacia atrás)">${st.label}</span>${j.shopify&&j.shopify.cerradoAt?`<span class="job-pack" title="Cerrado en Shopify · ${esc(fmtFull(j.shopify.cerradoAt))}">${ic("shopping-cart")}</span>`:j.shopify&&j.shopify.error?`<span class="job-pack" style="color:var(--danger-c)" title="${esc(j.shopify.error)}">${ic("triangle-alert")}</span>`:""}${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
     <div><div class="${delCls} celda-edit" onclick="editarCelda(event,'${id}','tipoEntrega')" title="Clic para cambiar el tipo de entrega">${delIcon}</div><div class="job-sub celda-edit ${ov?"overdue":""}" onclick="editarCelda(event,'${id}','fechaLimite')" title="Clic para cambiar la fecha límite">${fmtDate(j.fechaLimite)}${ov?" "+ic("triangle-alert"):""}</div></div>
     <div class="row-actions"><button class="btn btn-edit" onclick="event.stopPropagation();abrirFicha('${id}')">Editar</button><button class="btn btn-danger" onclick="event.stopPropagation();del('${id}')">✕</button></div>
   </div>`;
@@ -4645,7 +4653,7 @@ function chatIrACoincidencia(){
 
 // ══ EDICIÓN EN LA CELDA (propuesta, copia local) ══
 var celdaPop=null;
-const CELDA_LABEL={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",cantidad:"Cantidad",responsable:"Responsable",documento:"Boleta / Factura",drive:"Link Google Drive",tipoEntrega:"Tipo de entrega",fechaLimite:"Fecha límite"};
+const CELDA_LABEL={estado:"Estado",pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",cantidad:"Cantidad",responsable:"Responsable",documento:"Boleta / Factura",drive:"Link Google Drive",tipoEntrega:"Tipo de entrega",fechaLimite:"Fecha límite"};
 function cerrarCeldaPop(){ if(celdaPop){ celdaPop.remove(); celdaPop=null; } }
 document.addEventListener("pointerdown",e=>{
   if(!celdaPop||celdaPop.contains(e.target))return;
@@ -4669,6 +4677,7 @@ function editarCelda(ev,id,campo){
   if(campo==="tipoDtf"){ esLista=true; const ops=[]; FICHA_TIPOS.forEach(([g,ts])=>{ ops.push({grupo:g.replace(/^── /,"")}); ts.forEach(t=>ops.push({v:t,l:t,dot:tipoColor(t)})); }); ctl=menu(ops,j.tipoDtf); }
   else if(campo==="tipoEntrega"){ esLista=true; ctl=menu(FICHA_ENTREGAS.map(([v,l])=>({v,l})),j.tipoEntrega||"Retiro"); hint="Los datos de envío se completan en la ficha"; }
   else if(campo==="documento"){ esLista=true; ctl=menu(FICHA_DOCS.map(([v,l])=>({v,l})),j.documento||"NO"); }
+  else if(campo==="estado"){ esLista=true; ctl=menu(ORDEN_ESTADOS.map(k=>({v:k,l:ST[k].label,dot:(STAT_DEFS.find(s=>s.key===k)||{}).color})),j.estado||"recibido"); hint="Un clic elige · también se puede volver a un estado anterior"; }
   else if(campo==="responsable"){ esLista=true; ctl=menu([{v:"",l:"— Sin asignar —"},...FICHA_RESPONSABLES.map(x=>({v:x,l:x}))],j.responsable||""); }
   else if(campo==="cantidad"){ const u=getUnit(j.tipoDtf); ctl=`<input class="celda-input" type="number" min="0" step="${u==="metros"?"0.01":"1"}" value="${esc(fiVal(j.cantidad))}"/>`; hint=`En ${u} · Enter guarda · Esc cancela`; }
   else if(campo==="fechaLimite"){ ctl=`<input class="celda-input" type="date" value="${esc(j.fechaLimite||"")}"/>`; hint="Se guarda al elegir · vacío quita la fecha"; }
@@ -5831,7 +5840,7 @@ function renderFicha(forzar){
     <div class="fi-hint">${hint}</div>
   </div>
   <div class="fh-pills">
-    ${fichaNuevo?`<select class="badge badge-${j.estado||"recibido"} fi-estado" title="Estado inicial" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>`:`<span class="badge badge-${j.estado||"recibido"} fi-estado-badge">${st.label}</span>${st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}`}
+    <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}
     <button class="fi-pill${urg?" urg":""}" title="Cambiar prioridad" onclick="fichaCampo('prioridad','${urg?"normal":"urgente"}')">Prioridad: ${urg?ic("zap")+" Urgente":"Normal"}</button>
     <label class="fi-pill fi-fecha${ov?" overdue":""}" title="Fecha límite">${ic("calendar")} <input type="date" value="${esc(j.fechaLimite)}" onchange="fichaCampo('fechaLimite',this.value)"/>${ov?ic("triangle-alert"):""}</label>
     <span class="fi-pill fi-docpill" title="Boleta / Factura">Boleta / Factura:<select class="fi-doc" onchange="fichaCampo('documento',this.value)">${FICHA_DOCS.map(([v,l])=>`<option value="${v}"${(j.documento||"NO")===v?" selected":""}>${l}</option>`).join("")}</select></span>

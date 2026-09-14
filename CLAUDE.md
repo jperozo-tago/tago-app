@@ -250,7 +250,12 @@ ordenables y ajustables, edición en la celda), Tablero (kanban con 5
 columnas), Calendario (por fecha de entrega) y Carga (por persona). Cada
 vista recuerda sus filtros en `localStorage` (`tago_vistas_config`). El
 pedido se abre en una ficha lateral (`abrirFicha`) que reemplaza al modal
-de edición; el estado solo avanza, nunca retrocede. El arrastrar-y-soltar del Tablero usa el API nativo
+de edición. El estado se cambia desde el desplegable de la ficha, la pastilla
+de la tabla (menú) o el botón «→ siguiente», y **también puede retroceder**
+(desde el 14-sep-2026): al volver atrás, `moverEstado` borra los hitos de las
+etapas que se dejan (`enviadoProdAt`, `impresionAt`, `listaAt`) para que las
+estadísticas no las cuenten, y si se sale de Entregado con el cierre en
+Shopify aún pendiente quita esa marca. El arrastrar-y-soltar del Tablero usa el API nativo
 de HTML5 (`draggable`), que **no funciona con el dedo en celular** — en
 móvil solo sirve para tocar y abrir el pedido; para cambiar de estado ahí
 toca usar la Tabla.
