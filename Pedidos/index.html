@@ -748,6 +748,7 @@
     .sb-count.sb-unread{color:var(--teal);font-weight:600}
     body.sb-colapsada .sb-chat-body{display:none}
     .topbar-sub{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--text-sec)}
+    .tt-desc{margin:0 0 12px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text-sec);font-size:13.5px;line-height:1.5;max-width:72ch}
     /* ══ PROPUESTA (copia local): bandeja unificada ══ */
     .bandeja-filtros{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
     .bj-tab{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-sec);cursor:pointer;font-size:12px;font-weight:600;padding:7px 12px;white-space:nowrap;font-family:inherit;box-shadow:0 1px 3px rgba(11,20,71,0.04)}
@@ -1167,6 +1168,32 @@
     .el-doc-editor h2{font-family:'DM Sans',sans-serif;font-weight:600;font-size:20px;margin:18px 0 6px}
     .el-doc-editor a{color:var(--azul)}
     .el-doc-editor ul{padding-left:22px}
+    /* Documento con páginas (referencia: Docs de ClickUp) */
+    .el-doc-paginas{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:60vh}
+    .doc-pgs{border-right:1px solid var(--border-soft);padding:12px 8px;background:var(--surface)}
+    .doc-pgs-title{font-family:'DM Sans',sans-serif;font-weight:600;font-size:11.5px;color:var(--text-muted);padding:4px 10px 8px;display:flex;justify-content:space-between}
+    .doc-pg{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;color:var(--text-sec);font-family:'DM Sans',sans-serif;font-weight:600}
+    .doc-pg .ic{font-size:14px;color:var(--text-muted);flex-shrink:0}
+    .doc-pg:hover{background:var(--surface-alt)}
+    .doc-pg.active{background:var(--azul-glow);color:var(--azul-oscuro)}
+    .doc-pg-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .doc-pg-acc{display:none;gap:1px}
+    .doc-pg:hover .doc-pg-acc,.doc-pg.active .doc-pg-acc{display:inline-flex}
+    .doc-pg-acc button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:1px 3px;border-radius:4px;font-family:inherit;display:inline-flex;line-height:1}
+    .doc-pg-acc button:hover{color:var(--azul);background:var(--surface)}
+    .doc-pg-add{color:var(--text-muted);font-weight:400;font-family:'Open Sans',sans-serif;font-size:13px;margin-top:4px}
+    .doc-pg-add:hover{color:var(--teal-dark)}
+    .doc-pg-confirm{font-size:12px;color:var(--text-sec);padding:4px 10px 8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .doc-pg-confirm button{font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;border-radius:6px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+    .doc-pg-confirm button.si{background:var(--danger-c);color:#fff;border-color:var(--danger-c)}
+    .doc-main{min-width:0}
+    .doc-pg-titulo{display:block;width:calc(100% - 80px);max-width:820px;margin:26px 40px 2px;border:1px solid transparent;border-radius:8px;padding:4px 8px;margin-left:32px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:30px;line-height:1.2;color:var(--text);outline:none;background:transparent}
+    .doc-pg-titulo:hover{border-color:var(--border)}
+    .doc-pg-titulo:focus{border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-glow)}
+    .doc-pg-titulo::placeholder{color:var(--text-muted)}
+    .doc-pg-meta{font-size:12.5px;color:var(--text-muted);margin:0 40px 6px}
+    .el-doc-paginas .el-doc-editor{min-height:50vh;padding-top:14px}
+    @media(max-width:800px){.el-doc-paginas{grid-template-columns:1fr}.doc-pgs{border-right:none;border-bottom:1px solid var(--border-soft);display:flex;flex-wrap:wrap;gap:4px;padding:8px}.doc-pgs-title{width:100%}.doc-pg-acc{display:inline-flex}.doc-pg-titulo{margin:14px 12px 2px;width:calc(100% - 24px);font-size:24px}.doc-pg-meta{margin:0 18px 6px}}
     .doc-check{display:flex;align-items:center;gap:8px}
     .doc-check input{width:16px;height:16px;accent-color:var(--azul)}
     /* Panel */
@@ -2500,6 +2527,9 @@ function puedeVerTarea(t){
   if(t.asignados&&t.asignados[currentUser.id])return true;
   return false;
 }
+// La descripción de la lista (tago_listas/<id>/descripcion), bajo el título, cuando se está dentro de una lista.
+// La usan las listas de clientes del espacio "Clientes" (por qué esa prioridad); si no hay, no se ve nada.
+function ttDescripcionLista(){ const l=tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]; return l&&l.descripcion?`<div class="tt-desc">${esc(l.descripcion)}</div>`:""; }
 function renderTareas(){
   const estadosOrdenados=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
   const cont=document.getElementById("tareas-list");
@@ -2514,7 +2544,7 @@ function renderTareas(){
   const {plantilla,plantillaM}=ttPlantilla(cols);
   const asa=`<span class="col-resizer col-resizer-der tt-resizer" title="Arrastra para cambiar el ancho · doble clic para restablecer"></span>`;
   const head=`<div class="tt-row tt-head"><div class="tt-cell tt-nombre" data-col="nombre"><span class="tt-txt">Nombre</span>${asa}</div>${cols.map(c=>`<div class="tt-cell" data-col="${esc(c.k)}" title="${esc(c.t)}"><span class="tt-txt">${esc(c.t)}</span>${asa}</div>`).join("")}<div class="tt-cell tt-acc">${enLista&&admin?`<button class="tt-plus" title="Agregar o quitar campos de esta lista" onclick="abrirCampos()">${ic("plus")}</button>`:""}</div></div>`;
-  cont.innerHTML=estadosOrdenados.map(([estId,est])=>{
+  cont.innerHTML=ttDescripcionLista()+estadosOrdenados.map(([estId,est])=>{
     const tareasDelEstado=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&t.estado===estId&&puedeVerTarea(t)&&tareaEnFiltro(t));
     const abierto=!ttPlegados.has(estId);
     return`<div class="tarea-grupo">
@@ -4116,7 +4146,7 @@ function sbMenuElegir(tipo){
 document.addEventListener("pointerdown",e=>{ const m=document.getElementById("sb-menu-crear"); if(m&&!m.contains(e.target)&&!e.target.closest(".sb-plus,.sb-new")) sbCerrarMenuCrear(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") sbCerrarMenuCrear(); });
 
-function abrirElemento(id,modo){ elementoActual=id; formModo=modo||"editar"; elRenombrando=false; if(currentTab!=="elemento") switchTab("elemento"); else renderSidebar(); renderElemento(); closeSidebar(); }
+function abrirElemento(id,modo){ if(typeof docFlush==="function") docFlush(); elementoActual=id; formModo=modo||"editar"; elRenombrando=false; if(currentTab!=="elemento") switchTab("elemento"); else renderSidebar(); renderElemento(); closeSidebar(); }
 function elFecha(iso){ if(!iso)return""; const d=new Date(iso); if(isNaN(d))return""; const hoy=new Date(); const mismoDia=d.toDateString()===hoy.toDateString(); return (mismoDia?"hoy ":`${d.getDate()} ${MESES_CORTO[d.getMonth()]} `)+d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}); }
 function elRenombrar(v){ v=(v||"").trim(); elRenombrando=false; if(v&&elementoActual) firebase.database().ref("tago_elementos/"+elementoActual).update({nombre:v}); else renderElemento(); }
 function elGuardar(campos){ if(!elementoActual)return; campos.updatedAt=new Date().toISOString(); campos.updatedBy={id:currentUser.id,nombre:currentUser.nombre}; return firebase.database().ref("tago_elementos/"+elementoActual).update(campos); }
@@ -4130,7 +4160,7 @@ function renderElemento(){
   document.getElementById("topbar-title").innerHTML=ic(t.icono,"ic-titulo")+esc(e.nombre);
   const mismo=elementoRenderizado===elementoActual;
   // No se vuelve a dibujar mientras se escribe o se arrastra: se perdería el cursor
-  if(mismo&&e.tipo==="documento"&&document.activeElement?.id==="doc-editor") return;
+  if(mismo&&e.tipo==="documento"&&(["doc-editor","doc-pg-titulo"].includes(document.activeElement?.id)||docPendiente)) return;
   if(mismo&&e.tipo==="pizarra"&&(pzArrastre||cont.contains(document.activeElement)&&document.activeElement.tagName==="TEXTAREA")) return;
   if(mismo&&e.tipo==="formulario"&&cont.contains(document.activeElement)&&["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)) return;
   elementoRenderizado=elementoActual;
@@ -4143,23 +4173,89 @@ function renderElemento(){
 
 // ── Documento ──
 function sanearHtml(html){ return String(html||"").replace(/<\/?(script|style|iframe|object|embed)[^>]*>/gi,"").replace(/\son\w+="[^"]*"/gi,"").replace(/\son\w+='[^']*'/gi,"").replace(/javascript:/gi,""); }
+// Páginas del documento. Un documento viejo (solo `contenido`) se ve como una página «virtual» que sigue escribiendo en `contenido`.
+var docPagActual={}, docConfirmarBorrar=null, docPendiente=null;
+function docPaginas(e){
+  if(e.paginas&&Object.values(e.paginas).some(Boolean)) return Object.entries(e.paginas).filter(([,p])=>p).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,p])=>({id,...p}));
+  return [{id:"_principal",titulo:e.nombre,contenido:e.contenido||"",virtual:true,createdBy:e.creadoPor,updatedAt:e.updatedAt,updatedBy:e.updatedBy}];
+}
+function docPaginaActual(e){ const ps=docPaginas(e); return ps.find(p=>p.id===docPagActual[elementoActual])||ps[0]; }
 function renderDocumento(cont,e){
-  cont.insertAdjacentHTML("beforeend",`<div class="el-doc">
-    <div class="el-toolbar">
-      <button onclick="docCmd('bold')" title="Negrita">${ic("bold")}</button><button onclick="docCmd('italic')" title="Cursiva">${ic("italic")}</button><button onclick="docCmd('formatBlock','h2')" title="Título">${ic("heading-2")}</button><button onclick="docCmd('formatBlock','p')" title="Texto normal">P</button><button onclick="docCmd('insertUnorderedList')" title="Lista con viñetas">${ic("list")}</button><button onclick="docCasilla()" title="Casilla de verificación">${ic("list-checks")}</button><button onclick="docEnlace()" title="Enlace">${ic("link")}</button>
-      <span class="el-estado" id="doc-estado">${e.updatedAt?`Guardado ${elFecha(e.updatedAt)} · ${esc(e.updatedBy?.nombre||"")}`:"Todavía sin contenido"}</span>
+  const ps=docPaginas(e), pg=docPaginaActual(e); docPagActual[elementoActual]=pg.id;
+  const filas=ps.map(p=>`<div class="doc-pg${p.id===pg.id?" active":""}" onclick="docIrPagina('${p.id}')" title="${esc(p.titulo||"Sin título")}">${ic("file-text")}<span class="doc-pg-nombre">${esc(p.titulo||"Sin título")}</span>${ps.length>1?`<span class="doc-pg-acc"><button title="Subir" onclick="event.stopPropagation();docMoverPagina('${p.id}',-1)">↑</button><button title="Bajar" onclick="event.stopPropagation();docMoverPagina('${p.id}',1)">↓</button><button title="Eliminar página" onclick="event.stopPropagation();docConfirmarBorrar='${p.id}';elementoRenderizado=null;renderElemento()">${ic("trash")}</button></span>`:""}</div>${docConfirmarBorrar===p.id?`<div class="doc-pg-confirm"><span>¿Eliminar «${esc(p.titulo||"Sin título")}»?</span><button class="si" onclick="docBorrarPagina('${p.id}')">Sí</button><button onclick="docConfirmarBorrar=null;elementoRenderizado=null;renderElemento()">No</button></div>`:""}`).join("");
+  cont.insertAdjacentHTML("beforeend",`<div class="el-doc el-doc-paginas">
+    <aside class="doc-pgs"><div class="doc-pgs-title"><span>Páginas</span><span>${ps.length}</span></div>${filas}<div class="doc-pg doc-pg-add" onclick="docAgregarPagina()">${ic("plus")} Agregar página</div></aside>
+    <div class="doc-main">
+      <input class="doc-pg-titulo" id="doc-pg-titulo" value="${esc(pg.titulo||"")}" placeholder="Título de la página" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="docRenombrarPagina(this.value)"/>
+      <div class="doc-pg-meta">${pg.createdBy?.nombre?`${esc(pg.createdBy.nombre)} · `:""}${pg.updatedAt?`Actualización más reciente ${elFecha(pg.updatedAt)}${pg.updatedBy?.nombre?" · "+esc(pg.updatedBy.nombre):""}`:"Página nueva"}</div>
+      <div class="el-toolbar">
+        <button onclick="docCmd('bold')" title="Negrita">${ic("bold")}</button><button onclick="docCmd('italic')" title="Cursiva">${ic("italic")}</button><button onclick="docCmd('formatBlock','h2')" title="Título">${ic("heading-2")}</button><button onclick="docCmd('formatBlock','p')" title="Texto normal">P</button><button onclick="docCmd('insertUnorderedList')" title="Lista con viñetas">${ic("list")}</button><button onclick="docCasilla()" title="Casilla de verificación">${ic("list-checks")}</button><button onclick="docEnlace()" title="Enlace">${ic("link")}</button>
+        <span class="el-estado" id="doc-estado">${pg.updatedAt?`Guardado ${elFecha(pg.updatedAt)} · ${esc(pg.updatedBy?.nombre||"")}`:"Todavía sin contenido"}</span>
+      </div>
+      <div class="el-doc-editor" id="doc-editor" contenteditable="true" data-placeholder="Escribe aquí. Selecciona texto para darle formato con la barra de arriba." oninput="docCambiado()">${sanearHtml(pg.contenido)}</div>
     </div>
-    <div class="el-doc-editor" id="doc-editor" contenteditable="true" data-placeholder="Escribe aquí. Selecciona texto para darle formato con la barra de arriba." oninput="docCambiado()">${sanearHtml(e.contenido)}</div>
   </div>`);
   document.getElementById("doc-editor").addEventListener("change",ev=>{ if(ev.target.type==="checkbox"){ ev.target.toggleAttribute("checked",ev.target.checked); docCambiado(); } });
+}
+function docQuien(){ return {id:currentUser.id,nombre:currentUser.nombre}; }
+function docGuardarContenido(pid,html){
+  const now=new Date().toISOString(), upd={updatedAt:now,updatedBy:docQuien()};
+  if(pid==="_principal") upd.contenido=html;
+  else{ upd["paginas/"+pid+"/contenido"]=html; upd["paginas/"+pid+"/updatedAt"]=now; upd["paginas/"+pid+"/updatedBy"]=docQuien(); }
+  return firebase.database().ref("tago_elementos/"+elementoActual).update(upd).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function docFlush(){ // guarda ya lo que estaba esperando el temporizador
+  clearTimeout(docTimer); const p=docPendiente; if(!p)return; docPendiente=null;
+  const ed=document.getElementById("doc-editor"); if(!ed||elementoActual!==p.id)return;
+  docGuardarContenido(p.pid,sanearHtml(ed.innerHTML));
+  const s2=document.getElementById("doc-estado"); if(s2) s2.textContent=`Guardado ${elFecha(new Date().toISOString())} · ${currentUser.nombre}`;
+}
+window.addEventListener("beforeunload",()=>{ if(docPendiente) docFlush(); });
+function docIrPagina(pid){ docFlush(); docPagActual[elementoActual]=pid; docConfirmarBorrar=null; elementoRenderizado=null; renderElemento(); }
+function docAgregarPagina(){
+  const e=elementos[elementoActual]; if(!e)return;
+  docFlush();
+  const now=new Date().toISOString(), quien=docQuien(), upd={updatedAt:now,updatedBy:quien};
+  let orden=1;
+  const viejas=e.paginas&&Object.values(e.paginas).some(Boolean);
+  if(!viejas){ // documento de una sola página: lo que tenía pasa a ser la primera
+    const p1=firebase.database().ref("tago_elementos").push().key;
+    upd["paginas/"+p1]={titulo:e.nombre,contenido:e.contenido||"",orden:1,createdAt:e.createdAt||now,createdBy:e.creadoPor||quien,updatedAt:e.updatedAt||now,updatedBy:e.updatedBy||quien};
+    orden=2;
+  }else orden=Math.max(0,...Object.values(e.paginas).filter(Boolean).map(p=>p.orden||0))+1;
+  const pid=firebase.database().ref("tago_elementos").push().key;
+  upd["paginas/"+pid]={titulo:"",contenido:"",orden,createdAt:now,createdBy:quien,updatedAt:now,updatedBy:quien};
+  docPagActual[elementoActual]=pid; docConfirmarBorrar=null; elementoRenderizado=null;
+  firebase.database().ref("tago_elementos/"+elementoActual).update(upd).then(()=>{ renderElemento(); setTimeout(()=>document.getElementById("doc-pg-titulo")?.focus(),60); }).catch(err=>toast("No se pudo crear la página: "+err.message,"error"));
+}
+function docRenombrarPagina(v){
+  const e=elementos[elementoActual]; if(!e)return; v=(v||"").trim();
+  const pg=docPaginaActual(e);
+  if(pg.virtual){ if(v) firebase.database().ref("tago_elementos/"+elementoActual).update({nombre:v}); return; } // una sola página: su título es el del documento
+  const upd={}; upd["paginas/"+pg.id+"/titulo"]=v; upd["paginas/"+pg.id+"/updatedAt"]=new Date().toISOString(); upd["paginas/"+pg.id+"/updatedBy"]=docQuien();
+  elementoRenderizado=null;
+  firebase.database().ref("tago_elementos/"+elementoActual).update(upd).catch(err=>toast("No se pudo guardar el título: "+err.message,"error"));
+}
+function docMoverPagina(pid,dir){
+  const e=elementos[elementoActual]; if(!e)return; const ps=docPaginas(e); const i=ps.findIndex(p=>p.id===pid), j=i+dir; if(i<0||j<0||j>=ps.length||ps[i].virtual)return;
+  const upd={}; ps.forEach((p,k)=>{ const pos=k===i?j:k===j?i:k; upd["paginas/"+p.id+"/orden"]=pos+1; }); // se renumeran todas: los órdenes viejos podían repetirse
+  elementoRenderizado=null;
+  firebase.database().ref("tago_elementos/"+elementoActual).update(upd).catch(err=>toast("No se pudo mover: "+err.message,"error"));
+}
+function docBorrarPagina(pid){
+  const e=elementos[elementoActual]; if(!e)return; const ps=docPaginas(e);
+  if(ps.length<2||ps[0].virtual){ toast("Un documento necesita al menos una página","error"); return; }
+  docConfirmarBorrar=null; if(docPagActual[elementoActual]===pid){ const otra=ps.find(p=>p.id!==pid); docPagActual[elementoActual]=otra?otra.id:null; }
+  elementoRenderizado=null;
+  firebase.database().ref("tago_elementos/"+elementoActual+"/paginas/"+pid).remove().then(()=>toast("Página eliminada")).catch(err=>toast("No se pudo eliminar: "+err.message,"error"));
 }
 function docCmd(cmd,val){ document.getElementById("doc-editor").focus(); document.execCommand(cmd,false,val||null); docCambiado(); }
 function docCasilla(){ document.getElementById("doc-editor").focus(); document.execCommand("insertHTML",false,`<div class="doc-check"><input type="checkbox"> <span>&nbsp;</span></div>`); docCambiado(); }
 function docEnlace(){ let url=""; try{ url=prompt("Dirección del enlace (https://…)")||""; }catch(err){ toast("Escribe el enlace directamente en el texto","error"); return; } if(url) docCmd("createLink",url); }
 function docCambiado(){
   const st=document.getElementById("doc-estado"); if(st) st.textContent="Guardando…";
-  clearTimeout(docTimer);
-  docTimer=setTimeout(()=>{ const ed=document.getElementById("doc-editor"); if(!ed)return; elGuardar({contenido:sanearHtml(ed.innerHTML)}); const s2=document.getElementById("doc-estado"); if(s2) s2.textContent=`Guardado ${elFecha(new Date().toISOString())} · ${currentUser.nombre}`; },700);
+  docPendiente={id:elementoActual,pid:docPagActual[elementoActual]||"_principal"};
+  clearTimeout(docTimer); docTimer=setTimeout(docFlush,700);
 }
 
 // ── Panel: resumen automático de las tareas del espacio ──
