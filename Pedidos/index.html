@@ -4641,7 +4641,14 @@ function docAgregarPagina(){
 function docRenombrarPagina(v){
   const e=elementos[elementoActual]; if(!e)return; v=(v||"").trim();
   const pg=docPaginaActual(e);
-  if(pg.virtual){ if(v) firebase.database().ref("tago_elementos/"+elementoActual).update({nombre:v}); return; } // una sola página: su título es el del documento
+  if(pg.virtual){ // documento antiguo: la página pasa a ser real con su propio título; el nombre del documento no cambia
+    docFlush();
+    const now=new Date().toISOString(), quien=docQuien(), pid=firebase.database().ref("tago_elementos").push().key, upd={updatedAt:now,updatedBy:quien};
+    upd["paginas/"+pid]={titulo:v,contenido:e.contenido||"",orden:1,createdAt:e.createdAt||now,createdBy:e.creadoPor||quien,updatedAt:now,updatedBy:quien};
+    docPagActual[elementoActual]=pid; elementoRenderizado=null;
+    firebase.database().ref("tago_elementos/"+elementoActual).update(upd).catch(err=>toast("No se pudo guardar el título: "+err.message,"error"));
+    return;
+  }
   const upd={}; upd["paginas/"+pg.id+"/titulo"]=v; upd["paginas/"+pg.id+"/updatedAt"]=new Date().toISOString(); upd["paginas/"+pg.id+"/updatedBy"]=docQuien();
   elementoRenderizado=null;
   firebase.database().ref("tago_elementos/"+elementoActual).update(upd).catch(err=>toast("No se pudo guardar el título: "+err.message,"error"));
