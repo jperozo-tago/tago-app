@@ -951,6 +951,8 @@
     .table-row .celda-edit:hover{background:var(--surface-alt);box-shadow:0 0 0 3px var(--surface-alt)}
     .job-type-pill.celda-edit:hover,.badge.celda-edit:hover{box-shadow:0 0 0 2px rgba(11,20,71,.18)}
     .celda-popover{position:absolute;z-index:180;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 10px 9px;min-width:220px;max-width:320px;box-shadow:0 0 0 3px rgba(11,20,71,.06)}
+    .celda-popover.ancha{min-width:min(420px,92vw);max-width:min(600px,92vw)}
+    .celda-input.celda-texto-largo{display:block;width:100%;min-height:72px;max-height:60vh;resize:vertical;font-family:'Open Sans',sans-serif;font-weight:400;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow:auto}
     .celda-pop-label{font-size:12px;color:var(--text-sec);margin-bottom:6px;font-family:'DM Sans',sans-serif;font-weight:600}
     .celda-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;color:var(--text);background:var(--surface)}
     .celda-input:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-glow)}
@@ -4564,13 +4566,23 @@ function cpEditarEnFila(ev,id,cid){ // edición de un campo personalizado en la 
   }
   let hint="Enter guarda · Esc cancela";
   if(c.tipo==="fecha") hint="Se guarda al elegir · vacío quita la fecha";
-  if(c.tipo==="parrafo") hint="Enter guarda · Shift+Enter salto de línea · Esc cancela";
-  pop.innerHTML=`<div class="celda-pop-label">${esc(c.etiqueta)}</div>${cpControl("cpf-"+cid,c,actual,{clase:"celda-input"})}<div class="celda-pop-hint">${hint}</div>`;
+  const largo=["texto","parrafo","url"].includes(c.tipo); // mucho texto: ventana ancha con todo el contenido a la vista
+  let ctl=cpControl("cpf-"+cid,c,actual,{clase:"celda-input"});
+  if(largo){
+    const v=(actual===undefined||actual===null)?"":String(actual);
+    const filas=Math.min(14,Math.max(3,Math.ceil(v.length/60)+(v.match(/\n/g)||[]).length));
+    ctl=`<textarea id="cpf-${cid}" class="celda-input celda-texto-largo" rows="${filas}"${c.tipo==="url"?' placeholder="https://…"':""}>${esc(v)}</textarea>`;
+    hint="Enter guarda · Shift+Enter salto de línea · Esc cancela";
+    pop.classList.add("ancha");
+  }
+  pop.innerHTML=`<div class="celda-pop-label">${esc(c.etiqueta)}</div>${ctl}<div class="celda-pop-hint">${hint}</div>`;
   pop._colocar();
   const el=pop.querySelector("input,textarea"); if(!el)return;
-  el.addEventListener("input",()=>{ el.dataset.dirty="1"; if(el.type==="date") guardar(cpLeerControl(el,c)); });
-  el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!(c.tipo==="parrafo"&&e.shiftKey)){ e.preventDefault(); guardar(cpLeerControl(el,c)); } });
-  el.focus(); if(el.select) try{ el.select(); }catch(e){}
+  const leer=()=>{ let v=cpLeerControl(el,c); if(largo&&c.tipo!=="parrafo"&&typeof v==="string") v=v.replace(/\s*\n\s*/g," "); return v; }; // texto corto y enlace: sin saltos
+  pop._guardar=v=>guardar(largo&&c.tipo!=="parrafo"&&typeof v==="string"?v.replace(/\s*\n\s*/g," "):v);
+  el.addEventListener("input",()=>{ el.dataset.dirty="1"; if(el.type==="date") guardar(leer()); });
+  el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!(largo&&e.shiftKey)){ e.preventDefault(); guardar(leer()); } });
+  el.focus(); if(!largo&&el.select) try{ el.select(); }catch(e){} else if(largo) try{ el.setSelectionRange(el.value.length,el.value.length); }catch(e){}
 }
 // ── Modal de tarea: bloques integrados que la lista oculta + campos personalizados ──
 function tareaListaCambio(){ buildEstadoSelect(gv("f-tarea-estado")); aplicarCamposModal(gv("f-tarea-lista")||null); }
