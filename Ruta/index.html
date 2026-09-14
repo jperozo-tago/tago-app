@@ -287,6 +287,27 @@ dialog.det::backdrop{background:rgba(11,20,71,.45)}
 .plist .cuando{font-size:12px;color:var(--gris);white-space:nowrap}
 .pvacio{color:var(--gris);font-size:13.5px}
 
+/* panel cliqueable, asignación y estado en Control de producción */
+.tile.tocable{cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.tile.tocable:hover{border-color:var(--azul)}
+.tile.tocable.on{border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-suave)}
+button.pfila{background:none;border:0;padding:4px 0;width:100%;font:inherit;color:inherit;cursor:pointer;text-align:left;border-radius:8px}
+button.pfila:hover .pl{color:var(--azul)}
+button.pfila.on .pl{color:var(--azul);font-family:"DM Sans",sans-serif;font-weight:600}
+.pdet{margin:0 0 14px}
+.pdet .cardhead{padding:16px 18px 6px}
+.pdet .cerrar{margin-left:auto;background:transparent;color:var(--tinta2);border:1.5px solid var(--linea2);border-radius:var(--pill);font-family:"DM Sans",sans-serif;font-weight:600;font-size:.78rem;padding:5px 12px;cursor:pointer}
+.pdet .cerrar:hover{border-color:var(--azul);color:var(--azul)}
+.own.pedc{background:var(--azul-suave);color:var(--azul)}
+.own.pedc i{background:var(--azul-fill)}
+.own.pedc.ok{background:var(--verde-suave);color:var(--verde)}
+.own.pedc.ok i{background:var(--verde-fill)}
+.go.asig{background:var(--tinta);color:var(--film)}
+.go.asig:hover{background:var(--btn-hover);color:#FFFFFF}
+.asignar{margin-top:14px;padding:14px 16px;border:1px solid var(--linea2);border-radius:12px;background:var(--papel2)}
+.asignar .personas{display:flex;gap:8px 14px;flex-wrap:wrap;margin:10px 0}
+.asignar .personas label{display:inline-flex;align-items:center;gap:6px;font-size:14px}
+
 /* dueños y delegación */
 .own{display:inline-flex;align-items:center;gap:5px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:11.5px;padding:2px 9px;border-radius:var(--pill);background:var(--papel3);color:var(--tinta2);white-space:nowrap}
 .own i{width:7px;height:7px;border-radius:50%;background:var(--c,var(--gris));display:inline-block}
@@ -665,11 +686,16 @@ const SEGS = {
  D:{n:'Compraron una vez',desc:'Una sola compra, hace más de 45 días, y no volvieron. Ordenados por monto. Las vendedoras preguntan qué faltó.',money:'gastoTot',ml:'esa compra'},
  E:{n:'Clientes clave',desc:'Ocho o más compras en 2026 y siguen activos. Son la mitad de la venta: Carol les ofrece el plan mensual.',money:'gasto26',ml:'en 2026'}
 };
+/* Las personas de Control de producción (app Pedidos) y a quién le toca cada dueño de la Ruta.
+   Solo se usa en la app de TAGO: el artifact de Claude no llega a Firebase. */
+const EQUIPO_P = {CO:{n:'Carol',e:'c.oviedo@tago.cl'},MR:{n:'Mari',e:'m.perez@tago.cl'},AQ:{n:'Andrea',e:'a.querales@tago.cl'},MG:{n:'Miguel',e:'produccion.tago@gmail.com'},IP:{n:'Ignacio',e:'producciondtf.tago@gmail.com'},EM:{n:'Eva',e:'emartinez.tago@gmail.com'},AL:{n:'Allyson',e:'allysonalvarez.tago@gmail.com'},JP:{n:'José',e:'j.perozo@tago.cl'}};
+const OWNER_P = {CA:['CO'],V:['MR','AQ'],P:['MG','IP'],CO:['EM'],D:['AL'],J:['JP'],CT:['JP']};
+const PED = {espacio:'-P1SlqW2R4wvheoBgQoK', lista:'-P1SlrNER5GYraLxArIZ', activo:false, estados:{}, porHacer:null, listo:null};
 const ESTADOS = [['por','Por contactar'],['cont','Contactado'],['cot','Cotizando'],['rec','Compró o volvió'],['no','Sin interés'],['ya','Ya es cliente'],['sin','Dato inválido']];
 const FIN = new Set(['rec','no','ya','sin']);
 
 // ---------- state ----------
-const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R'};
+const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R', enlaces:{}, ped:{}, pan:null, detAsignar:false};
 let soloLectura=false; const RO=()=>soloLectura?' disabled':'';   // quien solo puede mirar no ve controles activos
 let db=null, tareasListo=false, guardando=false;
 const LS='rutaTago';
@@ -682,13 +708,27 @@ function setGuardado(modo){ const dot=document.getElementById('dotGuardado'), t=
 
 // ---------- render ----------
 const $=s=>document.querySelector(s);
-function hechas(ids){ return ids.filter(t=>state.hecho[t.id]).length; }
+function pedDe(id){ const e=state.enlaces[id]; return e&&e.tareaId? (state.ped[e.tareaId]||null) : null; }
+function pedListo(id){ const p=pedDe(id); return !!(p && PED.listo && p.estado===PED.listo); }
+function estaHecha(id){ return !!state.hecho[id] || pedListo(id); }
+function estaDelegada(id){ return !!state.delegado[id] || !!state.enlaces[id]; }
+function hechoTs(id){ return state.hecho[id] || ((pedDe(id)||{}).updatedAt) || ''; }
+function hechas(ids){ return ids.filter(t=>estaHecha(t.id)).length; }
 function renderHeader(){
   $('#pillSemana').innerHTML=`<b>Semana ${state.week+1} de 12</b>`;
-  const del=ALL.filter(t=>t.o!=='A'&&state.delegado[t.id]).length, delT=ALL.filter(t=>t.o!=='A').length; $('#pillHechas').textContent=`${hechas(ALL)} de ${ALL.length} tareas · ${del} de ${delT} delegadas`;
+  const del=ALL.filter(t=>t.o!=='A'&&estaDelegada(t.id)).length, delT=ALL.filter(t=>t.o!=='A').length; $('#pillHechas').textContent=`${hechas(ALL)} de ${ALL.length} tareas · ${del} de ${delT} delegadas`;
 }
 function ownChip(t){ const o=OWNERS[t.o]; return `<span class="own${t.o==='A'?' me':''}" style="--c:${o.c}"><i></i>${o.n}${t.con?` <span class="faint">con ${OWNERS[t.con].n}</span>`:''}</span>`; }
-function delChip(t,pref){ if(t.o==='A'||soloLectura) return ''; const on=!!state.delegado[t.id]; return `<label class="del${on?' on':''}"><input type="checkbox" id="${pref}-${t.id}" data-del="${t.id}" ${on?'checked':''}> ${on?'Delegado':'Delegar'}</label>`; }
+function pedChip(t){ const e=state.enlaces[t.id]; if(!e) return ''; const p=pedDe(t.id); const est=p&&PED.estados[p.estado]; const quien=(e.asignados||[]).map(k=>(EQUIPO_P[k]||{}).n||k).join(', ');
+  return `<span class="own pedc${pedListo(t.id)?' ok':''}"><i></i>Control de producción · ${esc(quien)}${est?` · ${esc(est.nombre)}`:''}</span>`; }
+function delChip(t,pref){ if(t.o==='A'||soloLectura) return ''; if(state.enlaces[t.id]) return pedChip(t);
+  if(PED.activo) return `<button class="go asig" data-asignar="${t.id}">Asignar en Control de producción</button>`;
+  const on=!!state.delegado[t.id]; return `<label class="del${on?' on':''}"><input type="checkbox" id="${pref}-${t.id}" data-del="${t.id}" ${on?'checked':''}> ${on?'Delegado':'Delegar'}</label>`; }
+function semChip(t){ return `<span class="qchip">semana ${WEEKOF[t.id]+1}</span>`; }
+function taskLi(t,conSemana){ return `<li class="task${estaHecha(t.id)?' done':''}">
+    <input type="checkbox" id="t-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}">
+    <div><button class="tt" data-open="${t.id}">${esc(t.t)}</button>${t.por?`<div class="why clamp">${esc(t.por)}</div>`:''}
+    <div class="chips">${conSemana?semChip(t):''}${qChip(t)}${ownChip(t)}${delChip(t,'d')}${(t.det&&t.det.length)?`<button class="go mas" data-open="${t.id}">Ver el detalle</button>`:''}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}</div></div></li>`; }
 function qChip(t){ return `<span class="qchip">${t.rut?'Cada semana':QUAD[t.q].n}</span>`; }
 function hitosHtml(w){ return w.hitos.map(h=>`<span class="hito ${h.c}">${esc(h.t)}</span>`).join(''); }
 function rangoTxt(w){ const a=d(w.ini), b=d(w.fin); return a.getMonth()===b.getMonth()? `${a.getDate()} al ${b.getDate()} de ${MESL[a.getMonth()]}` : `${a.getDate()} de ${MESL[a.getMonth()]} al ${b.getDate()} de ${MESL[b.getMonth()]}`; }
@@ -697,10 +737,7 @@ function renderSemana(){
   $('#wkTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
   $('#wkHitos').innerHTML=hitosHtml(w);
   $('#wkPrev').disabled=state.week===0; $('#wkNext').disabled=state.week===WEEKS.length-1;
-  $('#wkTasks').innerHTML=w.tareas.map(t=>`<li class="task${state.hecho[t.id]?' done':''}">
-    <input type="checkbox" id="t-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()} aria-label="${esc(t.t)}">
-    <div><button class="tt" data-open="${t.id}">${esc(t.t)}</button>${t.por?`<div class="why clamp">${esc(t.por)}</div>`:''}
-    <div class="chips">${qChip(t)}${ownChip(t)}${delChip(t,'d')}${(t.det&&t.det.length)?`<button class="go mas" data-open="${t.id}">Ver el detalle</button>`:''}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}</div></div></li>`).join('');
+  $('#wkTasks').innerHTML=w.tareas.map(t=>taskLi(t,false)).join('');
   const h=hechas(w.tareas); $('#wkBar').style.width=(w.tareas.length?100*h/w.tareas.length:0)+'%';
   $('#wkProg').textContent=`${h} de ${w.tareas.length} hechas esta semana`;
 }
@@ -709,36 +746,54 @@ function renderArranques(){
   $('#arranques').innerHTML=`<table class="arr"><thead><tr><th>Fecha</th><th>Cuándo es</th><th>Arranque</th><th>Anticipación</th><th></th></tr></thead><tbody>${ARRANQUES.map(a=>{ const pasado=d(a.arr)<HOY, hoy=d(a.arr).getTime()===HOY.getTime(); const enRuta=WEEKS.findIndex(w=>d(w.ini)<=d(a.arr)&&d(a.arr)<=d(w.fin)); return `<tr class="${hoy||(pasado&&d(a.dia)>=HOY)?'ahora':(pasado?'fue':'')}"><td class="nm">${esc(a.f)}</td><td>${esc(fmtL(a.dia))}</td><td class="num"><b>${esc(fmtL(a.arr))}</b>${enRuta>=0?`<div class="sm">semana ${enRuta+1} de la Ruta</div>`:''}</td><td>${a.meses===3?'tres meses':'dos meses'}</td><td class="sm">${esc(a.nota||'')}</td></tr>`; }).join('')}</tbody></table>`;
 }
 function semanaHoy(){ let i=0; WEEKS.forEach((w,k)=>{ if(d(w.ini)<=HOY) i=k; }); return i; }
+function panelLista(pan){
+  const wHoy=semanaHoy(); const [k,v]=String(pan).split(':');
+  const ordena=L=>[...L].sort((a,b)=>(estaHecha(a.id)-estaHecha(b.id))||(WEEKOF[a.id]-WEEKOF[b.id]));
+  if(k==='hechas') return {t:'Tareas hechas.',L:ALL.filter(t=>estaHecha(t.id)).sort((a,b)=>String(hechoTs(b.id)).localeCompare(String(hechoTs(a.id))))};
+  if(k==='atrasadas') return {t:'Atrasadas: de semanas que ya pasaron y siguen sin tachar.',L:ordena(ALL.filter(t=>WEEKOF[t.id]<wHoy&&!estaHecha(t.id)))};
+  if(k==='rutina') return {t:'La rutina de esta semana.',L:WEEKS[wHoy].tareas.filter(t=>t.rut)};
+  if(k==='delegadas') return {t:'Delegadas: lo que entregaste o asignaste en Control de producción.',L:ordena(ALL.filter(t=>t.o!=='A'&&estaDelegada(t.id)))};
+  if(k==='per') return {t:`Lo de ${OWNERS[v].n}, en las doce semanas.`,L:ordena(ALL.filter(t=>t.o===v||t.con===v))};
+  if(k==='q') return {t:`${QUAD[v].n}: ${QUAD[v].s}.`,L:ordena(ALL.filter(t=>t.q==v&&!t.rut))};
+  return null;
+}
+function panelDetalle(){
+  if(!state.pan) return '';
+  const r=panelLista(state.pan); if(!r) return '';
+  return `<div class="card pdet" id="panelDetalle"><div class="cardhead"><h3>${r.t}</h3><span class="small faint num">${r.L.length} ${r.L.length===1?'tarea':'tareas'}</span><button class="cerrar" data-pancerrar="1">Cerrar</button></div>${r.L.length?`<ul class="tasks">${r.L.map(t=>taskLi(t,true)).join('')}</ul>`:`<p class="pvacio" style="padding:0 18px 16px">Nada aquí todavía.</p>`}</div>`;
+}
 function renderPanel(){
   const wHoy=semanaHoy(), hoyW=WEEKS[wHoy];
   const tot=ALL.length, hech=hechas(ALL);
-  const atras=ALL.filter(t=>WEEKOF[t.id]<wHoy && !state.hecho[t.id]).sort((a,b)=>WEEKOF[a.id]-WEEKOF[b.id]);
-  const pendSem=hoyW.tareas.filter(t=>!state.hecho[t.id]);
-  const deleg=ALL.filter(t=>t.o!=='A'), delegOn=deleg.filter(t=>state.delegado[t.id]);
+  const atras=ALL.filter(t=>WEEKOF[t.id]<wHoy && !estaHecha(t.id)).sort((a,b)=>WEEKOF[a.id]-WEEKOF[b.id]);
+  const pendSem=hoyW.tareas.filter(t=>!estaHecha(t.id));
+  const deleg=ALL.filter(t=>t.o!=='A'), delegOn=deleg.filter(t=>estaDelegada(t.id));
   const rut=hoyW.tareas.filter(t=>t.rut), rutH=hechas(rut);
   const prox=ARRANQUES.map(a=>({...a,dias:Math.round((d(a.arr)-HOY)/864e5)})).filter(a=>a.dias>=0).sort((a,b)=>a.dias-b.dias).slice(0,3);
   const pct=(h,n)=>n?Math.round(100*h/n):0;
-  const fila=(et,h,n,extra,cls,dot)=>`<div class="pfila${cls||''}"><span class="pl">${dot?`<i style="--c:${dot}"></i>`:''}${esc(et)}</span><div class="pbar"><i${extra?` class="${extra}"`:''} style="width:${pct(h,n)}%"></i></div><span class="pn">${h} de ${n}</span></div>`;
-  const tile=(et,v,l,mal)=>`<div class="tile"><div class="eyebrow">${et}</div><div class="v${mal?' bad':''}">${v}</div><div class="l">${l}</div></div>`;
+  const fila=(et,h,n,extra,cls,dot,pan)=>`<button class="pfila${cls||''}${state.pan===pan?' on':''}" data-pan="${pan}"><span class="pl">${dot?`<i style="--c:${dot}"></i>`:''}${esc(et)}</span><div class="pbar"><i${extra?` class="${extra}"`:''} style="width:${pct(h,n)}%"></i></div><span class="pn">${h} de ${n}</span></button>`;
+  const tile=(et,v,l,mal,pan)=>`<button class="tile tocable${state.pan===pan?' on':''}" data-pan="${pan}"><div class="eyebrow">${et}</div><div class="v${mal?' bad':''}">${v}</div><div class="l">${l}</div></button>`;
   const li=t=>`<li><button class="tt" data-open="${t.id}">${esc(t.t)}</button><span class="cuando">semana ${WEEKOF[t.id]+1} · ${OWNERS[t.o].n}</span></li>`;
   const act=Object.entries(state.hecho).filter(([id,v])=>v&&BYID[id]).sort((a,b)=>String(b[1]).localeCompare(String(a[1]))).slice(0,6);
   const cuando=iso=>{ const x=new Date(iso); return isNaN(x)?'':`${x.getDate()} ${MES[x.getMonth()]} · ${String(x.getHours()).padStart(2,'0')}:${String(x.getMinutes()).padStart(2,'0')}`; };
   const porSeg=Object.keys(SEGS).map(k=>{ const L=SEG[k]||[]; const est=L.map(x=>estadoDe(x)); return {k,n:L.length,cont:est.filter(e=>e!=='por').length,rec:est.filter(e=>e==='rec').length}; });
+  const detalle=panelDetalle();
   $('#panel').innerHTML=`<div class="ptiles num">
-    ${tile('Tareas hechas',`${hech} <span class="faint" style="font-size:16px">de ${tot}</span>`,`${pct(hech,tot)}% de las doce semanas`)}
-    ${tile('Atrasadas',String(atras.length),atras.length?'de semanas que ya pasaron':'nada pendiente de semanas pasadas',atras.length>0)}
-    ${tile('Esta semana',`${hoyW.tareas.length-pendSem.length} <span class="faint" style="font-size:16px">de ${hoyW.tareas.length}</span>`,`semana ${wHoy+1} · ${esc(rangoTxt(hoyW))}`)}
-    ${tile('Rutina de la semana',`${rutH} <span class="faint" style="font-size:16px">de ${rut.length}</span>`,'métricas, Meta, Google, Klaviyo y seguimiento')}
-    ${tile('Delegadas',`${delegOn.length} <span class="faint" style="font-size:16px">de ${deleg.length}</span>`,'tareas de otros que ya entregaste')}
-    ${tile('Próximo arranque',prox.length?(prox[0].dias===0?'hoy':`${prox[0].dias} d`):'—',prox.length?esc(prox[0].f):'no quedan en el año')}
+    ${tile('Tareas hechas',`${hech} <span class="faint" style="font-size:16px">de ${tot}</span>`,`${pct(hech,tot)}% de las doce semanas`,false,'hechas')}
+    ${tile('Atrasadas',String(atras.length),atras.length?'de semanas que ya pasaron':'nada pendiente de semanas pasadas',atras.length>0,'atrasadas')}
+    ${tile('Esta semana',`${hoyW.tareas.length-pendSem.length} <span class="faint" style="font-size:16px">de ${hoyW.tareas.length}</span>`,`semana ${wHoy+1} · ${esc(rangoTxt(hoyW))}`,false,'semana')}
+    ${tile('Rutina de la semana',`${rutH} <span class="faint" style="font-size:16px">de ${rut.length}</span>`,'métricas, Meta, Google, Klaviyo y seguimiento',false,'rutina')}
+    ${tile('Delegadas',`${delegOn.length} <span class="faint" style="font-size:16px">de ${deleg.length}</span>`,`${Object.keys(state.enlaces).length} en Control de producción · ${ALL.filter(t=>pedListo(t.id)).length} listas allá`,false,'delegadas')}
+    ${tile('Próximo arranque',prox.length?(prox[0].dias===0?'hoy':`${prox[0].dias} d`):'—',prox.length?esc(prox[0].f):'no quedan en el año',false,'arranque')}
   </div>
+  ${detalle}
   <div class="pgrid">
-    <div class="pcard"><h3>Por semana</h3>${WEEKS.map((w,i)=>fila(`Semana ${i+1}`,hechas(w.tareas),w.tareas.length,i===wHoy?'azul':'',i===wHoy?' now':'')).join('')}</div>
-    <div class="pcard"><h3>Por persona</h3>${Object.keys(OWNERS).map(k=>{ const L=ALL.filter(t=>t.o===k); return L.length?fila(OWNERS[k].n,hechas(L),L.length,'','',OWNERS[k].c):''; }).join('')}</div>
+    <div class="pcard"><h3>Por semana</h3>${WEEKS.map((w,i)=>fila(`Semana ${i+1}`,hechas(w.tareas),w.tareas.length,i===wHoy?'azul':'',i===wHoy?' now':'',null,'sem:'+i)).join('')}</div>
+    <div class="pcard"><h3>Por persona</h3>${Object.keys(OWNERS).map(k=>{ const L=ALL.filter(t=>t.o===k); return L.length?fila(OWNERS[k].n,hechas(L),L.length,'','',OWNERS[k].c,'per:'+k):''; }).join('')}</div>
     <div class="pcard"><h3>Atrasadas</h3>${atras.length?`<ul class="plist">${atras.slice(0,8).map(li).join('')}</ul>${atras.length>8?`<p class="pvacio" style="margin-top:8px">y ${atras.length-8} más en el Calendario</p>`:''}`:`<p class="pvacio">Nada atrasado. Cuando pase una semana con tareas sin tachar, aparecen aquí.</p>`}</div>
     <div class="pcard"><h3>Pendiente esta semana</h3>${pendSem.length?`<ul class="plist">${pendSem.slice(0,10).map(li).join('')}</ul>${pendSem.length>10?`<p class="pvacio" style="margin-top:8px">y ${pendSem.length-10} más en Esta semana</p>`:''}`:`<p class="pvacio">Todo lo de esta semana está tachado.</p>`}</div>
-    <div class="pcard"><h3>Listas de clientes</h3>${porSeg.map(x=>fila(SEGS[x.k].n,x.cont,x.n,'','',null)).join('')}<p class="pvacio" style="margin-top:8px">Barra: contactados. Volvieron a comprar: ${porSeg.reduce((s,x)=>s+x.rec,0)}.</p></div>
-    <div class="pcard"><h3>Por cuadrante</h3>${[1,2,3,4].map(q=>{ const L=ALL.filter(t=>t.q===q&&!t.rut); return fila(QUAD[q].n,hechas(L),L.length); }).join('')}</div>
+    <div class="pcard"><h3>Listas de clientes</h3>${porSeg.map(x=>fila(SEGS[x.k].n,x.cont,x.n,'','',null,'seg:'+x.k)).join('')}<p class="pvacio" style="margin-top:8px">Barra: contactados. Volvieron a comprar: ${porSeg.reduce((s,x)=>s+x.rec,0)}.</p></div>
+    <div class="pcard"><h3>Por cuadrante</h3>${[1,2,3,4].map(q=>{ const L=ALL.filter(t=>t.q===q&&!t.rut); return fila(QUAD[q].n,hechas(L),L.length,'','',null,'q:'+q); }).join('')}</div>
     <div class="pcard"><h3>Próximos arranques</h3>${prox.length?`<ul class="plist">${prox.map(a=>`<li><span>${esc(a.f)}</span><span class="cuando">${a.dias===0?'hoy':`en ${a.dias} días`} · ${esc(fmtL(a.arr))}</span></li>`).join('')}</ul>`:`<p class="pvacio">No quedan arranques este año.</p>`}</div>
     <div class="pcard"><h3>Actividad reciente</h3>${act.length?`<ul class="plist">${act.map(([id,v])=>`<li><button class="tt" data-open="${id}">${esc(BYID[id].t)}</button><span class="cuando">${cuando(v)}</span></li>`).join('')}</ul>`:`<p class="pvacio">Todavía no hay tareas tachadas.</p>`}</div>
   </div>`;
@@ -748,14 +803,14 @@ function renderCalendario(){
   $('#weeks').innerHTML=WEEKS.map((w,i)=>{ const fin=d(w.fin); const cls= i===state.week?'now':(fin<HOY?'past':''); return `<div class="week ${cls}">
     <div><div class="wn dm num">${i+1}</div><div class="wd">${esc(rangoTxt(w))}</div></div>
     <div>${w.hitos.length?`<div class="hitos">${hitosHtml(w)}</div>`:''}
-    <ul class="wtasks">${w.tareas.map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
+    <ul class="wtasks">${w.tareas.map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
 }
 function renderEquipo(){
   const w=WEEKS[state.week];
   $('#eqTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
   $('#eqPrev').disabled=state.week===0; $('#eqNext').disabled=state.week===WEEKS.length-1;
-  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=w.tareas.filter(t=>t.q===q); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
-  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=w.tareas.filter(t=>t.o===k||t.con===k); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${state.hecho[t.id]?'ok':''}"><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
+  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=w.tareas.filter(t=>t.q===q); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
+  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=w.tareas.filter(t=>t.o===k||t.con===k); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${estaHecha(t.id)?'ok':''}"><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
 }
 function keyOf(x){ return x.rut || x.ghlId; }
 function estadoDe(x){ return (state.cli[keyOf(x)]||{}).estado||'por'; }
@@ -830,8 +885,13 @@ const BYID=Object.fromEntries(ALL.map(t=>[t.id,t])); const WEEKOF=Object.fromEnt
 let detId=null;
 function fillDet(id){ const t=BYID[id]; if(!t) return; const wi=WEEKOF[id]; const dlg=$('#det');
   $('#detIn').innerHTML=`<div class="eyebrow">Semana ${wi+1} · ${t.rut?'Cada semana':QUAD[t.q].n}</div><h3>${esc(t.t)}</h3>${t.por?`<p>${esc(t.por)}</p>`:''}${(t.det&&t.det.length)?`<ul>${t.det.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
-    <div class="det-foot">${soloLectura?'':`<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}> Hecho</label>`}${delChip(t,'dgd')}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
-function openDet(id){ detId=id; fillDet(id); const dlg=$('#det'); if(!dlg.open) dlg.showModal(); }
+    ${(state.detAsignar&&PED.activo&&!state.enlaces[t.id]&&t.o!=='A'&&!soloLectura)?`<div class="asignar"><div class="eyebrow">Asignar en Control de producción</div>
+      <div class="personas">${Object.keys(EQUIPO_P).map(k=>`<label><input type="checkbox" data-per="${k}"${(OWNER_P[t.o]||[]).includes(k)?' checked':''}> ${EQUIPO_P[k].n}</label>`).join('')}</div>
+      <p class="small faint">Se crea como tarea en Pedidos, en Equipo / Encargos de la Ruta, con fecha límite el domingo de la semana ${WEEKOF[t.id]+1}. Cuando la marquen Listo allá, aquí queda hecha.</p>
+      <div class="chips"><button class="go" data-crear="${t.id}">Crear la tarea</button><button class="go mas" data-nocrear="1">Cancelar</button></div></div>`:''}
+    ${(pedDe(t.id))?`<p class="small faint" style="margin-top:10px">En Control de producción: ${esc((PED.estados[pedDe(t.id).estado]||{}).nombre||'')}${pedDe(t.id).updatedBy?` · última vez ${esc(pedDe(t.id).updatedBy.nombre||'')}`:''}.</p>`:''}
+    <div class="det-foot">${soloLectura?'':`<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}> Hecho</label>`}${delChip(t,'dgd')}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
+function openDet(id,asignar){ detId=id; state.detAsignar=!!asignar; fillDet(id); const dlg=$('#det'); if(!dlg.open) dlg.showModal(); }
 function renderAll(){ renderHeader(); renderPanel(); renderSemana(); renderCalendario(); renderEquipo(); if(state.view==='clientes') renderClientes(); if(detId && $('#det').open) fillDet(detId); }
 function showView(v){ state.view=v; document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.view===v))); document.querySelectorAll('.view').forEach(s=>s.hidden = s.id!=='view-'+v); if(v==='clientes') renderClientes(); window.scrollTo({top:0}); }
 
@@ -865,6 +925,27 @@ function cierraEscuchas(){ for(const [r,cb] of escuchas){ try{ r.off('value',cb)
 /* Las llaves de la base no admiten . # $ [ ] /: el RUT va con guiones bajos y la llave
    original viaja dentro del valor (k) para volver a armar el estado al leer. */
 const claveDb = k => String(k).replace(/[.#$\[\]\/]/g, '_');
+PED.activo = true;
+/* Control de producción (app Pedidos): los estados de tarea, y las tareas que nacieron en la Ruta. */
+function escuchaPedidos(){
+  const r1=firebase.database().ref('tago_tareas_estados'); const cb1=r1.on('value', s=>{ const v=s.val()||{}; PED.estados=v; const ord=Object.entries(v).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); PED.porHacer=ord.length?ord[0][0]:null; PED.listo=ord.length?ord[ord.length-1][0]:null; renderAll(); }, e=>console.warn('estados',e)); escuchas.push([r1,cb1]);
+  const r2=firebase.database().ref('tago_tareas'); const cb2=r2.on('value', s=>{ const v=s.val()||{}; const m={}; Object.entries(v).forEach(([id,t])=>{ if(t&&t.origenRuta) m[id]=t; }); state.ped=m; renderAll(); }, e=>console.warn('tareas',e)); escuchas.push([r2,cb2]);
+}
+function asignarEnPedidos(id, ids){
+  const t=BYID[id]; if(!t||!sesion) return;
+  if(!PED.porHacer){ alert('Todavía no llegan los estados de Control de producción. Espera un segundo y vuelve a intentar.'); return; }
+  const wi=WEEKOF[id], w=WEEKS[wi], now=new Date().toISOString(), quien={id:'AR',nombre:'Andreina Rodriguez'};
+  const notas=[t.por||'', ...(t.det||[]).map(x=>'• '+x), '', `De la Ruta TAGO, semana ${wi+1} (${rangoTxt(w)}). Cuando la marques Listo, en la Ruta queda hecha.`].join('\n').trim();
+  const asignados={}, asigEmails={}; ids.forEach(k=>{ asignados[k]=true; if(EQUIPO_P[k]) asigEmails[claveDb(EQUIPO_P[k].e)]=true; });
+  const tid=firebase.database().ref('tago_tareas').push().key, up={};
+  up['tago_tareas/'+tid]={nombre:t.t, notas, estado:PED.porHacer, prioridad:t.q===1?'alta':'normal', lista:PED.lista, pedidoId:null, fechaLimite:w.fin, asignados, asignadosEmails:asigEmails, createdAt:now, createdBy:quien, creadoPorEmail:sesion.email, updatedAt:now, updatedBy:quien, origenRuta:{id:t.id, semana:wi+1}};
+  up['tago_tareas_visibilidad/'+claveDb(sesion.email)+'/'+tid]=true;
+  ids.forEach(k=>{ if(EQUIPO_P[k]) up['tago_tareas_visibilidad/'+claveDb(EQUIPO_P[k].e)+'/'+tid]=true; });
+  up['tago_ruta/enlaces/'+t.id]={tareaId:tid, asignados:ids, cuando:now};
+  up['tago_ruta/estado/delegado/'+t.id]=now;
+  firebase.database().ref().update(up).then(()=>{ state.detAsignar=false; state.delegado[t.id]=now; state.enlaces[t.id]={tareaId:tid,asignados:ids,cuando:now}; renderAll(); setGuardado('nube'); })
+    .catch(e=>{ console.warn('asignar',e); alert('No se pudo crear la tarea en Control de producción: '+(e&&e.message||e)); });
+}
 function marcar(campo,id,val){
   if(soloLectura) return;
   state[campo][id]= val? new Date().toISOString() : false; renderAll();
@@ -892,10 +973,12 @@ function entra(){
     if(soloLectura) $('#avisoLectura').hidden = false;
     escucha('estado', s2 => { const d0=s2.val()||{}; state.hecho=d0.hecho||{}; state.delegado=d0.delegado||{}; renderAll(); }, e => { console.warn(e); setGuardado('local'); });
     escucha('clientes', q => { const m={}; Object.values(q.val()||{}).forEach(x => { if(x && x.k) m[x.k]=x; }); state.cli=m; if(state.view==='clientes') renderClientes(); else renderSegs(); }, e => { console.warn(e); setGuardado(soloLectura?'lectura':'local'); });
+    escucha('enlaces', q => { state.enlaces=q.val()||{}; renderAll(); }, e => console.warn('enlaces',e));
+    escuchaPedidos();
       });
   }).catch(e => { if(esPermisoDenegado(e)) noAutorizado(); else muestraEntrada('abriendo', 'No se pudo abrir la Ruta: ' + (e && e.message || e)); });
 }
-function sale(){ cierraEscuchas(); sesion=null; SEG=null; soloLectura=false; $('#avisoLectura').hidden=true; state.hecho={}; state.delegado={}; state.cli={}; $('#app').hidden=true; if($('#det').open) $('#det').close(); muestraEntrada('tarjeta'); }
+function sale(){ cierraEscuchas(); sesion=null; SEG=null; soloLectura=false; state.enlaces={}; state.ped={}; state.pan=null; $('#avisoLectura').hidden=true; state.hecho={}; state.delegado={}; state.cli={}; $('#app').hidden=true; if($('#det').open) $('#det').close(); muestraEntrada('tarjeta'); }
 
 // ---------- events ----------
 document.addEventListener('change', e=>{
@@ -913,7 +996,17 @@ document.addEventListener('input', e=>{
 });
 document.addEventListener('click', e=>{
   const b=e.target.closest('button'); if(!b) return;
-  if(b.dataset.open) openDet(b.dataset.open);
+  if(b.dataset.asignar) openDet(b.dataset.asignar,true);
+  else if(b.dataset.crear){ const ids=[...document.querySelectorAll('#det input[data-per]:checked')].map(x=>x.dataset.per); if(!ids.length){ alert('Elige al menos una persona.'); return; } asignarEnPedidos(b.dataset.crear,ids); }
+  else if(b.dataset.nocrear){ state.detAsignar=false; fillDet(detId); }
+  else if(b.dataset.pancerrar){ state.pan=null; renderPanel(); }
+  else if(b.dataset.pan){ const p=b.dataset.pan; const wHoy=semanaHoy();
+    if(p==='semana'){ state.week=wHoy; showView('semana'); renderSemana(); renderEquipo(); renderHeader(); }
+    else if(p==='arranque'){ showView('calendario'); }
+    else if(p.startsWith('sem:')){ state.week=+p.slice(4); showView('semana'); renderSemana(); renderEquipo(); renderHeader(); }
+    else if(p.startsWith('seg:')){ state.seg=p.slice(4); showView('clientes'); }
+    else { state.pan=(state.pan===p?null:p); renderPanel(); const z=document.getElementById('panelDetalle'); if(z) z.scrollIntoView({behavior:'smooth',block:'start'}); } }
+  else if(b.dataset.open) openDet(b.dataset.open);
   else if(b.id==='detCerrar') $('#det').close();
   else if(b.dataset.view) showView(b.dataset.view);
   else if(b.classList.contains('go')){ state.seg=b.dataset.seg; if($('#det').open) $('#det').close(); showView('clientes'); }
