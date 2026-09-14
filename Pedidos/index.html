@@ -758,6 +758,8 @@
     .pk-nuevo-mov .fi{border-color:var(--border);background:var(--surface)}
     .fi-pack-hint{grid-column:1/-1;font-size:12px;color:var(--teal-dark);font-weight:600;padding:3px 0 6px;font-family:'DM Sans',sans-serif;line-height:1.4}
     .fi-pack-hint.mal{color:var(--danger-c)}
+    .fi-ro.fi-mal{color:var(--danger-c)}
+    .fi-ro.fi-ok{color:var(--teal-dark);font-family:'DM Sans',sans-serif;font-weight:600}
     .fi-pack-hint .pk-link{margin-left:6px}
     .job-pack{color:var(--teal-dark);font-size:12px;margin-left:4px;vertical-align:-1px}
     .fi-check{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap}
@@ -3749,6 +3751,31 @@ function saveJob(){
   }
 }
 
+// ── Cierre en Shopify: la app deja la marca; shopify_cerrar.py (corrida del Tablero) marca enviado y archiva ──
+function numeroShopify(j){ const m=String((j&&j.pedido)||"").match(/(?:^|[^\w-])#?(\d{4,6})(?![\w-])/); return m?m[1]:null; }
+function marcarCierreShopify(upd,j,now){
+  const n=numeroShopify(j); if(!n)return false;
+  if(j.shopify&&j.shopify.cerradoAt)return false;
+  upd.shopify={pendiente:true,numero:n,solicitadoAt:now||new Date().toISOString(),solicitadoBy:{id:currentUser.id,nombre:currentUser.nombre}};
+  return true;
+}
+function pedirCierreShopify(id){
+  const j=jobs[id]; if(!j)return;
+  if(j.estado!=="entregado"){ toast("Primero pasa el pedido a Entregado","error"); return; }
+  const upd={}; if(!marcarCierreShopify(upd,j)){ toast(j.shopify&&j.shopify.cerradoAt?"Este pedido ya está cerrado en Shopify":"Pon el número de Shopify en «# Pedido» (ej: #8584)","error"); return; }
+  dbRef.child(id).update(upd).then(()=>toast("Se cerrará en la próxima corrida del Tablero","ok")).catch(err=>toast("No se pudo: "+err.message,"error"));
+}
+function fichaShopifyHtml(j){
+  const n=numeroShopify(j), s=j.shopify||null; if(!n&&!s)return"";
+  let txt="", cls="", accion="";
+  if(s&&s.cerradoAt) { txt=`Cerrado ✓ ${fmtFull(s.cerradoAt)}${s.name?" · "+esc(s.name):""}${s.enviadoPorNosotros===false?" (ya estaba enviado)":""}`; cls="fi-ok"; }
+  else if(s&&s.pendiente) txt=`Se cerrará en la próxima corrida del Tablero (#${esc(s.numero||n)})`;
+  else if(s&&s.error){ txt=esc(s.error); cls="fi-mal"; }
+  else if(j.estado==="entregado") txt=n?`Sin cerrar (#${esc(n)})`:"Sin número de Shopify en «# Pedido»";
+  else txt=n?`#${esc(n)} · se marcará enviado y archivado al pasar a Entregado`:"";
+  if(!fichaNuevo&&j.estado==="entregado"&&n&&!(s&&(s.cerradoAt||s.pendiente))) accion=`<span class="pk-link" onclick="pedirCierreShopify('${fichaId}')">${s&&s.error?"Reintentar":"Cerrar en Shopify"}</span>`;
+  return txt?fiFila(ic("shopping-cart")+" Shopify",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true):"";
+}
 function advance(id){
   const j=jobs[id]; if(!j||!ST[j.estado]?.next)return;
   moverEstado(id,ST[j.estado].next);
@@ -3763,6 +3790,7 @@ function moverEstado(id,nuevoEstado){
   if(idx>=1&&!j.enviadoProdAt){ upd.enviadoProdAt=now; upd.enviadoProdBy={id:currentUser.id,nombre:currentUser.nombre}; }
   if(idx>=2&&!j.impresionAt){ upd.impresionAt=now; upd.impresionBy={id:currentUser.id,nombre:currentUser.nombre}; }
   if(idx>=3&&!j.listaAt){ upd.listaAt=now; upd.listaBy={id:currentUser.id,nombre:currentUser.nombre}; }
+  if(nuevoEstado==="entregado") marcarCierreShopify(upd,j,now); // el robot del Tablero lo marca enviado y lo archiva en Shopify
   if(dbRef){ dbRef.child(id).update(upd); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
   else{ jobs[id]={...j,...upd}; saveLocal(); render(); }
   toast("→ "+ST[nuevoEstado].label,"ok");
@@ -4088,7 +4116,7 @@ function renderRow(id,j){
     <div><div class="job-qty celda-edit" onclick="editarCelda(event,'${id}','cantidad')" title="Clic para editar la cantidad">${qty}${j.packId&&packs[j.packId]?`<span class="job-pack" title="Descuenta del pack ${esc(packNombre(j.packId))}">${ic("package")}</span>`:""}</div><div class="job-unit celda-edit" onclick="editarCelda(event,'${id}','responsable')" title="Clic para cambiar el responsable">Resp: ${j.responsable?esc(j.responsable.split(" ")[0]):"—"}</div></div>
     <div><span class="badge badge-doc-${j.documento==="SI"?"ok":j.documento==="NA"?"na":"no"} celda-edit" onclick="editarCelda(event,'${id}','documento')" title="Clic para cambiar boleta / factura">${j.documento==="SI"?"✓":j.documento==="NA"?"➖":"✗"}</span></div>
     <div>${j.drive?`<a href="${esc(safeUrl(j.drive))}" target="_blank" class="drive-link" onclick="event.stopPropagation()">${ic("folder")}</a>`:`<span class="job-sub celda-edit" style="margin-top:0" onclick="editarCelda(event,'${id}','drive')" title="Clic para agregar el link de Drive">—</span>`}</div>
-    <div><span class="badge badge-${j.estado}">${st.label}</span>${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
+    <div><span class="badge badge-${j.estado}">${st.label}</span>${j.shopify&&j.shopify.cerradoAt?`<span class="job-pack" title="Cerrado en Shopify · ${esc(fmtFull(j.shopify.cerradoAt))}">${ic("shopping-cart")}</span>`:j.shopify&&j.shopify.error?`<span class="job-pack" style="color:var(--danger-c)" title="${esc(j.shopify.error)}">${ic("triangle-alert")}</span>`:""}${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
     <div><div class="${delCls} celda-edit" onclick="editarCelda(event,'${id}','tipoEntrega')" title="Clic para cambiar el tipo de entrega">${delIcon}</div><div class="job-sub celda-edit ${ov?"overdue":""}" onclick="editarCelda(event,'${id}','fechaLimite')" title="Clic para cambiar la fecha límite">${fmtDate(j.fechaLimite)}${ov?" "+ic("triangle-alert"):""}</div></div>
     <div class="row-actions"><button class="btn btn-edit" onclick="event.stopPropagation();abrirFicha('${id}')">Editar</button><button class="btn btn-danger" onclick="event.stopPropagation();del('${id}')">✕</button></div>
   </div>`;
@@ -5750,6 +5778,7 @@ function crearDesdeFicha(){
   if(!ES_ACC(data.tipoDtf)) delete data.accesorio;
   if((data.tipoEntrega||"Retiro")==="Retiro") delete data.envio;
   packAjustarEnlace(data); if(!data.packId) delete data.packId;
+  if(data.estado==="entregado") marcarCierreShopify(data,data,now);
   const listo=id=>{ toast("Pedido agregado ✓","ok"); fichaNuevo=false; fichaDraft=null; fichaId=id; renderFicha(true); cargarActividad(id); };
   if(dbRef){ nextIdTransaction(id=>{ dbRef.child(id).set(data); if(data.packId){ registrarLog(id,"Pack DTF","—",packNombre(data.packId)); packAprender(data.packId,data.cliente); } notificarAsignados(id,data.cliente,data.personas); registrarCreacion(id); listo(id); }); }
   else{ const id=genId(); jobs[id]=data; saveLocal(); render(); listo(id); }
@@ -5798,7 +5827,7 @@ function renderFicha(forzar){
   </div>
   <div class="fh-title">
     <input class="fi fi-titulo" id="fc-cliente" list="clientes-list" value="${esc(j.cliente)}" placeholder="Nombre del cliente *" onchange="fichaCampo('cliente',this.value)"/>
-    <input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="# Pedido (ej: #ST01-0406)" onchange="fichaCampo('pedido',this.value)"/>
+    <input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="# Pedido de Shopify (ej: #8584)" onchange="fichaCampo('pedido',this.value)"/>
     <div class="fi-hint">${hint}</div>
   </div>
   <div class="fh-pills">
@@ -5819,6 +5848,7 @@ function renderFicha(forzar){
     ${fiFila("Tipo de entrega",fiSelect("tipoEntrega",j.tipoEntrega||"Retiro",FICHA_ENTREGAS))}
     ${fiFila("Responsable",fiSelect("responsable",j.responsable||"",[["","— Sin asignar —"],...FICHA_RESPONSABLES.map(r=>[r,r])]))}
     ${!(ES_STICKER(tipo)||ES_ACC(tipo))?fiFila(ic("folder")+" Link Google Drive",fiText("drive",j.drive,"https://drive.google.com/...","url"),true):""}
+    ${fichaShopifyHtml(j)}
     ${!fichaNuevo?fiFila("Creado por",fiRO(`${esc(j.createdBy?.nombre||"—")} · ${fmtFull(j.createdAt)}`)):""}
     ${!fichaNuevo?fiFila("Actualizado por",fiRO(esc(j.updatedBy?.nombre||"—"))):""}
     ${!fichaNuevo?fiFila("Última actualización",fiRO(timeAgo(j.updatedAt))):""}

@@ -177,6 +177,17 @@ Firestore).
   nadie edita ni borra entradas salvo admins. Las menciones y asignaciones
   de tareas llegan a `tago_notificaciones` con `tareaId` + `nombre` y la
   Bandeja abre la tarea (`irATarea`).
+- Cierre en Shopify (14-sep-2026): al pasar un pedido a **Entregado**, si
+  «# Pedido» trae un número de Shopify (`numeroShopify`: 4 a 6 dígitos sueltos,
+  «#8584»), `moverEstado`/`crearDesdeFicha` escriben
+  `tago_pedidos/<id>/shopify = {pendiente:true, numero, solicitadoAt/By}`.
+  Quien cierra es el robot del tablero (`tago-tablero/pipeline/shopify_cerrar.py`,
+  al final de cada corrida): marca enviado (fulfillment sin avisar al cliente) y
+  archiva (orderClose), y deja `shopify = {cerradoAt, orderId, name, …}` o
+  `{error, intentadoAt}` (sin permisos: el error y `pendiente` sigue en true).
+  La ficha muestra la fila «Shopify» (`fichaShopifyHtml`) con «Reintentar» /
+  «Cerrar en Shopify» (`pedirCierreShopify`); la tabla, un ícono junto al
+  estado. La app nunca habla con Shopify: no hay clave en el navegador.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o
