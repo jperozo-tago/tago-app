@@ -543,21 +543,18 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
 .corrida ul{margin:0;padding-left:18px}
 
 /* ═════ A quién llamar: las listas de la Ruta TAGO dentro del tablero ═════ */
-.segsR{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.segsR button{border:1.5px solid var(--linea);background:var(--papel);border-radius:var(--pill);padding:7px 13px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.84rem;color:var(--tinta2)}
-.segsR button:hover{border-color:var(--azul);color:var(--azul)}
-.segsR button[aria-selected="true"]{background:var(--tinta);color:var(--film);border-color:var(--tinta)}
-.segsR .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
 .filtrosR{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
 .filtrosR input[type=search]{flex:1 1 220px;min-width:0;padding:8px 12px;border:1px solid var(--linea2);border-radius:9px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.9rem}
 .filtrosR label{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;color:var(--tinta2)}
 .lnk{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--azul);cursor:pointer;text-align:left}
 .lnk:hover{text-decoration:underline}
-.encargos .caja{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.encargos{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.encargos .caja{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;cursor:pointer}
+.encargos .caja.abierta{border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-suave)}
+.encargos .verMas{margin-top:auto}
 .encargos .segT{font-family:"DM Sans",sans-serif;font-weight:600;font-size:1.05rem;color:var(--tinta);line-height:1.2}
 .encargos .medNum .de{font-size:.95rem;color:var(--gris);font-weight:600}
 .encargos .plata{font-size:.82rem;color:var(--tinta2);font-family:"DM Sans",sans-serif;font-weight:600}
-.encargos .mas{margin-top:auto;align-self:flex-start}
 select.stR{padding:5px 8px;border:1px solid var(--linea2);border-radius:8px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.82rem;min-width:140px}
 select.stR.s-cont,select.stR.s-cot{border-color:var(--azul);background:var(--azul-suave)}
 select.stR.s-rec{border-color:var(--verde-fill);background:var(--verde-suave)}
@@ -3227,13 +3224,13 @@ function comoLlego(ci, origen) {
 const waLink = t => "https://wa.me/" + (t.startsWith("+") ? t.slice(1)
   : "56" + t.replace(/\D/g,"").replace(/^56/, ""));
 const SEGSR = {
-  R: { n: "En riesgo", quien: "las vendedoras con Carol, esta semana", money: "gasto12", ml: "en 12 meses",
+  R: { n: "Se están yendo", quien: "las vendedoras con Carol, esta semana", money: "gasto12", ml: "en 12 meses",
        desc: "Compraban cada pocos días y llevan entre dos y seis semanas callados. Todavía no se fueron." },
   A: { n: "Compraban mucho y ya no", quien: "Carol con las vendedoras: los 10 primeros, y una sola pregunta: por qué", money: "gasto12", ml: "en 12 meses",
        desc: "Más de $800 mil en doce meses, o más de $1,5 M en 2025, y más de 45 días sin comprar." },
   B: { n: "Dormidos", quien: "las vendedoras, de mayor a menor gasto", money: "gasto12", ml: "en 12 meses",
        desc: "Compraban seguido y llevan más del doble de su ritmo sin comprar, con menos gasto que los grandes." },
-  C: { n: "Potenciales que no compran", quien: "las vendedoras: seguimiento a los 30, 60 y 90 días", money: null,
+  C: { n: "Potenciales sin compra", quien: "las vendedoras: seguimiento a los 30, 60 y 90 días", money: null,
        desc: "Escribieron tres o más mensajes por WhatsApp en los últimos 45 días y no aparecen como clientes en relBase. Vienen de GoHighLevel, con la fecha de corte de la Ruta." },
   D: { n: "Compraron una vez", quien: "las vendedoras: se les pregunta qué faltó", money: "gastoTot", ml: "esa compra",
        desc: "Una sola compra, hace más de 45 días, y no volvieron. Ordenados por monto." },
@@ -3377,40 +3374,42 @@ function sLlamar() {
     { seg: "R", n: S.R.length, de: null, plata: `${clp(plata(S.R, "gasto12"))} en 12 meses`, color: "var(--rojo)",
       t: "Se están yendo", d: "Compraban cada semana y llevan de dos a seis semanas callados. Llamarlos esta semana, antes de que se vayan." },
     { seg: "A", n: Math.min(10, S.A.length), de: S.A.length, plata: `${clp(plata(S.A, "gasto12"))} en 12 meses, entre los ${num(S.A.length)}`, color: "var(--tinta)",
-      t: "Compraban mucho y ya no", d: "Los diez primeros. Una sola pregunta: por qué dejaron de comprar. La respuesta vale más que la venta." },
+      t: "Compraban mucho y ya no", d: "Primero los diez más grandes. Una sola pregunta: por qué dejaron de comprar." },
     { seg: "E", n: Math.min(10, S.E.length), de: S.E.length, plata: `${clp(plata(S.E, "gasto26"))} en 2026, entre los ${num(S.E.length)}`, color: "var(--verde)",
-      t: "Clientes clave", d: "Son la mitad de la venta y siguen activos. Ofrecerles el plan mensual de DTF: si tres aceptan, ya hay producto." },
-    { seg: "B", n: S.B.length, de: null, plata: `${clp(plata(S.B, "gasto12"))} en 12 meses, más ${num(S.D.length)} que compraron una vez`, color: "var(--tinta)",
-      t: "Dormidos", d: "Se salieron de su ritmo y llevan más de un mes callados. De mayor a menor gasto. A los que compraron una sola vez se les pregunta qué faltó." },
+      t: "Clientes clave", d: "La mitad de la venta, y siguen activos. Ofrecerles el plan mensual de DTF: si tres aceptan, ya hay producto." },
+    { seg: "B", n: S.B.length, de: null, plata: `${clp(plata(S.B, "gasto12"))} en 12 meses`, color: "var(--tinta)",
+      t: "Dormidos", d: "Se salieron de su ritmo y llevan más de un mes callados. De mayor a menor gasto." },
+    { seg: "D", n: S.D.length, de: null, plata: `${clp(plata(S.D, "gastoTot"))} en esa compra`, color: "var(--tinta)",
+      t: "Compraron una vez", d: "Una sola compra hace más de 45 días, y no volvieron. Se les pregunta qué faltó." },
+    { seg: "C", n: nC, de: null, plata: "escribieron por WhatsApp y no compraron", color: "var(--tinta)",
+      t: "Potenciales sin compra", d: "Tres o más mensajes en 45 días y ninguna compra en relBase. Seguimiento a los 30, 60 y 90 días." },
   ];
-  return `<div class="sec" style="margin-top:0"><h2>Por dónde empezar a llamar.</h2>
-    <span class="tocable der">en orden de prioridad</span></div>
-  <div class="rej4 encargos">${P.map((c, i) => `<div class="caja">
+  const sel = SEGSR[RUTA.seg];
+  return `<div class="sec" style="margin-top:0"><h2>A quién llamar, en orden de prioridad.</h2>
+    <span class="tocable der">Toca una tarjeta para ver su lista abajo</span></div>
+  <div class="encargos">${P.map((c, i) => { const on = RUTA.seg === c.seg; return `<button class="caja abre ${on ? "abierta" : ""}" data-verseg="${c.seg}">
       <span class="rot">Prioridad ${i+1}</span>
       <b class="segT">${c.t}</b>
-      <span class="medNum" style="color:${c.color}">${num(c.n)}${c.de ? `<span class="de"> de ${num(c.de)}</span>` : ""}</span>
+      <span class="medNum" style="color:${c.color}">${c.n === null ? "…" : num(c.n)}${c.de ? `<span class="de"> de ${num(c.de)}</span>` : ""}</span>
       <span class="plata">${c.plata}</span>
       <span class="bajo">${c.d}</span>
-      <button class="mas" data-verseg="${c.seg}">Ver la lista</button></div>`).join("")}
+      <span class="verMas">${on ? "Viendo esta lista ↓" : "Ver la lista ↓"}</span></button>`; }).join("")}
   </div>
   <div class="panel" style="margin-top:12px">
-    <p>${nC !== null ? `Aparte, <b>${num(nC)} potenciales</b> escribieron por WhatsApp y no compraron: se les hace seguimiento a los 30, 60 y 90 días. ` : ""}Quién llama a cada lista y en qué semana está en la <a href="/ruta">Ruta TAGO</a>.</p>
+    <p class="bajo">Quién llama a cada lista y en qué semana está en la <a href="/ruta">Ruta TAGO</a>. El estado y la nota de cada cliente son los mismos allá y aquí.</p>
     ${explicable("ruta", `Las listas se arman con las mismas reglas de la Ruta TAGO, sobre los documentos de relBase que
-      ya tiene el tablero (montos netos, sin las dos máquinas, un cliente por RUT). <b>En riesgo</b>: compraban
+      ya tiene el tablero (montos netos, sin las dos máquinas, un cliente por RUT). <b>Se están yendo</b>: compraban
       seguido, llevan más del doble de su ritmo sin comprar, menos de 45 días, y más de $500 mil en el año.
       <b>Compraban mucho y ya no</b>: más de $800 mil en 12 meses o $1,5 M en 2025, y más de 45 días callados.
       <b>Dormidos</b>: el resto de los que se salieron de su ritmo, con más de 30 días. <b>Compraron una vez</b>:
       una sola compra desde septiembre de 2025, hace más de 45 días, de $30 mil o más. <b>Clientes clave</b>: ocho
       o más compras en 2026 y activos. Los <b>potenciales</b> salen de las conversaciones de WhatsApp en
-      GoHighLevel y se refrescan cuando se actualiza la Ruta. El estado y la nota de cada cliente son los mismos
-      que en la Ruta: lo que marques aquí se ve allá.`)}
+      GoHighLevel y se refrescan cuando se actualiza la Ruta.`)}
     ${RUTA.edita ? "" : `<p class="bajo" style="margin-top:10px">Estás viendo estas listas en solo lectura: el estado y las notas los cambia Andreina.</p>`}
   </div>
 
-  <div class="sec"><h2>Las listas.</h2><span class="tocable der">Toca un nombre para ver su ficha completa</span></div>
-  <div class="segsR">${["R","A","B","C","D","E"].map(k => { const n = k === "C" ? (nC === null ? "…" : num(nC)) : num(S[k].length);
-    return `<button data-segr="${k}" aria-selected="${RUTA.seg === k}">${SEGSR[k].n}<span class="n">${n}</span></button>`; }).join("")}</div>
-  <p class="bajo" style="margin:0 0 10px">${SEGSR[RUTA.seg].desc} Llaman <b>${SEGSR[RUTA.seg].quien}</b>.</p>
+  <div class="sec"><h2>${sel.n}.</h2><span class="tocable der">Toca un nombre para ver su ficha completa</span></div>
+  <p class="bajo" style="margin:0 0 10px">${sel.desc} Llaman <b>${sel.quien}</b>.</p>
   <div class="filtrosR">
     <input type="search" id="rq" value="${esc(RUTA.q)}" placeholder="Buscar por nombre, RUT o teléfono">
     <label><input type="checkbox" id="rqTel"${RUTA.soloTel ? " checked" : ""}> Solo con teléfono</label>
@@ -3428,8 +3427,7 @@ const timersR = {};
 document.addEventListener("click", e => {
   const sg = e.target.closest("[data-segr],[data-verseg]");
   if (sg) { RUTA.seg = sg.dataset.segr || sg.dataset.verseg; fichaAbierta = null; const y = window.scrollY; pinta();
-    window.scrollTo({ top: y });
-    if (sg.dataset.verseg) { const z = document.querySelector(".segsR"); if (z) z.scrollIntoView({ behavior: "smooth", block: "start" }); } }
+    window.scrollTo({ top: y }); }
 }, SENAL);
 document.addEventListener("change", e => {
   const t = e.target;
