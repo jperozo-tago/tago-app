@@ -928,7 +928,7 @@ const claveDb = k => String(k).replace(/[.#$\[\]\/]/g, '_');
 PED.activo = true;
 /* Control de producción (app Pedidos): los estados de tarea, y las tareas que nacieron en la Ruta. */
 function escuchaPedidos(){
-  const r1=firebase.database().ref('tago_tareas_estados'); const cb1=r1.on('value', s=>{ const v=s.val()||{}; PED.estados=v; const ord=Object.entries(v).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); PED.porHacer=ord.length?ord[0][0]:null; PED.listo=ord.length?ord[ord.length-1][0]:null; renderAll(); }, e=>console.warn('estados',e)); escuchas.push([r1,cb1]);
+  const r1=firebase.database().ref('tago_tareas_estados'); const cb1=r1.on('value', s=>{ const v=s.val()||{}; PED.estados=v; const ord=Object.entries(v).filter(([id,e])=>e&&!e.espacio).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); /* solo los estados generales: los de un espacio (Clientes) no cuentan */ PED.porHacer=ord.length?ord[0][0]:null; PED.listo=ord.length?ord[ord.length-1][0]:null; renderAll(); }, e=>console.warn('estados',e)); escuchas.push([r1,cb1]);
   const r2=firebase.database().ref('tago_tareas'); const cb2=r2.on('value', s=>{ const v=s.val()||{}; const m={}; Object.entries(v).forEach(([id,t])=>{ if(t&&t.origenRuta) m[id]=t; }); state.ped=m; renderAll(); }, e=>console.warn('tareas',e)); escuchas.push([r2,cb2]);
 }
 function asignarEnPedidos(id, ids){
