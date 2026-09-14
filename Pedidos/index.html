@@ -509,6 +509,13 @@
     .tt-head .tt-cell{min-height:34px}
     .tt-cell.tt-nombre{position:sticky;left:0;z-index:1;background:inherit;padding-left:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;box-shadow:inset -1px 0 0 var(--border-soft)}
     .tt-nombre-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tt-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--text-muted);box-sizing:border-box;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:9px;line-height:1;transition:transform .12s}
+    .tt-dot.inicio{border-style:dashed}
+    .tt-dot.fin{background:var(--text-muted)}
+    .tt-dot:hover{transform:scale(1.15)}
+    .tt-dot .ic{width:9px;height:9px;stroke-width:3}
+    .tarea-grupo-pill .tt-dot{width:12px;height:12px;cursor:default;margin-right:5px;vertical-align:-2px;border-width:2px}
+    .tarea-grupo-pill .tt-dot .ic{width:7px;height:7px}
     .tt-edit{cursor:pointer}
     .tt-edit:hover{box-shadow:inset 0 0 0 1px var(--claro-2)}
     .tt-vacio{color:var(--text-muted)}
@@ -2634,7 +2641,7 @@ function renderTareas(){
     return`<div class="tarea-grupo">
       <div class="tarea-grupo-header" onclick="ttPlegar('${estId}')" title="${abierto?"Plegar":"Desplegar"}">
         <span class="tt-caret">${abierto?"▾":"▸"}</span>
-        <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${esc(est.nombre)}${espNombre}</span>
+        <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${est._huerfano?"":ttDot(est,estId,est.espacio||null)}${esc(est.nombre)}${espNombre}</span>
         <span class="tarea-grupo-count">${tareasDelEstado.length}</span>
       </div>
       ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
@@ -2752,7 +2759,7 @@ function renderTareaRow(id,t,cols){
   cols=cols||ttColumnas();
   const celdas=cols.map(col=>{ const ed=ttEditable(t,col); return `<div class="tt-cell${ed?" tt-edit":""}"${ed?` onclick="ttEditar(event,'${id}','${col.k}')" title="Clic para editar"`:""}>${ttValor(id,t,col)}</div>`; }).join("");
   return`<div class="tt-row" data-id="${id}">
-    <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
+    <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,espacioDeTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
     ${celdas}
     <div class="tt-cell tt-acc">${currentUser&&currentUser.isAdmin?`<button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button>`:""}</div>
   </div>`;
@@ -2833,6 +2840,12 @@ function ttEnlazarMenu(pop,guardar){
     o.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); guardar(o.dataset.v); } if(e.key==="ArrowDown"){ e.preventDefault(); (ops[i+1]||ops[0]).focus(); } if(e.key==="ArrowUp"){ e.preventDefault(); (ops[i-1]||ops[ops.length-1]).focus(); } });
   });
   (pop.querySelector(".celda-opcion.actual")||ops[0])?.focus();
+}
+function ttDot(est,estId,esp){ // el circulito: punteado al empezar, anillo en el medio, relleno con ✓ al terminar
+  const set=estadosDe(esp), i=set.findIndex(([sid])=>sid===estId);
+  const clase=i===0?"inicio":(i>=0&&i===set.length-1?"fin":"");
+  const color=est?est.color:"var(--text-muted)";
+  return `<span class="tt-dot ${clase}" style="border-color:${color}${clase==="fin"?";background:"+color:""}">${clase==="fin"?ic("check"):""}</span>`;
 }
 function ttEditar(ev,id,k){
   ev.stopPropagation(); ev.preventDefault();
