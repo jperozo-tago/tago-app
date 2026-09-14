@@ -1936,7 +1936,7 @@ let historialListeners={},historialData={};
 const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado"};
 let chatRef=null,chatsMeta={},currentChatId=null,chatMessagesRef=null,chatMessages={},chatInitialized=false,selectedGrupoMiembros=[];
 let tareasRef=null,tareas={},tareasEstadosRef=null,tareaEstados={},tareasInitialized=false,editTareaId=null,selectedTareaAsignados=[];
-let tareasVisIndexRef=null,tareaChildListeners={};
+let tareasVisIndexRef=null,tareaChildListeners={},tareasPersonales={},tareasPorLista={},tareasListaListeners={};
 const TAREA_COLORES=[
   {nombre:"Gris",valor:"#6B7BB8"},{nombre:"Azul",valor:"#4063F9"},{nombre:"Ámbar",valor:"#D4870A"},
   {nombre:"Verde",valor:"#1F9E6E"},{nombre:"Teal",valor:"#49CEAB"},{nombre:"Violeta",valor:"#6B5BD6"},
@@ -2468,14 +2468,17 @@ function initTareas(){
       err=>{ toast("Error de sincronización de tareas: "+err.message,"error"); console.error(err); }
     );
   }else{
-    // No-admins: la regla de seguridad NO permite leer toda la colección, solo tareas puntuales donde
-    // la persona sea creadora o asignada. Por eso escuchamos primero el índice de visibilidad propio
-    // (tago_tareas_visibilidad/<mi-email>) y luego abrimos un listener individual por cada tarea permitida.
+    // No-admins: la regla no deja leer la colección entera. Dos fuentes que se funden en `tareas`:
+    // (1) el índice de visibilidad propio (tago_tareas_visibilidad/<mi-email>): las tareas personales,
+    //     creadas por mí o asignadas a mí, tengan lista o no; un listener por tarea.
+    // (2) las tareas de cada lista de los espacios, por consulta orderByChild('lista') (la regla lo
+    //     permite a cualquier permitido): todo el equipo ve lo que hay en los espacios.
     tareasVisIndexRef=firebase.database().ref("tago_tareas_visibilidad/"+sanitizeEmailKey(currentUser.email));
     tareasVisIndexRef.on("value",
       snap=>{ syncTareaChildListeners(Object.keys(snap.val()||{})); },
       err=>{ toast("Error de sincronización de tareas: "+err.message,"error"); console.error(err); }
     );
+    syncTareasListas();
   }
   tareasEstadosRef=firebase.database().ref("tago_tareas_estados");
   tareasEstadosRef.on("value",
@@ -2488,13 +2491,19 @@ function initTareas(){
     err=>{ toast("Error de sincronización de estados: "+err.message,"error"); console.error(err); }
   );
 }
+function recomponerTareas(){ // no-admins: las tareas de las listas + las personales, en un solo mapa
+  const t={};
+  Object.values(tareasPorLista).forEach(m=>Object.assign(t,m));
+  Object.assign(t,tareasPersonales);
+  tareas=t; renderTareas();
+}
 function syncTareaChildListeners(ids){
   const idSet=new Set(ids);
   Object.keys(tareaChildListeners).forEach(id=>{
     if(!idSet.has(id)){
       tareaChildListeners[id].off();
       delete tareaChildListeners[id];
-      delete tareas[id];
+      delete tareasPersonales[id];
     }
   });
   ids.forEach(id=>{
@@ -2504,13 +2513,26 @@ function syncTareaChildListeners(ids){
     ref.on("value",
       snap=>{
         const val=snap.val();
-        if(val)tareas[id]=val; else delete tareas[id];
-        renderTareas();
+        if(val)tareasPersonales[id]=val; else delete tareasPersonales[id];
+        recomponerTareas();
       },
       err=>{ console.error(err); }
     );
   });
-  renderTareas();
+  recomponerTareas();
+}
+function syncTareasListas(){ // una consulta por lista; se abren y cierran al ritmo de tago_listas
+  if(!tareasRef||!currentUser||currentUser.isAdmin)return;
+  const ids=new Set(Object.keys(listas).filter(lid=>listas[lid]));
+  Object.keys(tareasListaListeners).forEach(lid=>{ if(!ids.has(lid)){ const l=tareasListaListeners[lid]; try{ l.q.off("value",l.cb); }catch(e){} delete tareasListaListeners[lid]; delete tareasPorLista[lid]; } });
+  ids.forEach(lid=>{
+    if(tareasListaListeners[lid])return;
+    const q=tareasRef.orderByChild("lista").equalTo(lid);
+    const cb=snap=>{ tareasPorLista[lid]=snap.val()||{}; recomponerTareas(); };
+    tareasListaListeners[lid]={q,cb};
+    q.on("value",cb,err=>{ console.error(err); });
+  });
+  recomponerTareas();
 }
 function ensureDefaultEstados(){
   if(!currentUser.isAdmin)return;
@@ -2525,6 +2547,7 @@ function ensureDefaultEstados(){
 function overdueTarea(t){ return t.fechaLimite&&new Date(t.fechaLimite+"T23:59:59")<new Date(); }
 function puedeVerTarea(t){
   if(currentUser.isAdmin)return true;
+  if(t.lista&&listas[t.lista])return true; // lo que está en un espacio lo ve todo el equipo
   if(t.createdBy?.id===currentUser.id)return true;
   if(t.asignados&&t.asignados[currentUser.id])return true;
   return false;
@@ -3026,7 +3049,7 @@ function initFirebaseData(){
     initChat();
     initTareas();
     firebase.database().ref("tago_espacios").on("value",snap=>{ espacios=snap.val()||{}; renderSidebar(); actualizarTituloTareas(); },err=>console.error(err));
-    firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); cpRefrescar(); },err=>console.error(err));
+    firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; if(typeof syncTareasListas==="function") syncTareasListas(); renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); cpRefrescar(); },err=>console.error(err));
     firebase.database().ref("tago_campos").on("value",snap=>{ camposCat=snap.val()||{}; if(currentTab==="tareas")renderTareas(); cpRefrescar(); if(document.getElementById("modal-tarea")?.classList.contains("open")) aplicarCamposModal(gv("f-tarea-lista")||null); },err=>{ console.error(err); if(currentUser?.isAdmin) toast("No se pudieron cargar los campos personalizados de las listas: "+err.message,"error"); });
     firebase.database().ref("tago_carpetas").on("value",snap=>{ carpetas=snap.val()||{}; renderSidebar(); },err=>console.error(err));
     firebase.database().ref("tago_elementos").on("value",snap=>{ elementos=snap.val()||{}; renderSidebar(); if(currentTab==="elemento")renderElemento(); if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); } },err=>console.error(err));
