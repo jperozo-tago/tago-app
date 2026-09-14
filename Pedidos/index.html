@@ -509,6 +509,29 @@
     .tt-head .tt-cell{min-height:34px}
     .tt-cell.tt-nombre{position:sticky;left:0;z-index:1;background:inherit;padding-left:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;box-shadow:inset -1px 0 0 var(--border-soft)}
     .tt-nombre-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tarea-toolbar{flex-wrap:wrap;align-items:center}
+    /* Tablero de tareas */
+    .tk-wrap{overflow-x:auto;padding-bottom:6px}
+    .tk-board{display:grid;gap:10px;align-items:start;min-width:max-content}
+    .tk-col{background:var(--panel);border-radius:14px;padding:10px;min-height:160px;width:262px;transition:background .1s;border:2px dashed transparent}
+    .tk-col.sobre{background:var(--azul-glow);border-color:var(--azul)}
+    .tk-head{display:flex;align-items:center;gap:8px;padding:2px 4px 10px}
+    .tk-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
+    .tk-card:hover{border-color:var(--border)}
+    .tk-card.arrastrando{opacity:.45}
+    .tk-card-top{display:flex;align-items:flex-start;gap:7px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--text)}
+    .tk-card-top .tt-dot{margin-top:2px}
+    .tk-card-nombre{min-width:0;overflow-wrap:anywhere}
+    .tk-card-lista{font-size:11px;color:var(--text-muted);margin:4px 0 0 22px}
+    .tk-card-campo{font-size:11.5px;color:var(--text-sec);margin:3px 0 0 22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tk-card-campo b{color:var(--text);font-weight:600}
+    .tk-card-pie{display:flex;align-items:center;gap:8px;margin:8px 0 0 22px;flex-wrap:wrap;min-height:18px}
+    .tk-add{font-size:12.5px;color:var(--text-muted);cursor:pointer;padding:6px 4px;display:flex;align-items:center;gap:4px}
+    .tk-add:hover{color:var(--teal-dark)}
+    .tt-cal-chip{border-color:transparent}
+    .tt-cal-sinfecha{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--text-muted)}
+    .tt-cal-sinfecha .cal-chip{max-width:220px}
+    @media(max-width:700px){.tk-col{width:232px}}
     .tt-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--text-muted);box-sizing:border-box;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:9px;line-height:1;transition:transform .12s}
     .tt-dot.inicio{border-style:dashed}
     .tt-dot.fin{background:var(--text-muted)}
@@ -544,6 +567,12 @@
     .tt-del:hover{color:var(--danger-c);background:var(--danger-bg)}
     @media(hover:none){.tt-del{display:inline-block}}
     .tt-add-row{min-height:38px}
+    .tt-calc{min-height:34px;background:var(--panel);border-top:1px solid var(--border-soft)}
+    .tt-calc .tt-cell{min-height:34px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap}
+    .tt-calc .tt-cell.tt-nombre{cursor:default;background:var(--panel)}
+    .tt-calc .tt-cell:hover:not(.tt-nombre):not(.tt-acc){color:var(--text)}
+    .tt-calc .tt-cell b{color:var(--text);font-weight:600}
+    .tt-calc .tt-cell .ic{font-size:11px;opacity:.7}
     .tt-add{color:var(--text-muted);font-weight:400;font-size:12.5px;font-family:'Open Sans',sans-serif}
     .tt-add:hover{color:var(--teal-dark)}
     .tt-add-input{width:100%;border:1px solid var(--azul);border-radius:8px;padding:6px 10px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;outline:none;box-shadow:0 0 0 3px var(--azul-glow);background:var(--surface)}
@@ -1549,6 +1578,11 @@
   <!-- ── VISTA TAREAS ── -->
   <div id="view-tareas" style="display:none">
     <div class="tarea-toolbar">
+      <div class="vistas-tabs" id="tareas-vistas">
+        <button data-v="lista" class="active" onclick="ttVista('lista')"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Lista</button>
+        <button data-v="tablero" onclick="ttVista('tablero')"><svg class="ic" aria-hidden="true"><use href="#i-square-kanban"/></svg>Tablero</button>
+        <button data-v="calendario" onclick="ttVista('calendario')"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>Calendario</button>
+      </div>
       <button class="btn btn-primary" onclick="openTareaModal()">+ Nueva tarea</button>
       <button class="btn btn-secondary tareas-admin-only" style="display:none" onclick="openEstadosModal()"><svg class="ic" aria-hidden="true"><use href="#i-settings-2"/></svg><span class="btn-txt">Estados</span></button>
       <button class="btn btn-secondary" id="btn-campos-lista" style="display:none" onclick="abrirCampos()" title="Campos de esta lista"><svg class="ic" aria-hidden="true"><use href="#i-columns-3"/></svg><span class="btn-txt">Campos</span></button>
@@ -2597,18 +2631,29 @@ function puedeVerTarea(t){
 function ttDescripcionLista(){ const l=tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]; return l&&l.descripcion?`<div class="tt-desc">${esc(l.descripcion)}</div>`:""; }
 // ── Estados por espacio: con `espacio` son propios de ese espacio; sin `espacio`, generales ──
 function estadosGenerales(){ return Object.entries(tareaEstados).filter(([,e])=>e&&!e.espacio).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); }
-function estadosPropios(esp){ return esp?Object.entries(tareaEstados).filter(([,e])=>e&&e.espacio===esp).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)):[]; }
+function estadosPropios(esp){ return esp?Object.entries(tareaEstados).filter(([,e])=>e&&e.espacio===esp&&!e.lista).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)):[]; }
 function estadosDe(esp){ const p=estadosPropios(esp); return p.length?p:estadosGenerales(); } // los del espacio si tiene; si no, los generales
+function estadosPropiosLista(lid){ return lid?Object.entries(tareaEstados).filter(([,e])=>e&&e.lista===lid).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)):[]; } // estados propios de UNA lista (llevan también su espacio)
 function espacioDeLista(lid){ const l=lid&&listas[lid]; const e=l?l.espacio:null; return e&&e!=="tareas"?e:null; } // el espacio fijo «Tareas» usa los generales
+function estadosDeLista(lid){ const p=estadosPropiosLista(lid); return p.length?p:estadosDe(espacioDeLista(lid)); } // los de la lista si tiene; si no, los de su espacio
 function listaOculta(t){ return !!(t&&t.lista&&!listas[t.lista]); } // tiene lista pero yo no la veo (espacio privado o lista borrada)
 function espacioDeTarea(t){ if(listaOculta(t)){ const e=tareaEstados[t.estado]; return e&&e.espacio?e.espacio:null; } return espacioDeLista(t&&t.lista); }
+function estadosParaTarea(t){ // el conjunto de estados que le corresponde a una tarea
+  if(t&&t.lista){ const p=estadosPropiosLista(t.lista); if(p.length) return p; if(listaOculta(t)){ const e=tareaEstados[t.estado]; if(e&&e.lista) return estadosPropiosLista(e.lista); } }
+  return estadosDe(espacioDeTarea(t));
+}
 function estadosDelContexto(){
-  if(tareaFiltro.tipo==="lista") return estadosDe(espacioDeLista(tareaFiltro.id));
-  if(tareaFiltro.tipo==="espacio") return estadosDe(tareaFiltro.id==="tareas"?null:tareaFiltro.id);
-  // Todas las tareas: generales + los propios de cada espacio con tareas a la vista
-  const vistos=new Set(), extra=[];
-  Object.values(tareas).filter(t=>puedeVerTarea(t)&&tareaEnFiltro(t)).forEach(t=>{ const esp=espacioDeTarea(t); if(esp&&!vistos.has(esp)){ vistos.add(esp); extra.push(...estadosPropios(esp)); } });
-  return estadosGenerales().concat(extra);
+  if(tareaFiltro.tipo==="lista") return estadosDeLista(tareaFiltro.id);
+  const vistos=new Set(), extra=[], agregar=set=>set.forEach(x=>{ if(!vistos.has(x[0])){ vistos.add(x[0]); extra.push(x); } });
+  if(tareaFiltro.tipo==="espacio"){ // los del espacio + los propios de sus listas
+    const esp=tareaFiltro.id==="tareas"?null:tareaFiltro.id; agregar(estadosDe(esp));
+    Object.keys(listas).filter(lid=>listas[lid]&&espacioDeLista(lid)===esp).forEach(lid=>agregar(estadosPropiosLista(lid)));
+    return extra;
+  }
+  // Mis tareas / mezcladas: generales + los propios de cada espacio y de cada lista con tareas a la vista
+  agregar(estadosGenerales());
+  Object.values(tareas).filter(t=>puedeVerTarea(t)&&tareaEnFiltro(t)).forEach(t=>{ const esp=espacioDeTarea(t); if(esp) agregar(estadosPropios(esp)); if(t.lista) agregar(estadosPropiosLista(t.lista)); const e=tareaEstados[t.estado]; if(e&&e.lista) agregar(estadosPropiosLista(e.lista)); });
+  return extra;
 }
 function renderTareas(){
   const estadosOrdenados=estadosDelContexto();
@@ -2617,6 +2662,8 @@ function renderTareas(){
   if(!Object.keys(tareaEstados).length){ cont.innerHTML=`<div class="empty">Cargando estados...</div>`; return; }
   actualizarBotonCampos();
   ttCfgCache=Object.create(null);
+  document.querySelectorAll("#tareas-vistas button").forEach(b=>b.classList.toggle("active",b.dataset.v===ttVistaActual()));
+  if(ttVistaActual()!=="lista"){ renderTareasAlt(estadosOrdenados); ttColaFinal(); return; }
   // Si se estaba escribiendo el nombre de una tarea nueva, el repintado no se lo lleva
   const escribiendo=document.getElementById("tt-add-input"), textoNuevo=escribiendo?escribiendo.value:null;
   const cols=ttColumnas(), enLista=tareaFiltro.tipo==="lista", admin=!!(currentUser&&currentUser.isAdmin);
@@ -2637,24 +2684,98 @@ function renderTareas(){
   cont.innerHTML=ttDescripcionLista()+grupos.map(([estId,est])=>{
     const tareasDelEstado=est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId);
     const abierto=!ttPlegados.has(estId);
-    const espNombre=mezcla&&est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:"";
+    const espNombre=est.lista&&tareaFiltro.tipo!=="lista"?(listas[est.lista]?` · ${esc(listas[est.lista].nombre)}`:""):(mezcla&&est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:"");
     return`<div class="tarea-grupo">
       <div class="tarea-grupo-header" onclick="ttPlegar('${estId}')" title="${abierto?"Plegar":"Desplegar"}">
         <span class="tt-caret">${abierto?"▾":"▸"}</span>
-        <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${est._huerfano?"":ttDot(est,estId,est.espacio||null)}${esc(est.nombre)}${espNombre}</span>
+        <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${est._huerfano?"":ttDot(est,estId,est.lista?estadosPropiosLista(est.lista):estadosDe(est.espacio||null))}${esc(est.nombre)}${espNombre}</span>
         <span class="tarea-grupo-count">${tareasDelEstado.length}</span>
       </div>
       ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
         ${head}
         ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cols)).join("")}
         ${est._huerfano||(tareaFiltro.tipo==="mias"&&est.espacio)?"":ttFilaNueva(estId)}
+        ${ttFilaCalc(tareasDelEstado,cols)}
       </div></div>`:""}
     </div>`;
   }).join("");
   if(textoNuevo!==null){ const inp=document.getElementById("tt-add-input"); if(inp){ inp.value=textoNuevo; inp.focus(); } }
+  ttColaFinal();
+}
+function ttColaFinal(){ // lo que depende de las tareas y se repinta con ellas
   if(typeof fichaId!=="undefined"&&fichaId&&!fichaNuevo) renderFicha();
   if(currentTab==="elemento"&&["panel","formulario"].includes(elementos[elementoActual]?.tipo)) renderElemento();
   if(typeof renderSidebar==="function") renderSidebar();
+}
+// ── Vistas Tablero y Calendario (referencia: ClickUp) ──
+var ttVistas={}; try{ ttVistas=JSON.parse(localStorage.getItem("tago_tareas_vista")||"{}")||{}; }catch(e){}
+var ttCalMes=(()=>{ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),1); })(), ttArrastre=null;
+function ttVistaActual(){ return ttVistas[ttAnchoKey()]||"lista"; }
+function ttVista(v){ ttVistas[ttAnchoKey()]=v; try{ localStorage.setItem("tago_tareas_vista",JSON.stringify(ttVistas)); }catch(e){} cerrarCeldaPop(); ttNuevo=null; renderTareas(); }
+function ttSufijoGrupo(est){ if(est.lista&&tareaFiltro.tipo!=="lista") return listas[est.lista]?` · ${esc(listas[est.lista].nombre)}`:""; if(tareaFiltro.tipo==="todas"||tareaFiltro.tipo==="mias") return est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:""; return ""; }
+function ttCard(id,t,mezcla){
+  const est=tareaEstados[t.estado], p=PRIO[t.prioridad]||PRIO.normal, l=t.lista&&listas[t.lista];
+  const asig=Object.keys(t.asignados||{}).map(pid=>{ const q=EQUIPO.find(x=>x.id===pid); return q?`<span class="avatar ${q.avClass}" title="${esc(q.nombre)}">${q.id}</span>`:""; }).join("");
+  const campos=(t.lista&&listas[t.lista]?ttCfg(t.lista).personalizados:[]).map(c=>[c,cpValorTexto(c,t.campos?t.campos[c.cid]:undefined)]).filter(([,v])=>v).slice(0,3);
+  return `<div class="tk-card" draggable="true" ondragstart="ttDragStart(event,'${id}')" ondragend="ttDragEnd(event)" onclick="openTareaModal('${id}')">
+    <div class="tk-card-top"><span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(est,t.estado,estadosParaTarea(t))}</span><span class="tk-card-nombre">${esc(t.nombre)}</span></div>
+    ${mezcla?`<div class="tk-card-lista">${l?esc(l.nombre):(listaOculta(t)?"Espacio privado":"Sin lista")}</div>`:""}
+    ${campos.map(([c,v])=>`<div class="tk-card-campo" title="${esc(c.etiqueta)}: ${esc(v)}">${esc(c.etiqueta)}: <b>${esc(v)}</b></div>`).join("")}
+    <div class="tk-card-pie"><span class="tt-avatars">${asig}</span>${t.fechaLimite?`<span class="tt-fecha${overdueTarea(t)?" overdue":""}">${fmtDate(t.fechaLimite)}</span>`:""}${t.prioridad&&t.prioridad!=="normal"?`<span class="tt-prio" style="color:${p.color}">${ic("flag")} ${p.label}</span>`:""}</div>
+  </div>`;
+}
+function ttDragStart(ev,id){ ttArrastre=id; try{ ev.dataTransfer.effectAllowed="move"; ev.dataTransfer.setData("text/plain",id); }catch(e){} ev.currentTarget.classList.add("arrastrando"); }
+function ttDragEnd(ev){ ev.currentTarget.classList.remove("arrastrando"); document.querySelectorAll(".tk-col.sobre").forEach(c=>c.classList.remove("sobre")); ttArrastre=null; }
+function ttDragOver(ev){ if(!ttArrastre)return; ev.preventDefault(); try{ ev.dataTransfer.dropEffect="move"; }catch(e){} ev.currentTarget.classList.add("sobre"); }
+function ttDragLeave(ev){ ev.currentTarget.classList.remove("sobre"); }
+function ttDrop(ev,estId){
+  ev.preventDefault(); ev.currentTarget.classList.remove("sobre");
+  const id=ttArrastre||(ev.dataTransfer&&ev.dataTransfer.getData("text/plain")); ttArrastre=null;
+  const t=tareas[id]; if(!t||estId==="_sin_estado"||t.estado===estId)return;
+  if(!estadosParaTarea(t).some(([sid])=>sid===estId)){ toast("Ese estado no es de la lista de esta tarea","error"); return; }
+  tareaGuardarCampo(id,"estado",estId);
+}
+function ttCalMover(n){ ttCalMes=new Date(ttCalMes.getFullYear(),ttCalMes.getMonth()+n,1); renderTareas(); }
+function ttCalHoy(){ const d=new Date(); ttCalMes=new Date(d.getFullYear(),d.getMonth(),1); renderTareas(); }
+function renderTareasAlt(estados){
+  const cont=document.getElementById("tareas-list"); if(!cont)return;
+  const visibles=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&puedeVerTarea(t)&&tareaEnFiltro(t));
+  const ids=new Set(estados.map(([id])=>id)), huerfanas=visibles.filter(([,t])=>!ids.has(t.estado));
+  const mezcla=tareaFiltro.tipo!=="lista";
+  if(ttVistaActual()==="tablero"){
+    const cols=estados.slice(); if(huerfanas.length) cols.push(["_sin_estado",{nombre:"Sin estado",color:"#858AA3",_huerfano:true}]);
+    cont.innerHTML=ttDescripcionLista()+`<div class="tk-wrap"><div class="tk-board" style="grid-template-columns:repeat(${cols.length},auto)">`+cols.map(([estId,est])=>{
+      const items=est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId);
+      const set=est._huerfano?[]:(est.lista?estadosPropiosLista(est.lista):estadosDe(est.espacio||null));
+      return `<div class="tk-col" ondragover="ttDragOver(event)" ondragleave="ttDragLeave(event)" ondrop="ttDrop(event,'${estId}')">
+        <div class="tk-head"><span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${est._huerfano?"":ttDot(est,estId,set)}${esc(est.nombre)}${est._huerfano?"":ttSufijoGrupo(est)}</span><span class="tarea-grupo-count">${items.length}</span></div>
+        ${items.map(([id,t])=>ttCard(id,t,mezcla)).join("")}
+        ${est._huerfano?"":`<div class="tk-add" onclick="openTareaModal(null,'${estId}')">${ic("plus")} Agregar tarea</div>`}
+      </div>`;
+    }).join("")+`</div></div>`;
+    return;
+  }
+  // Calendario por fecha límite
+  const y=ttCalMes.getFullYear(), m=ttCalMes.getMonth(), offset=(new Date(y,m,1).getDay()+6)%7, inicio=new Date(y,m,1-offset);
+  const hoyKey=ymdLocal(hoyMedianoche()), porDia={}, sinFecha=[];
+  visibles.forEach(([id,t])=>{ if(!t.fechaLimite){ sinFecha.push([id,t]); return; } (porDia[t.fechaLimite]=porDia[t.fechaLimite]||[]).push([id,t]); });
+  const chip=([id,t])=>{ const e=tareaEstados[t.estado], c=e?e.color:"#858AA3"; return `<div class="cal-chip tt-cal-chip${overdueTarea(t)&&tareaPendiente(t)?" ov":""}" style="background:${c}22;color:${c}" onclick="openTareaModal('${id}')" title="${esc(t.nombre)}${e?" · "+esc(e.nombre):""}${t.lista&&listas[t.lista]?" · "+esc(listas[t.lista].nombre):""}">${esc(t.nombre)}</div>`; };
+  let celdas="";
+  for(let i=0;i<42;i++){
+    const d=new Date(inicio.getFullYear(),inicio.getMonth(),inicio.getDate()+i), key=ymdLocal(d), items=porDia[key]||[];
+    celdas+=`<div class="cal-celda${d.getMonth()!==m?" otro-mes":""}${key===hoyKey?" hoy":""}"><div class="cal-dia">${d.getDate()}${key===hoyKey?" · hoy":""}</div>${items.slice(0,4).map(chip).join("")}${items.length>4?`<div class="cal-mas">+${items.length-4} más</div>`:""}</div>`;
+  }
+  cont.innerHTML=ttDescripcionLista()+`<div class="cal-head">
+    <button class="btn btn-secondary" onclick="ttCalMover(-1)" title="Mes anterior">‹</button>
+    <div class="cal-titulo">${MESES[m]} ${y}</div>
+    <button class="btn btn-secondary" onclick="ttCalMover(1)" title="Mes siguiente">›</button>
+    <button class="btn btn-secondary" onclick="ttCalHoy()">Hoy</button>
+    <span class="cal-leyenda">${estados.map(([,e])=>`<span><span class="dot" style="background:${e.color}"></span>${esc(e.nombre)}</span>`).join("")}</span>
+    <span class="cal-sinfecha">${sinFecha.length} sin fecha límite</span>
+  </div>
+  <div class="cal-semana">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(d=>`<div>${d}</div>`).join("")}</div>
+  <div class="cal-grid">${celdas}</div>
+  ${sinFecha.length?`<div class="tt-cal-sinfecha"><span>Sin fecha límite:</span>${sinFecha.slice(0,40).map(chip).join("")}${sinFecha.length>40?`<span>+${sinFecha.length-40} más</span>`:""}</div>`:""}`;
 }
 // ── Tabla de tareas: columnas según la lista, celdas editables (referencia: vista Lista de ClickUp) ──
 var ttCfgCache=Object.create(null), ttNuevo=null;
@@ -2759,7 +2880,7 @@ function renderTareaRow(id,t,cols){
   cols=cols||ttColumnas();
   const celdas=cols.map(col=>{ const ed=ttEditable(t,col); return `<div class="tt-cell${ed?" tt-edit":""}"${ed?` onclick="ttEditar(event,'${id}','${col.k}')" title="Clic para editar"`:""}>${ttValor(id,t,col)}</div>`; }).join("");
   return`<div class="tt-row" data-id="${id}">
-    <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,espacioDeTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
+    <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,estadosParaTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
     ${celdas}
     <div class="tt-cell tt-acc">${currentUser&&currentUser.isAdmin?`<button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button>`:""}</div>
   </div>`;
@@ -2797,6 +2918,73 @@ function ttGuardarAnchos(){ try{ localStorage.setItem("tago_tareas_anchos",JSON.
 })();
 function ttPlegar(estId){ ttPlegados.has(estId)?ttPlegados.delete(estId):ttPlegados.add(estId); try{ localStorage.setItem("tago_tareas_plegados",JSON.stringify([...ttPlegados])); }catch(e){} renderTareas(); }
 // Agregar tarea al pie del grupo: basta el nombre; si la lista tiene campos obligatorios, o no se está en una lista, se abre la ficha completa
+// ── Calcular por columna (suma, promedio, conteos) al pie de cada grupo ──
+var ttCalcLocal={}; try{ ttCalcLocal=JSON.parse(localStorage.getItem("tago_tareas_calculos")||"{}")||{}; }catch(e){}
+const TT_CALC={suma:"Suma",promedio:"Promedio",min:"Mínimo",max:"Máximo",contar:"Contar",vacios:"Vacíos",llenos:"No vacíos",unicos:"Únicos",antigua:"Más antigua",reciente:"Más reciente",marcadas:"Marcadas"};
+function ttCalcGuardados(){
+  if(tareaFiltro.tipo==="lista"){ const l=listas[tareaFiltro.id]; const c=l&&l.campos&&l.campos.calculos; if(c&&typeof c==="object") return c; }
+  return ttCalcLocal[ttAnchoKey()]||{};
+}
+function ttCalcTipo(col){ // qué clase de dato hay en la columna, para ofrecer operaciones con sentido
+  if(col.tipo==="campo") return ["dinero","numero"].includes(col.c.tipo)?"numero":(col.c.tipo==="fecha"?"fecha":(col.c.tipo==="casilla"?"casilla":"texto"));
+  return ["fechaLimite","fechaInicio","creado","actualizado"].includes(col.k)?"fecha":"texto";
+}
+function ttCalcValor(id,t,col){ // el valor crudo de una celda para calcular
+  if(col.tipo==="campo"){ const v=t.campos?t.campos[col.cid]:undefined; return (v===undefined||v===null||v==="")?null:v; }
+  switch(col.k){
+    case "asignados": { const ids=Object.keys(t.asignados||{}); return ids.length?ids.map(pid=>(EQUIPO.find(x=>x.id===pid)||{}).nombre||pid).join(", "):null; }
+    case "fechaLimite": return t.fechaLimite||null; case "fechaInicio": return t.fechaInicio||null;
+    case "creado": return t.createdAt?String(t.createdAt).slice(0,10):null; case "actualizado": return t.updatedAt?String(t.updatedAt).slice(0,10):null;
+    case "prioridad": return (PRIO[t.prioridad]||PRIO.normal).label; case "estado": return tareaEstados[t.estado]?tareaEstados[t.estado].nombre:null;
+    case "pedido": return t.pedidoId||null; case "creador": return t.createdBy?(t.createdBy.nombre||t.createdBy.id):null; case "id": return id;
+    case "listaDe": return t.lista&&listas[t.lista]?listas[t.lista].nombre:null;
+  }
+  return null;
+}
+function ttCalcular(op,filas,col){
+  const vals=filas.map(([id,t])=>ttCalcValor(id,t,col)), llenos=vals.filter(v=>v!==null&&v!==""), tipo=ttCalcTipo(col);
+  const fmtNum=n=>col.tipo==="campo"&&col.c.tipo==="dinero"?fmtCLP(n):(Math.round(n*100)/100).toLocaleString("es-CL");
+  const nums=llenos.map(Number).filter(n=>!isNaN(n));
+  switch(op){
+    case "contar": return String(filas.length);
+    case "vacios": return String(vals.length-llenos.length);
+    case "llenos": return String(llenos.length);
+    case "unicos": return String(new Set(llenos.map(String)).size);
+    case "marcadas": return String(llenos.filter(v=>v===true).length);
+    case "suma": return fmtNum(nums.reduce((a,b)=>a+b,0));
+    case "promedio": return nums.length?fmtNum(nums.reduce((a,b)=>a+b,0)/nums.length):"—";
+    case "min": return tipo==="numero"?(nums.length?fmtNum(Math.min(...nums)):"—"):"—";
+    case "max": return tipo==="numero"?(nums.length?fmtNum(Math.max(...nums)):"—"):"—";
+    case "antigua": { const f=llenos.map(String).sort()[0]; return f?fmtDate(f):"—"; }
+    case "reciente": { const f=llenos.map(String).sort().slice(-1)[0]; return f?fmtDate(f):"—"; }
+  }
+  return "";
+}
+function ttFilaCalc(filas,cols){
+  const calc=ttCalcGuardados();
+  return `<div class="tt-row tt-calc"><div class="tt-cell tt-nombre"></div>${cols.map(col=>{ const op=calc[col.k]; return `<div class="tt-cell" onclick="ttCalcMenu(event,'${esc(col.k)}')" title="Calcular sobre esta columna">${op&&TT_CALC[op]?`${TT_CALC[op]}: <b>${esc(ttCalcular(op,filas,col))}</b>`:"Calcular"} ${ic("chevron-down")}</div>`; }).join("")}<div class="tt-cell tt-acc"></div></div>`;
+}
+function ttCalcMenu(ev,k){
+  ev.stopPropagation(); ev.preventDefault();
+  const col=ttColsActuales.find(c=>c.k===k); if(!col)return;
+  if(celdaPop&&celdaPop._id==="_calc"&&celdaPop._campo===k){ cerrarCeldaPop(); return; }
+  const pop=ttAbrirPop(ev.currentTarget,"_calc",k), tipo=ttCalcTipo(col), actual=ttCalcGuardados()[k]||"";
+  let ops=["contar","vacios","llenos","unicos"];
+  if(tipo==="numero") ops=["suma","promedio","min","max",...ops];
+  if(tipo==="fecha") ops=[...ops,"antigua","reciente"];
+  if(tipo==="casilla") ops=["marcadas","contar","vacios"];
+  pop.innerHTML=`<div class="celda-pop-label">Calcular · ${esc(col.t)}</div>${ttMenu([{v:"",l:"— Ninguno —"},...ops.map(o=>({v:o,l:TT_CALC[o]}))],actual)}<div class="celda-pop-hint">Se calcula con las tareas de cada grupo</div>`;
+  pop._colocar(); ttEnlazarMenu(pop,v=>{ ttCalcSet(k,v); cerrarCeldaPop(); });
+}
+function ttCalcSet(k,op){
+  if(tareaFiltro.tipo==="lista"&&currentUser&&currentUser.isAdmin&&listas[tareaFiltro.id]){
+    firebase.database().ref("tago_listas/"+tareaFiltro.id+"/campos/calculos/"+k.replace(/[.#$\[\]\/]/g,"_")).set(op||null).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+  }else{
+    const key=ttAnchoKey(); ttCalcLocal[key]=ttCalcLocal[key]||{}; if(op) ttCalcLocal[key][k]=op; else delete ttCalcLocal[key][k];
+    try{ localStorage.setItem("tago_tareas_calculos",JSON.stringify(ttCalcLocal)); }catch(e){}
+    renderTareas();
+  }
+}
 function ttFilaNueva(estId){
   if(ttNuevo===estId) return `<div class="tt-row tt-add-row"><div class="tt-cell tt-nombre"><input id="tt-add-input" class="tt-add-input" placeholder="Nombre de la tarea · Enter crea · Esc cancela" onkeydown="ttNuevaTecla(event,'${estId}')" onblur="ttNuevaBlur('${estId}')"/></div></div>`;
   return `<div class="tt-row tt-add-row"><div class="tt-cell tt-nombre tt-add" onclick="ttAgregar('${estId}')">${ic("plus")} Agregar tarea</div></div>`;
@@ -2841,8 +3029,8 @@ function ttEnlazarMenu(pop,guardar){
   });
   (pop.querySelector(".celda-opcion.actual")||ops[0])?.focus();
 }
-function ttDot(est,estId,esp){ // el circulito: punteado al empezar, anillo en el medio, relleno con ✓ al terminar
-  const set=estadosDe(esp), i=set.findIndex(([sid])=>sid===estId);
+function ttDot(est,estId,set){ // el circulito: punteado al empezar, anillo en el medio, relleno con ✓ al terminar
+  set=set||[]; const i=set.findIndex(([sid])=>sid===estId);
   const clase=i===0?"inicio":(i>=0&&i===set.length-1?"fin":"");
   const color=est?est.color:"var(--text-muted)";
   return `<span class="tt-dot ${clase}" style="border-color:${color}${clase==="fin"?";background:"+color:""}">${clase==="fin"?ic("check"):""}</span>`;
@@ -2863,7 +3051,7 @@ function ttEditar(ev,id,k){
     pintar(); pop._colocar(); return;
   }
   if(k==="estado"){ // los estados del espacio de esta tarea; al elegir, se mueve de grupo
-    const set=estadosDe(espacioDeTarea(t)).slice();
+    const set=estadosParaTarea(t).slice();
     if(t.estado&&tareaEstados[t.estado]&&!set.some(([id])=>id===t.estado)) set.unshift([t.estado,tareaEstados[t.estado]]); // estado de otro espacio: se ve, y se puede cambiar por uno propio
     pop.innerHTML=`<div class="celda-pop-label">${label}</div>${ttMenu(set.map(([v,e])=>({v,l:e.nombre,dot:e.color})),t.estado)}<div class="celda-pop-hint">Un clic elige · Esc cancela</div>`;
     pop._colocar(); ttEnlazarMenu(pop,guardar); return;
@@ -2893,7 +3081,7 @@ function pedidoDesdeTexto(v){ // id del pedido a partir de lo escrito; null = va
 function tareaGuardarCampo(id,k,v){
   const t=tareas[id]; if(!t)return;
   const base="tago_tareas/"+id+"/", updates={};
-  if(k==="estado"){ if(!estadosDe(espacioDeTarea(t)).some(([id])=>id===v)) return; updates[base+"estado"]=v; }
+  if(k==="estado"){ if(!estadosParaTarea(t).some(([id])=>id===v)) return; updates[base+"estado"]=v; }
   else if(k==="prioridad") updates[base+"prioridad"]=PRIO[v]?v:"normal";
   else if(k==="fechaLimite") updates[base+"fechaLimite"]=v||"";
   else if(k==="fechaInicio") updates[base+"fechaInicio"]=v||null;
@@ -2941,7 +3129,7 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
 }
 function closeTareaModal(){ document.getElementById("modal-tarea").classList.remove("open"); editTareaId=null; }
 function buildEstadoSelect(selectedId){ // los estados del espacio de la lista elegida en el modal
-  const ordered=estadosDe(espacioDeLista(gv("f-tarea-lista")||null));
+  const ordered=estadosDeLista(gv("f-tarea-lista")||null);
   if(!ordered.some(([id])=>id===selectedId)) selectedId=ordered[0]?.[0];
   document.getElementById("f-tarea-estado").innerHTML=ordered.map(([id,e])=>
     `<option value="${id}" ${id===selectedId?"selected":""}>${esc(e.nombre)}</option>`
@@ -3051,7 +3239,7 @@ function saveTarea(){
   const now=new Date().toISOString();
   const data={
     nombre, notas:gv("f-tarea-notas").trim(),
-    estado:(()=>{ const s=gv("f-tarea-estado"), set=estadosDe(espacioDeLista(gv("f-tarea-lista")||null)); return set.some(([id])=>id===s)?s:(set[0]?.[0]||s); })(), prioridad:gv("f-tarea-prioridad"),
+    estado:(()=>{ const s=gv("f-tarea-estado"), set=estadosDeLista(gv("f-tarea-lista")||null); return set.some(([id])=>id===s)?s:(set[0]?.[0]||s); })(), prioridad:gv("f-tarea-prioridad"),
     lista:gv("f-tarea-lista")||null,
     pedidoId:pedidoDesdeInputTarea()||null,
     fechaLimite:gv("f-tarea-fecha"), fechaInicio:gv("f-tarea-inicio")||null, asignados, asignadosEmails,
@@ -3099,27 +3287,34 @@ function delTarea(id){
 }
 
 // ── Estados de tareas ─────────────────────────────────────
-var estadosEditando=null; // null = generales; si no, id del espacio cuyos estados se editan
+var estadosEditando=null; // null = generales; id de espacio; o "lista:<id>" para los estados propios de una lista
+function estadosEditandoLista(){ return typeof estadosEditando==="string"&&estadosEditando.startsWith("lista:")?estadosEditando.slice(6):null; }
 function openEstadosModal(){
-  estadosEditando=tareaFiltro.tipo==="lista"?espacioDeLista(tareaFiltro.id):(tareaFiltro.tipo==="espacio"&&tareaFiltro.id!=="tareas"?tareaFiltro.id:null);
+  if(tareaFiltro.tipo==="lista") estadosEditando=estadosPropiosLista(tareaFiltro.id).length?"lista:"+tareaFiltro.id:espacioDeLista(tareaFiltro.id);
+  else estadosEditando=(tareaFiltro.tipo==="espacio"&&tareaFiltro.id!=="tareas")?tareaFiltro.id:null;
   renderEstadosModal(); document.getElementById("modal-estados").classList.add("open");
 }
-function estadosEditados(){ return estadosEditando?estadosPropios(estadosEditando):estadosGenerales(); }
-function crearEstadosPropios(){ // copia los generales como punto de partida para este espacio y pasa sus tareas al estado equivalente
-  if(!estadosEditando||estadosPropios(estadosEditando).length)return; // ya los tiene: nada que crear
-  const base=estadosGenerales(), updates={}, equivalente={};
-  base.forEach(([gid,e],i)=>{ const nid=tareasEstadosRef.push().key; equivalente[gid]=nid; updates["tago_tareas_estados/"+nid]={nombre:e.nombre,color:e.color,orden:i,espacio:estadosEditando}; });
+function estadosEditados(){ const lid=estadosEditandoLista(); if(lid) return estadosPropiosLista(lid); return estadosEditando?estadosPropios(estadosEditando):estadosGenerales(); }
+function crearEstadosPropios(){ // copia los estados que hoy usa (los del espacio o los generales) como punto de partida y pasa las tareas al equivalente
+  if(!estadosEditando||estadosEditados().length)return; // ya los tiene: nada que crear
+  const lid=estadosEditandoLista(), esp=lid?espacioDeLista(lid):estadosEditando;
+  const base=lid?estadosDeLista(lid):estadosGenerales(), updates={}, equivalente={};
+  base.forEach(([gid,e],i)=>{ const nid=tareasEstadosRef.push().key; equivalente[gid]=nid; const nuevo={nombre:e.nombre,color:e.color,orden:i}; if(esp) nuevo.espacio=esp; if(lid) nuevo.lista=lid; updates["tago_tareas_estados/"+nid]=nuevo; });
   let movidas=0;
-  Object.entries(tareas).forEach(([id,t])=>{ if(espacioDeTarea(t)===estadosEditando&&equivalente[t.estado]){ updates["tago_tareas/"+id+"/estado"]=equivalente[t.estado]; movidas++; } });
-  firebase.database().ref().update(updates).then(()=>toast(`Este espacio ya tiene estados propios${movidas?` (${movidas} tareas pasaron al equivalente)`:""}: cámbialos a gusto`,"ok")).catch(err=>toast("No se pudo: "+err.message,"error"));
+  Object.entries(tareas).forEach(([id,t])=>{ const mia=lid?t.lista===lid:(espacioDeTarea(t)===estadosEditando&&!estadosPropiosLista(t.lista).length); if(mia&&equivalente[t.estado]){ updates["tago_tareas/"+id+"/estado"]=equivalente[t.estado]; movidas++; } });
+  firebase.database().ref().update(updates).then(()=>toast(`${lid?"Esta lista":"Este espacio"} ya tiene estados propios${movidas?` (${movidas} tareas pasaron al equivalente)`:""}: cámbialos a gusto`,"ok")).catch(err=>toast("No se pudo: "+err.message,"error"));
 }
 function closeEstadosModal(){ document.getElementById("modal-estados").classList.remove("open"); }
 function renderEstadosModal(){
   const sel=document.getElementById("f-estados-espacio");
-  if(sel){ const esps=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); sel.innerHTML=`<option value="">Generales (todos los espacios)</option>`+esps.map(([id,e])=>`<option value="${id}"${estadosEditando===id?" selected":""}>${esc(e.nombre)}${estadosPropios(id).length?" · propios":""}</option>`).join(""); if(estadosEditando&&!espacios[estadosEditando]) estadosEditando=null; sel.value=estadosEditando||""; }
-  const ordered=estadosEditados();
+  if(sel){
+    const esps=Object.entries(espacios).filter(([id])=>espacioVisible(id)).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+    sel.innerHTML=`<option value="">Generales (todos los espacios)</option>`+esps.map(([id,e])=>{ const ls=Object.entries(listas).filter(([,l])=>l&&l.espacio===id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); return `<option value="${id}">${esc(e.nombre)}${estadosPropios(id).length?" · propios":""}</option>`+ls.map(([lid,l])=>`<option value="lista:${lid}">&nbsp;&nbsp;— lista: ${esc(l.nombre)}${estadosPropiosLista(lid).length?" · propios":""}</option>`).join(""); }).join("");
+    const lid=estadosEditandoLista(); if((lid&&!listas[lid])||(estadosEditando&&!lid&&!espacios[estadosEditando])) estadosEditando=null; sel.value=estadosEditando||"";
+  }
+  const ordered=estadosEditados(), lidEd=estadosEditandoLista();
   const pie=document.getElementById("estados-agregar"); if(pie) pie.style.display=(estadosEditando&&!ordered.length)?"none":"";
-  if(estadosEditando&&!ordered.length){ document.getElementById("estados-list").innerHTML=`<div class="fi-muted" style="padding:6px 0 10px">Este espacio usa los estados generales. Si necesita otros (por ejemplo, las etapas de un cliente), créale los suyos.</div><button class="btn btn-teal" onclick="crearEstadosPropios()">+ Crear estados propios para este espacio</button>`; return; }
+  if(estadosEditando&&!ordered.length){ document.getElementById("estados-list").innerHTML=`<div class="fi-muted" style="padding:6px 0 10px">${lidEd?"Esta lista usa los estados de su espacio. Si necesita otros (por ejemplo, Pendiente / Resuelto), créale los suyos.":"Este espacio usa los estados generales. Si necesita otros (por ejemplo, las etapas de un cliente), créale los suyos."}</div><button class="btn btn-teal" onclick="crearEstadosPropios()">+ Crear estados propios para ${lidEd?"esta lista":"este espacio"}</button>`; return; }
   document.getElementById("estados-list").innerHTML=ordered.map(([id,e])=>`
     <div class="admin-user-row">
       <div class="tarea-color-swatch" style="background:${e.color}" title="Click para cambiar color" onclick="cycleEstadoColor('${id}')"></div>
@@ -3157,7 +3352,7 @@ function agregarEstado(){
   const valores=estadosEditados().map(([,e])=>e);
   const maxOrden=valores.length?Math.max(...valores.map(e=>e.orden||0)):-1;
   const color=TAREA_COLORES[valores.length%TAREA_COLORES.length].valor;
-  const nuevo={nombre,color,orden:maxOrden+1}; if(estadosEditando) nuevo.espacio=estadosEditando;
+  const nuevo={nombre,color,orden:maxOrden+1}; const lidN=estadosEditandoLista(); if(lidN){ const esp=espacioDeLista(lidN); if(esp) nuevo.espacio=esp; nuevo.lista=lidN; } else if(estadosEditando) nuevo.espacio=estadosEditando;
   tareasEstadosRef.push(nuevo);
   document.getElementById("f-nuevo-estado-nombre").value="";
 }
@@ -4586,7 +4781,7 @@ function fmEnviar(){
   if(!e.lista||!listas[e.lista]){ toast("Este formulario no tiene lista destino. Elígela en Editar.","error"); return; }
   const primerTexto=respuestas.find(([c,v])=>c.tipo==="texto"&&v);
   const primeraFecha=respuestas.find(([c,v])=>c.tipo==="fecha"&&v);
-  const estados=estadosDe(espacioDeLista(e.lista));
+  const estados=estadosDeLista(e.lista);
   const now=new Date().toISOString();
   const data={ nombre:primerTexto?primerTexto[1]:`${e.nombre} · ${currentUser.nombre}`, notas:respuestas.map(([c,v])=>`${c.etiqueta}: ${v||"—"}`).join("\n"),
     estado:estados[0]?.[0]||"", prioridad:"normal", lista:e.lista, pedidoId:null, fechaLimite:primeraFecha?primeraFecha[1]:"", asignados:{}, asignadosEmails:{},
@@ -4888,7 +5083,7 @@ function actualizarTituloTareas(){
   document.getElementById("topbar-title").innerHTML=ic("square-check-big","ic-titulo")+"Tareas"+esc(ctx);
 }
 function tareaEsMia(t){ return !!(currentUser&&t&&t.asignados&&t.asignados[currentUser.id]); }
-function tareaPendiente(t){ const set=estadosDe(espacioDeTarea(t)); const ultimo=set.length?set[set.length-1][0]:null; return t.estado!==ultimo; } // no está en el último estado de su espacio
+function tareaPendiente(t){ const set=estadosParaTarea(t); const ultimo=set.length?set[set.length-1][0]:null; return t.estado!==ultimo; } // no está en el último estado de su lista o espacio
 function tareaEnFiltro(t){
   if(tareaFiltro.tipo==="lista") return t.lista===tareaFiltro.id;
   if(tareaFiltro.tipo==="espacio") return !!t.lista&&listas[t.lista]?.espacio===tareaFiltro.id;

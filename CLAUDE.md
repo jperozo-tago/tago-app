@@ -76,7 +76,13 @@ Firestore).
   estados sin `espacio` son los generales y NO deben tocarse (la app Ruta los
   usa: menor `orden` = por hacer, mayor = listo). Cada vista agrupa por los
   estados del espacio que se mira (`estadosDe`, `estadosDelContexto`); las
-  tareas cuyo estado no es de su espacio caen en «Sin estado». La vista personal
+  tareas cuyo estado no es de su espacio caen en «Sin estado». Un estado con
+  `lista` (y `espacio`) es propio de esa lista (`estadosPropiosLista`,
+  `estadosDeLista`, `estadosParaTarea`): la lista lo usa en vez de los del
+  espacio. Vistas de tareas: Lista (tabla), Tablero (columnas por estado,
+  arrastrar cambia el estado) y Calendario (por fecha límite), recordadas en
+  `tago_tareas_vista`; fila «Calcular» por columna al pie de cada grupo
+  (`tago_listas/<id>/campos/calculos` si lo guarda un admin, si no local). La vista personal
   es «Mis tareas» (bajo Bandeja, `tareaFiltro.tipo==="mias"`: solo las
   asignadas a quien mira, con columna «Lista»); ya no existe el espacio fijo
   «Tareas» ni «Todas las tareas». En Mis tareas siempre están los grupos
