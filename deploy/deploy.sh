@@ -100,6 +100,9 @@ fi
 echo "→ Desplegando Hosting a Firebase (proyecto tago)..."
 firebase deploy --only hosting
 
+# Pedidos escucha tago_meta/versionPedidos: al cambiar, muestra «Hay una versión nueva, recarga»
+firebase database:set /tago_meta/versionPedidos --data "$(date +%s)" --force >/dev/null 2>&1 && echo "→ Versión de Pedidos anotada (aviso de recarga en las pestañas abiertas)" || echo "  (no se pudo anotar la versión de Pedidos; no pasa nada)"
+
 echo ""
 echo "✓ Listo. Ecosistema en: https://tago-app-489c1.web.app"
 echo "  Home:        https://tago-app-489c1.web.app/"

@@ -93,7 +93,14 @@ Firestore).
   carpetas, elementos y tareas exigen a los no-admins leer por consulta
   (`orderByChild('espacio')` / `orderByChild('lista')`) y comprueban la
   membresía del espacio; en la app, `espacioVisible`, `syncEspaciosDatos`
-  (una consulta por espacio y colección) y el modal «Quién puede ver».
+  (una consulta por espacio y colección) y el modal «Quién puede ver». Crear
+  espacios: solo admins; dentro de un espacio, quien lo ve crea listas,
+  carpetas y elementos; eliminar (listas, carpetas, elementos, tareas,
+  páginas): solo admins (interfaz y reglas: los no-admins nunca escriben
+  `null`). Al crear una tarea, `creadoPorEmail` debe ser el propio correo, y
+  cambiarla de lista exige acceso a la lista destino. `deploy.sh` anota
+  `tago_meta/versionPedidos` al publicar y la app muestra «Hay una versión
+  nueva, recarga» en las pestañas abiertas.
 - `tago_espacios` / `tago_listas` / `tago_carpetas` / `tago_elementos` —
   espacios de trabajo de la barra lateral (rediseño de septiembre 2026): sus
   listas de tareas, carpetas, y los documentos / paneles / pizarras /

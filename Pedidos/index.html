@@ -1804,6 +1804,7 @@
 
 <div id="chat-avisos" aria-live="polite"></div>
 <div class="toast" id="toast"></div>
+<div id="aviso-version" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:210;background:var(--azul-oscuro);color:#fff;border-radius:999px;padding:8px 10px 8px 16px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(11,20,71,.25);display:none;align-items:center;gap:10px">Hay una versión nueva de Pedidos <button onclick="location.reload()" style="background:#49CEAB;color:#0B1447;border:none;border-radius:999px;padding:5px 12px;font-family:inherit;font-weight:600;cursor:pointer">Recargar</button></div>
 
 <script>
 const FIREBASE_CONFIG = {
@@ -2592,7 +2593,8 @@ function estadosGenerales(){ return Object.entries(tareaEstados).filter(([,e])=>
 function estadosPropios(esp){ return esp?Object.entries(tareaEstados).filter(([,e])=>e&&e.espacio===esp).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)):[]; }
 function estadosDe(esp){ const p=estadosPropios(esp); return p.length?p:estadosGenerales(); } // los del espacio si tiene; si no, los generales
 function espacioDeLista(lid){ const l=lid&&listas[lid]; const e=l?l.espacio:null; return e&&e!=="tareas"?e:null; } // el espacio fijo «Tareas» usa los generales
-function espacioDeTarea(t){ return espacioDeLista(t&&t.lista); }
+function listaOculta(t){ return !!(t&&t.lista&&!listas[t.lista]); } // tiene lista pero yo no la veo (espacio privado o lista borrada)
+function espacioDeTarea(t){ if(listaOculta(t)){ const e=tareaEstados[t.estado]; return e&&e.espacio?e.espacio:null; } return espacioDeLista(t&&t.lista); }
 function estadosDelContexto(){
   if(tareaFiltro.tipo==="lista") return estadosDe(espacioDeLista(tareaFiltro.id));
   if(tareaFiltro.tipo==="espacio") return estadosDe(tareaFiltro.id==="tareas"?null:tareaFiltro.id);
@@ -2742,7 +2744,7 @@ function ttValor(id,t,col){ // cómo se ve cada celda
     case "creador": return t.createdBy?`<span class="tt-txt">${esc(t.createdBy.nombre||t.createdBy.id)}</span>`:vacio;
     case "actualizado": return t.updatedAt?`<span class="tt-fecha">${fmtDate(String(t.updatedAt).slice(0,10))}</span>`:vacio;
     case "id": return `<span class="tarea-row-id">#${esc(String(id).slice(-6))}</span>`;
-    case "listaDe": { const l=t.lista&&listas[t.lista]; if(!l) return `<span class="tt-vacio">Sin lista</span>`; const e=espacios[l.espacio]; return `<span class="tt-txt" title="${esc((e?e.nombre+" / ":"")+l.nombre)}"><span class="tt-vacio">${e?esc(e.nombre)+" / ":""}</span>${esc(l.nombre)}</span>`; }
+    case "listaDe": { const l=t.lista&&listas[t.lista]; if(!l) return `<span class="tt-vacio">${listaOculta(t)?"Espacio privado":"Sin lista"}</span>`; const e=espacios[l.espacio]; return `<span class="tt-txt" title="${esc((e?e.nombre+" / ":"")+l.nombre)}"><span class="tt-vacio">${e?esc(e.nombre)+" / ":""}</span>${esc(l.nombre)}</span>`; }
   }
   return "";
 }
@@ -2752,7 +2754,7 @@ function renderTareaRow(id,t,cols){
   return`<div class="tt-row" data-id="${id}">
     <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
     ${celdas}
-    <div class="tt-cell tt-acc"><button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button></div>
+    <div class="tt-cell tt-acc">${currentUser&&currentUser.isAdmin?`<button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button>`:""}</div>
   </div>`;
 }
 // Anchos de columna ajustables: se recuerdan por lista (o por vista) en este navegador
@@ -2914,6 +2916,7 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
     listaIni=(Object.entries(listas).filter(([,l])=>l&&l.espacio===esp).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0))[0]||[""])[0];
   }
   buildListaSelect(listaIni);
+  { const sel=document.getElementById("f-tarea-lista"); sel.disabled=false; if(t&&listaOculta(t)){ sel.insertAdjacentHTML("beforeend",`<option value="${esc(t.lista)}" selected>Lista de un espacio privado</option>`); sel.value=t.lista; sel.disabled=true; } } // no se puede cambiar la lista de lo que no se ve
   buildEstadoSelect(t?.estado||estadoPreseleccionado);
   document.getElementById("f-tarea-inicio").value=t?.fechaInicio||"";
   aplicarCamposModal(gv("f-tarea-lista")||null,t?.campos||{},true);
@@ -2957,8 +2960,12 @@ function recomponerEspacioDatos(){
   const junta=col=>{ const m={}; Object.values(espDatos[col]).forEach(x=>Object.assign(m,x)); return m; };
   listas=junta("listas"); carpetas=junta("carpetas"); elementos=junta("elementos");
   if(typeof syncTareasListas==="function") syncTareasListas();
+  // Lo que se estaba mirando ya no está disponible (el espacio pasó a privado, o lo borraron): a Mis tareas
+  if(currentTab==="tareas"&&((tareaFiltro.tipo==="espacio"&&!espacioVisible(tareaFiltro.id))||(tareaFiltro.tipo==="lista"&&!listas[tareaFiltro.id]))){ toast("Ese espacio ya no está disponible para ti"); irATareas({tipo:"mias"}); return; }
+  if(currentTab==="elemento"&&elementoActual&&!elementos[elementoActual]){ toast("Ese documento ya no está disponible para ti"); irATareas({tipo:"mias"}); return; }
   renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); if(typeof cpRefrescar==="function") cpRefrescar();
   if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); }
+  else if(formularioPendiente&&Object.values(espDatosListeners).every(ls=>ls.every(l=>l.cargado))){ formularioPendiente=null; toast("No tienes acceso a ese formulario o ya no existe","error"); }
 }
 function syncEspaciosDatos(){ // se llama cada vez que cambia tago_espacios
   if(!currentUser||currentUser.isAdmin)return;
@@ -2968,9 +2975,10 @@ function syncEspaciosDatos(){ // se llama cada vez que cambia tago_espacios
     if(espDatosListeners[sp])return;
     espDatosListeners[sp]=[["listas","tago_listas"],["carpetas","tago_carpetas"],["elementos","tago_elementos"]].map(([col,nodo])=>{
       const q=firebase.database().ref(nodo).orderByChild("espacio").equalTo(sp);
-      const cb=snap=>{ espDatos[col][sp]=snap.val()||{}; recomponerEspacioDatos(); };
-      q.on("value",cb,err=>console.error(nodo,sp,err));
-      return {q,cb};
+      const l={q,cb:null,cargado:false};
+      l.cb=snap=>{ espDatos[col][sp]=snap.val()||{}; l.cargado=true; recomponerEspacioDatos(); };
+      q.on("value",l.cb,err=>{ l.cargado=true; console.error(nodo,sp,err); });
+      return l;
     });
   });
   recomponerEspacioDatos();
@@ -3065,6 +3073,7 @@ function saveTarea(){
   closeTareaModal();
 }
 function delTarea(id){
+  if(!currentUser||!currentUser.isAdmin){ toast("Solo un administrador puede eliminar tareas","error"); return; }
   if(!confirm("¿Eliminar esta tarea?"))return;
   const t=tareas[id]||{};
   const vis=new Set([...(t.creadoPorEmail?[sanitizeEmailKey(t.creadoPorEmail)]:[]),...Object.keys(t.asignadosEmails||{})]);
@@ -3147,6 +3156,9 @@ function initFirebaseData(){
   try{
     initChat();
     initTareas();
+    // Cuando se publica una versión nueva, deploy.sh cambia tago_meta/versionPedidos: se avisa para recargar (las reglas nuevas pueden dejar a la vieja sin datos)
+    let versionVista=null;
+    firebase.database().ref("tago_meta/versionPedidos").on("value",snap=>{ const v=snap.val(); if(versionVista===null){ versionVista=v||0; return; } if(v&&v!==versionVista){ const b=document.getElementById("aviso-version"); if(b) b.style.display="flex"; } },err=>console.error(err));
     firebase.database().ref("tago_espacios").on("value",snap=>{ espacios=snap.val()||{}; if(!currentUser.isAdmin) syncEspaciosDatos(); renderSidebar(); actualizarTituloTareas(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); },err=>console.error(err));
     if(currentUser.isAdmin) firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; if(typeof syncTareasListas==="function") syncTareasListas(); renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); cpRefrescar(); },err=>console.error(err));
     firebase.database().ref("tago_campos").on("value",snap=>{ camposCat=snap.val()||{}; if(currentTab==="tareas")renderTareas(); cpRefrescar(); if(document.getElementById("modal-tarea")?.classList.contains("open")) aplicarCamposModal(gv("f-tarea-lista")||null); },err=>{ console.error(err); if(currentUser?.isAdmin) toast("No se pudieron cargar los campos personalizados de las listas: "+err.message,"error"); });
@@ -4344,7 +4356,7 @@ function tareasDelEspacio(esp){ return Object.entries(tareas).filter(([,t])=>pue
 function renderElemento(){
   const cont=document.getElementById("view-elemento"); if(!cont||currentTab!=="elemento")return;
   const e=elementos[elementoActual];
-  if(!e){ cont.innerHTML=`<div class="empty">Este elemento ya no existe</div>`; return; }
+  if(!e){ cont.innerHTML=`<div class="empty">Este elemento ya no existe o no tienes acceso</div>`; return; }
   const t=ELEM_TIPOS[e.tipo]||ELEM_TIPOS.documento;
   const sp=e.espacio==="tareas"?{nombre:"Tareas"}:espacios[e.espacio]; const carp=e.carpeta&&carpetas[e.carpeta];
   document.getElementById("topbar-title").innerHTML=ic(t.icono,"ic-titulo")+esc(e.nombre);
@@ -4372,7 +4384,7 @@ function docPaginas(e){
 function docPaginaActual(e){ const ps=docPaginas(e); return ps.find(p=>p.id===docPagActual[elementoActual])||ps[0]; }
 function renderDocumento(cont,e){
   const ps=docPaginas(e), pg=docPaginaActual(e); docPagActual[elementoActual]=pg.id;
-  const filas=ps.map(p=>`<div class="doc-pg${p.id===pg.id?" active":""}" onclick="docIrPagina('${p.id}')" title="${esc(p.titulo||"Sin título")}">${ic("file-text")}<span class="doc-pg-nombre">${esc(p.titulo||"Sin título")}</span>${ps.length>1?`<span class="doc-pg-acc"><button title="Subir" onclick="event.stopPropagation();docMoverPagina('${p.id}',-1)">↑</button><button title="Bajar" onclick="event.stopPropagation();docMoverPagina('${p.id}',1)">↓</button><button title="Eliminar página" onclick="event.stopPropagation();docConfirmarBorrar='${p.id}';elementoRenderizado=null;renderElemento()">${ic("trash")}</button></span>`:""}</div>${docConfirmarBorrar===p.id?`<div class="doc-pg-confirm"><span>¿Eliminar «${esc(p.titulo||"Sin título")}»?</span><button class="si" onclick="docBorrarPagina('${p.id}')">Sí</button><button onclick="docConfirmarBorrar=null;elementoRenderizado=null;renderElemento()">No</button></div>`:""}`).join("");
+  const filas=ps.map(p=>`<div class="doc-pg${p.id===pg.id?" active":""}" onclick="docIrPagina('${p.id}')" title="${esc(p.titulo||"Sin título")}">${ic("file-text")}<span class="doc-pg-nombre">${esc(p.titulo||"Sin título")}</span>${ps.length>1?`<span class="doc-pg-acc"><button title="Subir" onclick="event.stopPropagation();docMoverPagina('${p.id}',-1)">↑</button><button title="Bajar" onclick="event.stopPropagation();docMoverPagina('${p.id}',1)">↓</button>${currentUser&&currentUser.isAdmin?`<button title="Eliminar página" onclick="event.stopPropagation();docConfirmarBorrar='${p.id}';elementoRenderizado=null;renderElemento()">${ic("trash")}</button>`:""}</span>`:""}</div>${docConfirmarBorrar===p.id?`<div class="doc-pg-confirm"><span>¿Eliminar «${esc(p.titulo||"Sin título")}»?</span><button class="si" onclick="docBorrarPagina('${p.id}')">Sí</button><button onclick="docConfirmarBorrar=null;elementoRenderizado=null;renderElemento()">No</button></div>`:""}`).join("");
   cont.insertAdjacentHTML("beforeend",`<div class="el-doc el-doc-paginas">
     <aside class="doc-pgs"><div class="doc-pgs-title"><span>Páginas</span><span>${ps.length}</span></div>${filas}<div class="doc-pg doc-pg-add" onclick="docAgregarPagina()">${ic("plus")} Agregar página</div></aside>
     <div class="doc-main">
@@ -4894,9 +4906,9 @@ function sbCrearEspacio(v){
 }
 function sbCrearLista(espacio,v,carpeta){
   v=(v||"").trim(); if(!v)return; sbEditando=null;
-  const ref=firebase.database().ref("tago_listas").push({espacio,carpeta:carpeta||null,nombre:v,orden:Date.now(),creadoPor:currentUser.id});
+  const ref=firebase.database().ref("tago_listas").push({espacio,carpeta:carpeta||null,nombre:v,orden:Date.now(),creadoPor:currentUser.id,creadoPorEmail:currentUser.email});
   // Recién creada la lista, se entra a ella y se abre el panel para definir sus campos
-  const abrir=()=>{ if(!ref||!ref.key)return; irATareas({tipo:"lista",id:ref.key}); abrirCampos(ref.key,true); };
+  const abrir=()=>{ if(!ref||!ref.key)return; irATareas({tipo:"lista",id:ref.key}); if(currentUser.isAdmin) abrirCampos(ref.key,true); };
   if(ref&&typeof ref.then==="function") ref.then(abrir).catch(err=>toast("No se pudo crear la lista: "+(err&&err.message||err),"error")); else abrir();
 }
 function sbCrearCarpeta(espacio,v){ v=(v||"").trim(); if(!v)return; sbEditando=null; const ref=firebase.database().ref("tago_carpetas").push({espacio,nombre:v,orden:Date.now(),creadoPor:currentUser.id}); if(ref&&ref.key) sbAbiertos.add("c_"+ref.key); renderSidebar(); }
@@ -4910,6 +4922,7 @@ function sbCrearElemento(espacio,tipo,v,carpeta){
 }
 function sbEliminar(tipo,id){
   sbConfirmar=null;
+  if(tipo!=="categoria"&&(!currentUser||!currentUser.isAdmin)){ toast("Solo un administrador puede eliminar esto","error"); renderSidebar(); return; }
   if(tipo==="categoria"){
     if(!ADMINS_ELIMINAR_CATEGORIA.includes(currentUser?.email)){ toast("No tienes autorización para eliminar esta categoría. Contacta a José Perozo o Andreina Rodriguez.","error"); renderSidebar(); return; }
     firebase.database().ref("tago_categorias_custom/"+id).remove().catch(()=>toast("No se pudo eliminar la categoría","error"));
@@ -4987,7 +5000,8 @@ function renderSidebar(){
     const misElems=Object.entries(elementos).filter(([,e])=>e.espacio===sp.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
     const misCarpetas=Object.entries(carpetas).filter(([,c])=>c.espacio===sp.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
     const elemActivoSp=currentTab==="elemento"&&elementos[elementoActual]?.espacio===sp.id;
-    const plusBtn=(carpeta)=>puedeEsp&&!col?`<button class="sb-add sb-plus" title="Crear aquí" onclick="event.stopPropagation();sbAbrirMenuCrear(event,'${sp.id}',${carpeta?`'${carpeta}'`:"null"})">+</button>`:"";
+    const puedeCrear=!sp.fijo&&(puedeEsp||espacioVisible(sp.id)); // quien ve el espacio crea en él; borrar sigue siendo de admins
+    const plusBtn=(carpeta)=>puedeCrear&&!col?`<button class="sb-add sb-plus" title="Crear aquí" onclick="event.stopPropagation();sbAbrirMenuCrear(event,'${sp.id}',${carpeta?`'${carpeta}'`:"null"})">+</button>`:"";
     const filaLista=([id,l],sub)=>{ const activo=currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&tareaFiltro.id===id; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="irATareas({tipo:'lista',id:'${id}'})"><span class="sb-ic sb-ic-sm">${ic("list")}</span><span class="sb-label">${esc(l.nombre)}</span><span class="sb-count">${nLista(id)}</span>${puedeEsp?`<button class="sb-del" title="Campos de la lista" onclick="event.stopPropagation();abrirCampos('${id}')">${ic("columns-3")}</button>`:""}${puedeEsp?delBtn("lista",id):""}${confirmar("lista",id)}</div>`; };
     const filaElem=([id,e],sub)=>{ const activo=currentTab==="elemento"&&elementoActual===id; const n=e.tipo==="formulario"?Object.values(tareas).filter(t=>t.origenFormulario===id).length:""; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="abrirElemento('${id}')"><span class="sb-ic sb-ic-sm">${ic(ELEM_TIPOS[e.tipo]?.icono||"file-text")}</span><span class="sb-label">${esc(e.nombre)}</span><span class="sb-count">${n||""}</span>${puedeEsp?delBtn("elemento",id):""}${confirmar("elemento",id)}</div>`; };
     const filaEditando=(carpeta)=>{ const ed=sbEditando; if(!ed||ed.espacio!==sp.id||(ed.carpeta||null)!==(carpeta||null)||!["lista","carpeta","elemento"].includes(ed.tipo)) return ""; const c=carpeta?`'${carpeta}'`:"null"; const ph=ed.tipo==="lista"?"Nombre de la lista":ed.tipo==="carpeta"?"Nombre de la carpeta":"Nombre del "+(ELEM_TIPOS[ed.etipo]?.nombre||"elemento").toLowerCase(); const fn=ed.tipo==="lista"?`sbCrearLista('${sp.id}',this.value,${c})`:ed.tipo==="carpeta"?`sbCrearCarpeta('${sp.id}',this.value)`:`sbCrearElemento('${sp.id}','${ed.etipo}',this.value,${c})`; return inputInline(ph,fn,"sbEditando=null;renderSidebar()",true); };
@@ -5006,7 +5020,7 @@ function renderSidebar(){
       misElems.filter(([,e])=>!e.carpeta||!carpetas[e.carpeta]).forEach(x=>h+=filaElem(x,false));
       const edRaiz=filaEditando(null);
       if(edRaiz) h+=edRaiz;
-      else if(puedeEsp) h+=`<div class="sb-node sb-list sb-new" onclick="sbAbrirMenuCrear(event,'${sp.id}',null)"><span class="sb-label">+ Crear…</span></div>`;
+      else if(puedeCrear) h+=`<div class="sb-node sb-list sb-new" onclick="sbAbrirMenuCrear(event,'${sp.id}',null)"><span class="sb-label">+ Crear…</span></div>`;
     }
     h+=`</div>`;
   });
