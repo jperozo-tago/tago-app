@@ -541,6 +541,29 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
 .corrida .v{color:var(--tinta);font-weight:600;white-space:normal}
 .corrida .v.ok{color:var(--verde)} .corrida .v.mal{color:var(--rojo)} .corrida .v.es{color:var(--ambar)}
 .corrida ul{margin:0;padding-left:18px}
+
+/* ═════ A quién llamar: las listas de la Ruta TAGO dentro del tablero ═════ */
+.segsR{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.segsR button{border:1.5px solid var(--linea);background:var(--papel);border-radius:var(--pill);padding:7px 13px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.84rem;color:var(--tinta2)}
+.segsR button:hover{border-color:var(--azul);color:var(--azul)}
+.segsR button[aria-selected="true"]{background:var(--tinta);color:var(--film);border-color:var(--tinta)}
+.segsR .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+.filtrosR{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.filtrosR input[type=search]{flex:1 1 220px;min-width:0;padding:8px 12px;border:1px solid var(--linea2);border-radius:9px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.9rem}
+.filtrosR label{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;color:var(--tinta2)}
+.lnk{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--azul);cursor:pointer;text-align:left}
+.lnk:hover{text-decoration:underline}
+.quienes{margin:10px 0 0;padding-left:18px;line-height:1.55}
+.quienes li{margin:6px 0}
+select.stR{padding:5px 8px;border:1px solid var(--linea2);border-radius:8px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.82rem;min-width:140px}
+select.stR.s-cont,select.stR.s-cot{border-color:var(--azul);background:var(--azul-suave)}
+select.stR.s-rec{border-color:var(--verde-fill);background:var(--verde-suave)}
+select.stR.s-no,select.stR.s-sin,select.stR.s-ya{background:var(--papel3);color:var(--tinta2)}
+select.stR:disabled,input.notaR:disabled{opacity:.7;cursor:default}
+input.notaR{width:100%;min-width:170px;padding:5px 8px;border:1px solid var(--linea2);border-radius:8px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.82rem}
+tr.finR td{opacity:.55} tr.finR td.stcell{opacity:1}
+.smR{display:block;font-size:.76rem;color:var(--gris);white-space:normal;font-weight:400}
+td.pista{white-space:normal;max-width:260px;font-size:.82rem;color:var(--tinta2)}
 </style>
 </head>
 <body>
@@ -687,6 +710,26 @@ function muestraEntrada(modo, texto) {
   if (texto) $("abriendoTxt").textContent = texto;
 }
 
+/* Las listas de la Ruta TAGO se escuchan desde aquí afuera, igual que el paquete: la
+   suscripción sobrevive a un paquete nuevo y el tablero armado (T) solo repinta. */
+const claveRuta = k => String(k).replace(/[.#$\[\]\/]/g, "_");
+function escuchaRuta() {
+  const ref = p => firebase.database().ref("tago_ruta/" + p);
+  ref("editores/" + claveRuta(sesion.email)).once("value")
+    .then(x => { RUTA.edita = x.val() === true; if (seccion === "llamar" && T) T.pinta(); })
+    .catch(() => { RUTA.edita = false; });
+  const r1 = ref("segmentos");
+  const cb1 = r1.on("value", x => { const v = x.val() || {}; RUTA.C = v.C || []; RUTA.corte = v.corte || null;
+      RUTA.acceso = true; if (seccion === "llamar" && T) T.pinta(); },
+    () => { RUTA.acceso = false; if (seccion === "llamar" && T) T.pinta(); });
+  escuchas.push([r1, cb1]);
+  const r2 = ref("clientes");
+  const cb2 = r2.on("value", x => { const m = {};
+      Object.values(x.val() || {}).forEach(c => { if (c && c.k) m[c.k] = c; });
+      RUTA.cli = m; if (seccion === "llamar" && T) T.pintaTablaRuta(); }, () => {});
+  escuchas.push([r2, cb2]);
+}
+
 /* ═════════ estado que sobrevive a una recarga del paquete ═════════ */
 /* Cuando el pipeline sube un paquete nuevo, el tablero se vuelve a armar con él
    (iniciaTablero), pero la persona sigue donde estaba: misma sección, mismos filtros,
@@ -727,6 +770,13 @@ let editandoMeta = false, editandoFijos = false;
 /* Las cachés del tablero. Se vacían al recargar el paquete y al cambiar de IVA. */
 let _docs = null, _lins = null, _clave = "";
 let _dorm = null, _hist = null, _fielCache = {}, _eq = null;
+/* Las listas de la Ruta TAGO (en riesgo, grandes que ya no compran, dormidos, una compra, clave)
+   se calculan aquí mismo con el paquete, con las mismas reglas que informe/ruta/segmentos.py, así
+   están tan frescas como el tablero. Los potenciales (C) vienen de GoHighLevel y llegan de la base
+   (tago_ruta/segmentos, los sube la Ruta). El estado y la nota de cada cliente se comparten con la
+   Ruta en tago_ruta/clientes; los escribe solo quien está en tago_ruta/editores. */
+let _segRuta = null;
+const RUTA = { seg: "R", q: "", soloTel: false, ocultar: true, cli: {}, C: null, corte: null, acceso: null, edita: false };
 /* La venta del día en vivo, tal como la escribe el pipeline en tago_tablero/hoy. */
 const vivo = { rb: null, rbEstado: null };
 /* La meta de venta de cada mes, editable y guardada. Se guarda SIN IVA, igual que
@@ -787,10 +837,11 @@ function entra() {
   /* Lo guardado en este navegador se lee SIEMPRE: es el respaldo mientras la base abre. */
   reparte(guardadoLocal());
   guardadoEn = "cargando";
-  escuchaPaquete(); escuchaHoy(); escuchaEstado(); escuchaMetas(); leeConfig();
+  escuchaPaquete(); escuchaHoy(); escuchaEstado(); escuchaMetas(); leeConfig(); escuchaRuta();
 }
 function sale() {
   cierraEscuchas();
+  RUTA.cli = {}; RUTA.C = null; RUTA.corte = null; RUTA.acceso = null; RUTA.edita = false; _segRuta = null;
   if (T) { T.detener(); T = null; }
   sesion = null; D = null; estado = null; paqueteVersion = null; avisoPaquete = null;
   corridaClave = null; corridaVistaEn = null; corridaAbandonada = null;
@@ -1125,7 +1176,7 @@ function iniciaTablero(D) {
    paquete se cortan todos de una vez y no quedan dos copias respondiendo al clic. */
 const parar = new AbortController(), SENAL = { signal: parar.signal };
 armando = parar;   // por si el armado falla a medias, cargaPaquete corta lo que se alcanzó a atar
-_docs = _lins = null; _clave = ""; _dorm = _hist = null; _fielCache = {}; _eq = null;
+_docs = _lins = null; _clave = ""; _dorm = _hist = null; _segRuta = null; _fielCache = {}; _eq = null;
 
 /* ═════════ formato ═════════ */
 const nf = new Intl.NumberFormat("es-CL");
@@ -3172,58 +3223,216 @@ function comoLlego(ci, origen) {
 /* ═════════ 7 · A quién llamar ═════════ */
 const waLink = t => "https://wa.me/" + (t.startsWith("+") ? t.slice(1)
   : "56" + t.replace(/\D/g,"").replace(/^56/, ""));
+const SEGSR = {
+  R: { n: "En riesgo", quien: "las vendedoras con Carol, esta semana", money: "gasto12", ml: "en 12 meses",
+       desc: "Compraban cada pocos días y llevan entre dos y seis semanas callados. Todavía no se fueron." },
+  A: { n: "Compraban mucho y ya no", quien: "Carol con las vendedoras: los 10 primeros, y una sola pregunta: por qué", money: "gasto12", ml: "en 12 meses",
+       desc: "Más de $800 mil en doce meses, o más de $1,5 M en 2025, y más de 45 días sin comprar." },
+  B: { n: "Dormidos", quien: "las vendedoras, de mayor a menor gasto", money: "gasto12", ml: "en 12 meses",
+       desc: "Compraban seguido y llevan más del doble de su ritmo sin comprar, con menos gasto que los grandes." },
+  C: { n: "Potenciales que no compran", quien: "las vendedoras: seguimiento a los 30, 60 y 90 días", money: null,
+       desc: "Escribieron tres o más mensajes por WhatsApp en los últimos 45 días y no aparecen como clientes en relBase. Vienen de GoHighLevel, con la fecha de corte de la Ruta." },
+  D: { n: "Compraron una vez", quien: "las vendedoras: se les pregunta qué faltó", money: "gastoTot", ml: "esa compra",
+       desc: "Una sola compra, hace más de 45 días, y no volvieron. Ordenados por monto." },
+  E: { n: "Clientes clave", quien: "Carol les ofrece el plan mensual de DTF", money: "gasto26", ml: "en 2026",
+       desc: "Ocho o más compras en 2026 y siguen activos. Son la mitad de la venta: se cuidan." },
+};
+const ESTADOSR = [["por","Por contactar"],["cont","Contactado"],["cot","Cotizando"],["rec","Compró o volvió"],["no","Sin interés"],["ya","Ya es cliente"],["sin","Dato inválido"]];
+const FINR = new Set(["rec","no","ya","sin"]);
+/* Las mismas reglas de segmentos.py, sobre el paquete: montos netos, sin máquinas, un cliente por RUT. */
+function segRuta() {
+  if (_segRuta) return _segRuta;
+  const porCli = new Map();
+  for (const d of D.doc) {
+    if (d[1] < 0 || D.cli[d[1]][2] || !D.cli[d[1]][1] || d[2] === 3 || d[4] <= 0) continue;
+    if (!porCli.has(d[1])) porCli.set(d[1], []);
+    porCli.get(d[1]).push(d);
+  }
+  const h12 = IHOY - 365, y25a = aDias("2025-01-01"), y25b = aDias("2025-12-31"),
+        y26a = aDias("2026-01-01"), sep25 = aDias("2025-09-01");
+  const mediana = xs => { const o = [...xs].sort((a,b) => a-b), n = o.length;
+    return n ? (n % 2 ? o[(n-1)/2] : (o[n/2-1] + o[n/2]) / 2) : null; };
+  const todos = [];
+  for (const [ci, ds] of porCli) {
+    const fechas = [...new Set(ds.map(d => d[0]))].sort((a,b) => a-b);
+    const rec = ds.filter(d => d[0] >= h12);
+    const fr = [...new Set(rec.map(d => d[0]))].sort((a,b) => a-b);
+    const hab = fr.length >= 3 ? mediana(fr.slice(1).map((f,i) => f - fr[i])) : null;
+    const ult = fechas[fechas.length-1], dias = IHOY - ult;
+    const dormido = !!(hab && hab > 0 && dias > hab*2);
+    const entre = (a,b) => ds.filter(d => d[0] >= a && d[0] <= b).reduce((t,d) => t + d[4], 0);
+    const fam = (() => { const m = new Map();
+      for (const d of ds) for (const i of (LIN_DE_DOC.get(d[5]) || [])) {
+        const l = D.lin[i], f = D.prod[l[1]][3]; m.set(f, (m.get(f) || 0) + l[3]); }
+      const t = [...m.entries()].filter(x => x[1] > 0).sort((a,b) => b[1]-a[1]);
+      return [t[0] ? D.familias[t[0][0]] : "—", t[1] ? D.familias[t[1][0]] : ""]; })();
+    todos.push({ ci, k: D.cli[ci][1], nombre: D.cli[ci][0], tel: D.cli[ci][3] || "",
+      ultima: ult, dias, cada: hab ? Math.round(hab) : null, compras12: fr.length,
+      gasto12: rec.reduce((t,d) => t + d[4], 0), gasto25: entre(y25a, y25b), gasto26: entre(y26a, IMAX),
+      compras26: new Set(ds.filter(d => d[0] >= y26a).map(d => d[0])).size,
+      nCompras: fechas.length, primera: fechas[0], dormido, familia: fam[0], familia2: fam[1] });
+  }
+  const Rr = [], A = [], B = [], Dd = [], E = [];
+  for (const x of todos) {
+    const grande = x.gasto12 >= 800000 || x.gasto25 >= 1500000;
+    if (grande && x.dias >= 45 && (x.dormido || x.dias >= 120)) A.push(x);
+    else if (x.dormido && x.dias < 45 && x.gasto12 >= 500000) Rr.push(x);
+    else if (x.dormido && x.dias >= 30) B.push(x);
+    else if (x.nCompras === 1 && x.dias >= 45 && x.gasto12 + x.gasto25 >= 30000 && x.primera >= sep25) Dd.push(x);
+    else if (x.compras26 >= 8 && !x.dormido) E.push(x);
+  }
+  Rr.sort((a,b) => b.gasto12 - a.gasto12);
+  A.sort((a,b) => (b.gasto12 + b.gasto25*.5) - (a.gasto12 + a.gasto25*.5));
+  B.sort((a,b) => b.gasto12 - a.gasto12);
+  Dd.sort((a,b) => (b.gasto12 + b.gasto25) - (a.gasto12 + a.gasto25));
+  E.sort((a,b) => b.gasto26 - a.gasto26);
+  for (const x of Dd) x.gastoTot = Math.max(x.gasto12, x.gasto25);
+  _segRuta = { R: Rr, A, B, D: Dd.slice(0, 80), E };
+  return _segRuta;
+}
+const estadoR = k => (RUTA.cli[k] || {}).estado || "por";
+const notaR = k => (RUTA.cli[k] || {}).nota || "";
+function selR(k) { const e = estadoR(k), ro = RUTA.edita ? "" : " disabled";
+  return `<select class="stR s-${e}" data-k="${esc(k)}"${ro}>${ESTADOSR.map(([v,l]) =>
+    `<option value="${v}"${v === e ? " selected" : ""}>${l}</option>`).join("")}</select>`; }
+function notaHtmlR(k) { const ro = RUTA.edita ? "" : " disabled";
+  return `<input class="notaR" data-k="${esc(k)}" value="${esc(notaR(k))}" placeholder="${RUTA.edita ? "Qué dijo, cuándo volver a llamar" : ""}"${ro}>`; }
+function listaSeg(k) {
+  if (k === "C") return RUTA.C || [];
+  return segRuta()[k] || [];
+}
+function filtraRuta(l, k) {
+  const q = RUTA.q.trim().toLowerCase();
+  return l.filter(x => {
+    const clave = k === "C" ? x.ghlId : x.k;
+    if (RUTA.ocultar && FINR.has(estadoR(clave))) return false;
+    if (RUTA.soloTel && !(x.tel || x.telRaw)) return false;
+    if (q && !`${x.nombre} ${x.k || ""} ${x.tel || ""} ${x.empresa || ""} ${x.fantasia || ""}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+function tablaRuta() {
+  const k = RUTA.seg, S = SEGSR[k];
+  if (k === "C" && RUTA.acceso === false) return `<div class="aviso">Tu cuenta no tiene acceso a las listas de la Ruta TAGO en la base, así que los potenciales no se muestran aquí. Las otras cinco listas salen del paquete del tablero.</div>`;
+  if (k === "C" && RUTA.C === null) return `<div class="vacio">Cargando los potenciales…</div>`;
+  const todos = listaSeg(k), l = filtraRuta(todos, k);
+  const ocultos = todos.length - l.length;
+  const conTel = l.filter(x => x.tel || x.telRaw).length;
+  const dinero = S.money ? ` · ${clp(l.reduce((t,x) => t + (x[S.money] || 0), 0))} ${S.ml}` : "";
+  const contactados = l.filter(x => estadoR(k === "C" ? x.ghlId : x.k) !== "por").length;
+  const resumen = `<p class="bajo" style="margin:0 0 8px">${num(l.length)} ${k === "C" ? "potenciales" : "clientes"}${dinero} · ${conTel} con teléfono · ${contactados} contactados${ocultos ? ` · ${ocultos} ocultos por el filtro` : ""}${k === "C" && RUTA.corte ? ` · corte ${esc(RUTA.corte)}` : ""}</p>`;
+  if (!l.length) return resumen + `<div class="vacio">Nadie en esta lista con los filtros de arriba.</div>`;
+  const tel = x => { const t = x.telRaw ? "+56" + x.telRaw : (x.tel || "");
+    return t ? `<a class="wa" href="${waLink(t)}" target="_blank" rel="noopener">${esc(x.tel || t)}</a>` : `<span style="color:var(--gris)">sin teléfono</span>`; };
+  let head, filas;
+  if (k === "C") {
+    head = `<tr><th>Potencial</th><th>Contacto</th><th>Qué pidió</th><th>Último mensaje</th><th class="num">Mensajes</th><th>Llegó por</th><th>Estado</th><th>Nota</th></tr>`;
+    filas = l.map(x => { const cl = x.ghlId; const fin = FINR.has(estadoR(cl));
+      return `<tr class="${fin ? "finR" : ""}"><td class="nom">${esc(x.nombre || "—")}${x.empresa ? `<span class="smR">${esc(x.empresa)}</span>` : ""}</td>
+        <td>${tel(x)}${x.ghlId ? ` <a class="wa" style="margin-left:4px" href="https://app.gohighlevel.com/v2/location/FNbzbjYQLhwIrPFUCbOS/contacts/detail/${esc(x.ghlId)}" target="_blank" rel="noopener">GHL</a>` : ""}${x.mail ? `<span class="smR">${esc(x.mail)}</span>` : ""}</td>
+        <td class="pista">${esc(x.pista || "")}</td><td class="f">${x.ultimo ? etCorta(x.ultimo) : "—"}</td>
+        <td class="num">${num(x.msjs || 0)}</td><td class="pista">${esc(x.origen || "")}${x.campana ? `<span class="smR">${esc(x.campana)}</span>` : ""}${x.etapa ? `<span class="smR">${esc(x.etapa)}</span>` : ""}</td>
+        <td class="stcell">${selR(cl)}</td><td>${notaHtmlR(cl)}</td></tr>`; }).join("");
+  } else {
+    head = `<tr><th>Cliente</th><th>Contacto</th><th>Compra</th><th>Última compra</th><th>Ritmo</th><th class="num">${k === "E" ? "Gasto 2026" : k === "D" ? "Esa compra" : "Gasto 12 m"}</th><th>Estado</th><th>Nota</th></tr>`;
+    filas = l.map(x => { const fin = FINR.has(estadoR(x.k));
+      return `<tr class="${fin ? "finR" : ""}"><td class="nom"><button class="lnk" data-ficha="${x.ci}">${esc(x.nombre)}</button><span class="smR">${esc(x.k)}</span></td>
+        <td>${tel(x)}</td>
+        <td>${esc(x.familia)}${x.familia2 ? `<span class="smR">${esc(x.familia2)}</span>` : ""}</td>
+        <td class="f">${etCorta(deDias(x.ultima))}<span class="smR">hace ${num(x.dias)} días</span></td>
+        <td>${x.cada ? `cada ${num(x.cada)} d` : "—"}<span class="smR">${num(x.compras12)} compras en 12 m</span></td>
+        <td class="num"><b>${clp(x[S.money] || 0)}</b></td>
+        <td class="stcell">${selR(x.k)}</td><td>${notaHtmlR(x.k)}</td></tr>`; }).join("");
+  }
+  return resumen + `<div class="tw ${l.length > 25 ? "twAlto" : ""}"><table><thead>${head}</thead><tbody>${filas}</tbody></table></div>`;
+}
+function pintaTablaRuta() {
+  const z = document.getElementById("rutaTabla");
+  if (!z) return;
+  const a = document.activeElement;
+  if (a && z.contains(a) && a.matches("input.notaR")) return;   // no se pisa una nota a medio escribir
+  z.innerHTML = tablaRuta();
+  alineaTablas(z);
+}
 function sLlamar() {
-  const ds = dormidos();
-  if (!ds.length) return `<div class="panel"><p style="font-size:1.1rem">
-    <b>Ningún cliente bueno se está alejando.</b> Todos los que compran seguido siguen apareciendo
-    dentro de su ritmo normal.</p></div>`;
-  const plata = ds.reduce((s,c) => s + c.plata, 0);
-  const conTel = ds.filter(c => c.tel);
+  if (fichaAbierta !== null) return fichaCliente(fichaAbierta);
+  const S = segRuta();
+  const plata = (l, f) => l.reduce((t,x) => t + (x[f] || 0), 0);
+  const nombres = (l, n) => l.slice(0, n).map(x => `<button class="lnk" data-ficha="${x.ci}">${esc(x.nombre)}</button>`).join(", ")
+    + (l.length > n ? ` y ${num(l.length - n)} más` : "");
+  const nC = RUTA.C ? RUTA.C.length : null;
   return `<div class="heroe">
-    <div class="caja"><span class="rot">En juego, si no los llamas</span>
-      <span class="granNum" style="color:var(--ambar)">${clp(plata)}</span>
-      <span class="bajo">es lo que estos ${ds.length} clientes te compraron en los últimos
-        12 meses</span></div>
-    <div class="caja"><span class="rot">Puedes escribirles hoy</span>
-      <span class="medNum" style="color:var(--verde)">${conTel.length}</span>
-      <span class="bajo">tienen teléfono en su ficha · valen
-        ${clp(conTel.reduce((s,c) => s + c.plata, 0))}</span></div>
-    <div class="caja"><span class="rot">Hay que buscarles el teléfono</span>
-      <span class="medNum">${ds.length - conTel.length}</span>
-      <span class="bajo">están en relBase sin número cargado</span></div>
-    <div class="caja"><span class="rot">El que más urge</span>
-      <span class="medNum" style="font-size:1.1rem">${esc(ds[0].nombre)}</span>
-      <span class="bajo">${clp(ds[0].plata)} al año · lleva ${ds[0].sin} días sin comprar</span></div>
+    <div class="caja"><span class="rot">Se están callando</span>
+      <span class="granNum" style="color:var(--rojo)">${num(S.R.length)}</span>
+      <span class="bajo">compraban cada semana y llevan de dos a seis semanas sin comprar · ${clp(plata(S.R, "gasto12"))} en 12 meses</span></div>
+    <div class="caja"><span class="rot">Compraban mucho y ya no</span>
+      <span class="medNum">${num(S.A.length)}</span>
+      <span class="bajo">${clp(plata(S.A, "gasto12"))} en 12 meses</span></div>
+    <div class="caja"><span class="rot">Dormidos</span>
+      <span class="medNum">${num(S.B.length)}</span>
+      <span class="bajo">${clp(plata(S.B, "gasto12"))} en 12 meses</span></div>
+    <div class="caja"><span class="rot">Clientes clave</span>
+      <span class="medNum" style="color:var(--verde)">${num(S.E.length)}</span>
+      <span class="bajo">${clp(plata(S.E, "gasto26"))} en 2026</span></div>
   </div>
 
   <div class="panel" style="margin-top:14px">
-    <p style="font-size:1.06rem;line-height:1.5">Estos clientes <b>no están perdidos</b>: son
-      clientes que compraban con un ritmo claro y llevan más del doble de ese ritmo sin aparecer.
-      Es la plata más fácil que tienes sobre la mesa.</p>
-    ${explicable("dormidos", `Un cliente entra a esta lista cuando cumple <b>las cuatro cosas</b>:
-      compró al menos 3 veces en los últimos 12 meses (si no, no hay ritmo que medir), lleva
-      <b>más del doble de su propio ritmo</b> sin comprar, lleva al menos 30 días, y te dejó más
-      de ${clp(150000)} en el año.<br><br>
-      No es un plazo fijo igual para todos: a alguien que compraba cada semana se le nota a las
-      dos semanas; a alguien que compraba cada dos meses, a los cuatro.`)}
+    <h3 style="font-size:1.08rem">Quién llama a quién esta semana.</h3>
+    <ul class="quienes">
+      <li><b>Las vendedoras con Carol</b>, los ${num(S.R.length)} en riesgo: ${nombres(S.R, 12) || "nadie por ahora"}.</li>
+      <li><b>Carol con las vendedoras</b>, los 10 primeros que compraban mucho y ya no: ${nombres(S.A, 10) || "nadie por ahora"}. Una sola pregunta: por qué dejaron de comprar.</li>
+      <li><b>Las vendedoras</b>, después: los ${num(S.B.length)} dormidos de mayor a menor gasto, y los ${num(S.D.length)} que compraron una vez.</li>
+      <li><b>Carol</b> les ofrece el plan mensual de DTF a 10 clientes clave: ${nombres(S.E, 10) || "nadie por ahora"}.</li>
+      ${nC !== null ? `<li><b>Las vendedoras</b> hacen seguimiento a los ${num(nC)} potenciales que escribieron y no compraron: a los 30, 60 y 90 días.</li>` : ""}
+      <li>Andreina no llama: decide qué ofrecerles. El plan completo está en la <a href="/ruta">Ruta TAGO</a>.</li>
+    </ul>
+    ${explicable("ruta", `Las listas se arman con las mismas reglas de la Ruta TAGO, sobre los documentos de relBase que
+      ya tiene el tablero (montos netos, sin las dos máquinas, un cliente por RUT). <b>En riesgo</b>: compraban
+      seguido, llevan más del doble de su ritmo sin comprar, menos de 45 días, y más de $500 mil en el año.
+      <b>Compraban mucho y ya no</b>: más de $800 mil en 12 meses o $1,5 M en 2025, y más de 45 días callados.
+      <b>Dormidos</b>: el resto de los que se salieron de su ritmo, con más de 30 días. <b>Compraron una vez</b>:
+      una sola compra desde septiembre de 2025, hace más de 45 días, de $30 mil o más. <b>Clientes clave</b>: ocho
+      o más compras en 2026 y activos. Los <b>potenciales</b> salen de las conversaciones de WhatsApp en
+      GoHighLevel y se refrescan cuando se actualiza la Ruta. El estado y la nota de cada cliente son los mismos
+      que en la Ruta: lo que marques aquí se ve allá.`)}
+    ${RUTA.edita ? "" : `<p class="bajo" style="margin-top:10px">Estás viendo estas listas en solo lectura: el estado y las notas los cambia Andreina.</p>`}
   </div>
 
-  <div class="sec"><h2>La lista, ordenada por lo que está en juego.</h2></div>
-  <div class="tw"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Compraba cada</th>
-    <th>Lleva sin comprar</th><th>Te dejó en 12 meses</th><th></th></tr></thead><tbody id="tbDorm">
-    ${ds.slice(0,30).map(filaDorm).join("")}
-  </tbody></table></div>
-  ${ds.length > 30 ? `<button class="mas" data-mas="dorm">Ver los ${ds.length-30} restantes</button>` : ""}`;
+  <div class="sec"><h2>Las listas.</h2><span class="tocable der">Toca un nombre para ver su ficha completa</span></div>
+  <div class="segsR">${["R","A","B","C","D","E"].map(k => { const n = k === "C" ? (nC === null ? "…" : num(nC)) : num(S[k].length);
+    return `<button data-segr="${k}" aria-selected="${RUTA.seg === k}">${SEGSR[k].n}<span class="n">${n}</span></button>`; }).join("")}</div>
+  <p class="bajo" style="margin:0 0 10px">${SEGSR[RUTA.seg].desc} Llaman <b>${SEGSR[RUTA.seg].quien}</b>.</p>
+  <div class="filtrosR">
+    <input type="search" id="rq" value="${esc(RUTA.q)}" placeholder="Buscar por nombre, RUT o teléfono">
+    <label><input type="checkbox" id="rqTel"${RUTA.soloTel ? " checked" : ""}> Solo con teléfono</label>
+    <label><input type="checkbox" id="rqFin"${RUTA.ocultar ? " checked" : ""}> Ocultar terminados</label>
+  </div>
+  <div id="rutaTabla">${tablaRuta()}</div>`;
 }
-function filaDorm(c) {
-  return `<tr><td class="nom">${esc(c.nombre)}</td>
-    <td class="f">${c.tel ? esc(c.tel) : '<span style="color:var(--gris)">sin teléfono</span>'}</td>
-    <td class="num">${c.ritmo} días</td>
-    <td class="num"><b style="color:${c.sin > c.ritmo*4 ? "var(--rojo)" : "var(--ambar)"}">${c.sin} días</b></td>
-    <td class="num">${clp(c.plata)} <span style="color:var(--gris);font-size:.78rem">en ${c.compras} compras</span></td>
-    <td>${c.tel ? `<a class="wa" href="${waLink(c.tel)}" target="_blank" rel="noopener"
-      >Escribir</a>` : ""}</td></tr>`;
+function guardaCliRuta(k, patch) {
+  if (!RUTA.edita) return;
+  const v = Object.assign({}, RUTA.cli[k] || {}, patch, { cuando: new Date().toISOString(), k });
+  RUTA.cli[k] = v;
+  firebase.database().ref("tago_ruta/clientes/" + claveRuta(k)).set(v).catch(e => console.warn("ruta", e));
 }
+const timersR = {};
+document.addEventListener("click", e => {
+  const sg = e.target.closest("[data-segr]");
+  if (sg) { RUTA.seg = sg.dataset.segr; fichaAbierta = null; const y = window.scrollY; pinta(); window.scrollTo({ top: y }); }
+}, SENAL);
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.matches("select.stR")) { guardaCliRuta(t.dataset.k, { estado: t.value }); t.className = "stR s-" + t.value;
+    const tr = t.closest("tr"); if (tr) tr.classList.toggle("finR", FINR.has(t.value)); return; }
+  if (t.id === "rqTel") { RUTA.soloTel = t.checked; pintaTablaRuta(); return; }
+  if (t.id === "rqFin") { RUTA.ocultar = t.checked; pintaTablaRuta(); return; }
+}, SENAL);
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.matches("input.notaR")) { const k = t.dataset.k; clearTimeout(timersR[k]);
+    timersR[k] = setTimeout(() => guardaCliRuta(k, { nota: t.value }), 600); return; }
+  if (t.id === "rq") { RUTA.q = t.value; pintaTablaRuta(); }
+}, SENAL);
 
 /* ═════════ 8 · Dónde vendo ═════════ */
 function listaComunas() {
@@ -3776,7 +3985,7 @@ const SEC = {
                 fn: sProductos },
   clientes:   { et: "Mis clientes", ic: "i-cli", q: "¿Quiénes me sostienen y cómo llegaron?",
                 fn: sClientes },
-  llamar:     { et: "A quién llamar", ic: "i-tel", q: "¿Qué cliente bueno se está yendo?",
+  llamar:     { et: "A quién llamar", ic: "i-tel", q: "¿A quién llamo esta semana, quién lo hace y qué pasó?",
                 fn: sLlamar, sinFiltro: true },
   donde:      { et: "Dónde vendo", ic: "i-mapa", q: "¿En qué comunas está mi plata?", fn: sDonde },
   publicidad: { et: "Publicidad", ic: "i-ads", q: "¿Cuánto gasté y me trajo plata?",
@@ -3845,7 +4054,7 @@ const NOMF = {
 /* ═════════ pintado ═════════ */
 function pinta() {
   const S = SEC[seccion];
-  const nDorm = dormidos().length;
+  const nDorm = segRuta().R.length + segRuta().A.length;
 
   document.getElementById("menu").innerHTML = GRUPOS.map(([g, ks]) => `<div class="grupo">
     <span>${g}</span>
@@ -3978,7 +4187,6 @@ function engancha(zona) {
     if (k === "docs") add("tbDocs",
       [...docs()].sort((a,c) => c[0]-a[0]).slice(40).map(filaDoc).join(""));
     if (k === "cli") add("tbCli", listaClientes().slice(25).map(filaCli).join(""));
-    if (k === "dorm") add("tbDorm", dormidos().slice(30).map(filaDorm).join(""));
     if (k === "prod") { const ps = tablaProductos();
       const cc = ps.filter(p => p.costo !== null).sort((a,b) => b.queda - a.queda);
       const sc = ps.filter(p => p.costo === null).sort((a,b) => b.neto - a.neto);
@@ -4116,7 +4324,7 @@ document.addEventListener("click", e => {
     else F[k] = null;
     pinta(); return; }
   const iv = e.target.closest("#iva button");
-  if (iv) { conIva = iv.dataset.iva === "1"; _dorm = null; _clave = ""; _hist = null;
+  if (iv) { conIva = iv.dataset.iva === "1"; _dorm = null; _segRuta = null; _clave = ""; _hist = null;
     pinta(); return; }
   if (e.target.closest("#verMas")) { document.getElementById("masMenu").classList.add("on"); return; }
   if (e.target.id === "masMenu") document.getElementById("masMenu").classList.remove("on");
@@ -4157,7 +4365,7 @@ if (H.a === null) { H.a = IHOY; H.b = IHOY; } else { mueve(H, "a"); mueve(H, "b"
 if (C.a === null) { C.a = aDias(HOY.slice(0,4) + "-01-01"); C.b = IMAX; } else { mueve(C, "a"); mueve(C, "b"); }
 ultimoIHOY = IHOY; ultimoIMAX = IMAX;
 pinta();
-return { pinta, pintaEstado, detener: () => parar.abort() };
+return { pinta, pintaEstado, pintaTablaRuta, detener: () => parar.abort() };
 }
 </script>
 </body>
