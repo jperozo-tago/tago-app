@@ -542,6 +542,7 @@ input:disabled,select:disabled{cursor:default;opacity:.7}
   <section class="view" id="view-clientes" hidden>
     <div class="segs" role="tablist" id="segs"></div>
     <p class="segdesc" id="segDesc"></p>
+    <p class="segdesc small" id="segFuente"></p>
     <div class="toolbar">
       <input type="search" id="q" placeholder="Buscar por nombre, RUT o teléfono">
       <label><input type="checkbox" id="fTel"> Solo con teléfono</label>
@@ -691,6 +692,12 @@ const SEGS = {
 const EQUIPO_P = {CO:{n:'Carol',e:'c.oviedo@tago.cl'},MR:{n:'Mari',e:'m.perez@tago.cl'},AQ:{n:'Andrea',e:'a.querales@tago.cl'},MG:{n:'Miguel',e:'produccion.tago@gmail.com'},IP:{n:'Ignacio',e:'producciondtf.tago@gmail.com'},EM:{n:'Eva',e:'emartinez.tago@gmail.com'},AL:{n:'Allyson',e:'allysonalvarez.tago@gmail.com'},JP:{n:'José',e:'j.perozo@tago.cl'}};
 const OWNER_P = {CA:['CO'],V:['MR','AQ'],P:['MG','IP'],CO:['EM'],D:['AL'],J:['JP'],CT:['JP']};
 const PED = {espacio:'-P1SlqW2R4wvheoBgQoK', lista:'-P1SlrNER5GYraLxArIZ', activo:false, estados:{}, porHacer:null, listo:null};
+/* El seguimiento de clientes (estado y nota) vive en Control de producción: una tarea por cliente en el
+   espacio Clientes. Aquí se lee y se escribe allá. El artifact de Claude no llega: solo muestra la foto. */
+const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"contacto": "-P1Sj9za67Zlcp5aWv9B", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {"MR": "m.perez@tago.cl", "AQ": "a.querales@tago.cl", "CO": "c.oviedo@tago.cl"}};
+PEDC.codigo = Object.fromEntries(Object.entries(PEDC.est).map(([c,id])=>[id,c]));
+PEDC.listaSeg = Object.fromEntries(Object.entries(PEDC.listas).map(([k,id])=>[id,k]));
+const CLI_RO = () => !PED.activo;   // sin Control de producción a mano, el seguimiento no se edita
 const ESTADOS = [['por','Por contactar'],['cont','Contactado'],['cot','Cotizando'],['rec','Compró o volvió'],['no','Sin interés'],['ya','Ya es cliente'],['sin','Dato inválido']];
 const FIN = new Set(['rec','no','ya','sin']);
 
@@ -815,8 +822,8 @@ function renderEquipo(){
 function keyOf(x){ return x.rut || x.ghlId; }
 function estadoDe(x){ return (state.cli[keyOf(x)]||{}).estado||'por'; }
 function notaDe(x){ return (state.cli[keyOf(x)]||{}).nota||''; }
-function selHtml(x){ const e=estadoDe(x); return `<select class="st s-${e}" id="est-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}"${RO()}>${ESTADOS.map(([v,l])=>`<option value="${v}"${v===e?' selected':''}>${l}</option>`).join('')}</select>`; }
-function notaHtml(x){ return `<input class="nota" id="nota-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}" value="${esc(notaDe(x))}" placeholder="${soloLectura?'':'Qué dijo, cuándo volver a llamar'}"${RO()}>`; }
+function selHtml(x){ const e=estadoDe(x); return `<select class="st s-${e}" id="est-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}"${RO()||(CLI_RO()?' disabled':'')}>${ESTADOS.map(([v,l])=>`<option value="${v}"${v===e?' selected':''}>${l}</option>`).join('')}</select>`; }
+function notaHtml(x){ const ro=RO()||(CLI_RO()?' disabled':''); return `<input class="nota" id="nota-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}" value="${esc(notaDe(x))}" placeholder="${(soloLectura||CLI_RO())?'':'Qué dijo, cuándo volver a llamar'}"${ro}>`; }
 const WA='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 12 12 0 0 0 4.6 4.1c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>';
 function contactoHtml(x){
   const tel = x.tel ? `<a class="wa" href="https://wa.me/56${x.telRaw}" target="_blank" rel="noopener" title="Abrir WhatsApp">${WA}${esc(x.tel)}</a>` : `<span class="chip notel">Sin teléfono</span>`;
@@ -839,6 +846,7 @@ function renderClientes(){
   const q=($('#q').value||'').trim().toLowerCase(), soloTel=$('#fTel').checked, ocultar=$('#fPend').checked;
   const tot=L.length, conTel=L.filter(x=>x.tel).length, contact=L.filter(x=>estadoDe(x)!=='por').length, rec=L.filter(x=>estadoDe(x)==='rec').length;
   const dinero = S.money ? ` · ${clp(L.reduce((a,x)=>a+(x[S.money]||0),0))} ${S.ml}` : '';
+  $('#segFuente').textContent = PED.activo ? 'El estado y la nota de cada cliente son los de Control de producción (Pedidos, espacio Clientes): lo que cambies aquí se escribe allá, y lo que las chicas marquen allá se ve aquí.' : 'El seguimiento de clientes (estado y nota) se lleva en Control de producción, en la app de TAGO. En esta copia compartida solo se ven las listas.';
   $('#segSum').textContent=`${tot} ${k==='C'?'potenciales':'clientes'}${dinero} · ${conTel} con teléfono · ${contact} contactados · ${rec} ${k==='C'?'compraron':'volvieron a comprar'}`;
   if(q) L=L.filter(x=>[x.nombre,x.fantasia,x.empresa,x.rut,x.telRaw,x.mail].join(' ').toLowerCase().includes(q));
   if(soloTel) L=L.filter(x=>x.tel);
@@ -929,7 +937,10 @@ PED.activo = true;
 /* Control de producción (app Pedidos): los estados de tarea, y las tareas que nacieron en la Ruta. */
 function escuchaPedidos(){
   const r1=firebase.database().ref('tago_tareas_estados'); const cb1=r1.on('value', s=>{ const v=s.val()||{}; PED.estados=v; const ord=Object.entries(v).filter(([id,e])=>e&&!e.espacio).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); /* solo los estados generales: los de un espacio (Clientes) no cuentan */ PED.porHacer=ord.length?ord[0][0]:null; PED.listo=ord.length?ord[ord.length-1][0]:null; renderAll(); }, e=>console.warn('estados',e)); escuchas.push([r1,cb1]);
-  const r2=firebase.database().ref('tago_tareas'); const cb2=r2.on('value', s=>{ const v=s.val()||{}; const m={}; Object.entries(v).forEach(([id,t])=>{ if(t&&t.origenRuta) m[id]=t; }); state.ped=m; renderAll(); }, e=>console.warn('tareas',e)); escuchas.push([r2,cb2]);
+  const r2=firebase.database().ref('tago_tareas'); const cb2=r2.on('value', s=>{ const v=s.val()||{}; const m={}, cli={};
+    Object.entries(v).forEach(([id,t])=>{ if(!t) return; if(t.origenRuta) m[id]=t;
+      const k=t.lista&&PEDC.listaSeg[t.lista]&&t.campos&&t.campos[PEDC.cid.rut]; if(k) cli[k]={k, tareaId:id, estado:PEDC.codigo[t.estado]||'por', nota:(t.campos[PEDC.cid.nota]||''), cuando:t.updatedAt||'', quien:(t.updatedBy||{}).nombre||''}; });
+    state.ped=m; state.cli=cli; renderAll(); }, e=>console.warn('tareas',e)); escuchas.push([r2,cb2]);
 }
 function asignarEnPedidos(id, ids){
   const t=BYID[id]; if(!t||!sesion) return;
@@ -952,10 +963,38 @@ function marcar(campo,id,val){
   refDe('estado/'+campo+'/'+id).set(state[campo][id]).then(()=>setGuardado('nube')).catch(e=>{ console.warn('tarea',e); localSave(); setGuardado('local'); });
 }
 const timers={};
+const QUIEN_P = {'a.rodriguez@tago.cl':{id:'AR',nombre:'Andreina Rodriguez'},'a.rodriguez.alizo1492@gmail.com':{id:'AR',nombre:'Andreina Rodriguez'},'j.perozo@tago.cl':{id:'JP',nombre:'José Perozo'}};
+function quienSoy(){ return QUIEN_P[(sesion&&sesion.email)||'']||{id:'AR',nombre:'Andreina Rodriguez'}; }
+function filaCliente(k){ for(const sg of Object.keys(SEGS)) for(const x of (SEG[sg]||[])) if(keyOf(x)===k) return {sg,x}; return null; }
+/* El estado y la nota se escriben en la tarea del cliente en Pedidos. Si el cliente todavía no tiene tarea
+   (entró a la lista después de la última carga), se crea igual que las demás: en su lista de prioridad,
+   asignada a Mari, Andrea y Carol. */
 function guardarCli(k, patch){
-  if(soloLectura) return;
-  state.cli[k]=Object.assign({}, state.cli[k]||{}, patch, {cuando:new Date().toISOString(), k});
-  refDe('clientes/'+claveDb(k)).set(state.cli[k]).then(()=>setGuardado('nube')).catch(e=>{ console.warn('cliente',e); localSave(); setGuardado('local'); });
+  if(soloLectura||CLI_RO()) return;
+  const now=new Date().toISOString(), yo=quienSoy(), c=state.cli[k];
+  state.cli[k]=Object.assign({}, c||{k}, patch, {cuando:now});
+  const up={};
+  if(c&&c.tareaId){
+    const b='tago_tareas/'+c.tareaId+'/';
+    if(patch.estado!==undefined) up[b+'estado']=PEDC.est[patch.estado]||PEDC.est.por;
+    if(patch.nota!==undefined) up[b+'campos/'+PEDC.cid.nota]=patch.nota||null;
+    up[b+'updatedAt']=now; up[b+'updatedBy']=yo;
+  } else {
+    const f=filaCliente(k); if(!f){ console.warn('cliente sin fila',k); return; }
+    const x=f.x, sg=f.sg, tid=firebase.database().ref('tago_tareas').push().key;
+    const tel=x.tel||'', mail=x.mail||''; const contacto=[tel||(sg!=='C'?'sin teléfono':''), mail].filter(Boolean).join(' · ')||'sin teléfono';
+    let compra, ultima, ritmo, gasto;
+    if(sg==='C'){ compra=x.pista?('Pidió: '+String(x.pista).trim()).slice(0,300):'Escribió por WhatsApp y no compró'; ultima=x.ultimo||null; ritmo=`${x.msjs||0} mensajes`+(x.origen?` · llegó por ${x.origen}`:''); gasto=null; }
+    else { compra=(x.familia||'')+(x.familia2?` · ${x.familia2}`:''); ultima=x.ultima||null; ritmo=(x.cada?`cada ${x.cada} días · `:'')+`${x.compras12||0} compras en 12 m · lleva ${x.dias} días sin comprar`; gasto=sg==='D'?Math.max(x.gasto12||0,x.gasto25||0):(x.gasto12||0); }
+    let nom=x.nombre||k; if(x.fantasia&&String(x.fantasia).toLowerCase()!==String(nom).toLowerCase()) nom+=` (${x.fantasia})`; else if(sg==='C'&&x.empresa) nom+=` (${x.empresa})`;
+    const asignados={}, asigEmails={}; Object.entries(PEDC.asignados).forEach(([id,e])=>{ asignados[id]=true; asigEmails[claveDb(e)]=true; });
+    const campos={}; campos[PEDC.cid.contacto]=contacto; campos[PEDC.cid.compra]=compra; campos[PEDC.cid.ultima]=ultima; campos[PEDC.cid.ritmo]=ritmo; campos[PEDC.cid.gasto]=gasto; campos[PEDC.cid.nota]=patch.nota||null; campos[PEDC.cid.rut]=k;
+    up['tago_tareas/'+tid]={nombre:String(nom).slice(0,120), notas:'', estado:PEDC.est[patch.estado||'por'], prioridad:'normal', lista:PEDC.listas[sg], pedidoId:null, fechaLimite:'', asignados, asignadosEmails:asigEmails, createdAt:now, createdBy:yo, creadoPorEmail:sesion.email, updatedAt:now, updatedBy:yo, campos};
+    up['tago_tareas_visibilidad/'+claveDb(sesion.email)+'/'+tid]=true;
+    Object.values(PEDC.asignados).forEach(e=>{ up['tago_tareas_visibilidad/'+claveDb(e)+'/'+tid]=true; });
+    state.cli[k].tareaId=tid;
+  }
+  firebase.database().ref().update(up).then(()=>setGuardado('nube')).catch(e=>{ console.warn('cliente',e); setGuardado('local'); alert('No se pudo guardar en Control de producción: '+(e&&e.message||e)); });
 }
 firebase.auth().onAuthStateChanged(user => { if(!user){ sale(); return; } sesion = { email:(user.email||'').toLowerCase(), uid:user.uid }; entra(); });
 function entra(){
@@ -972,9 +1011,8 @@ function entra(){
     $('#entrada').hidden = true; $('#app').hidden = false; renderAll(); setGuardado(soloLectura?'lectura':'nube');
     if(soloLectura) $('#avisoLectura').hidden = false;
     escucha('estado', s2 => { const d0=s2.val()||{}; state.hecho=d0.hecho||{}; state.delegado=d0.delegado||{}; renderAll(); }, e => { console.warn(e); setGuardado('local'); });
-    escucha('clientes', q => { const m={}; Object.values(q.val()||{}).forEach(x => { if(x && x.k) m[x.k]=x; }); state.cli=m; if(state.view==='clientes') renderClientes(); else renderSegs(); }, e => { console.warn(e); setGuardado(soloLectura?'lectura':'local'); });
     escucha('enlaces', q => { state.enlaces=q.val()||{}; renderAll(); }, e => console.warn('enlaces',e));
-    escuchaPedidos();
+    escuchaPedidos();   // trae también el seguimiento de clientes (estado y nota) desde las tareas de Pedidos
       });
   }).catch(e => { if(esPermisoDenegado(e)) noAutorizado(); else muestraEntrada('abriendo', 'No se pudo abrir la Ruta: ' + (e && e.message || e)); });
 }
@@ -984,6 +1022,7 @@ function sale(){ cierraEscuchas(); sesion=null; SEG=null; soloLectura=false; sta
 document.addEventListener('change', e=>{
   const t=e.target;
   if(soloLectura && (t.matches('[data-del],[data-id],select.st'))) { renderAll(); return; }
+  if(CLI_RO() && t.matches('select.st')) { renderAll(); return; }
   if(t.matches('input[type=checkbox][data-del]')) marcar('delegado', t.dataset.del, t.checked);
   else if(t.matches('input[type=checkbox][data-id]')) marcar('hecho', t.dataset.id, t.checked);
   else if(t.matches('select.st')){ guardarCli(t.dataset.k,{estado:t.value}); t.className='st s-'+t.value; renderSegs(); const tr=t.closest('tr'); if(tr) tr.classList.toggle('fin',FIN.has(t.value)); }
@@ -991,7 +1030,7 @@ document.addEventListener('change', e=>{
 });
 document.addEventListener('input', e=>{
   const t=e.target;
-  if(t.matches('input.nota')){ if(soloLectura) return; const k=t.dataset.k; clearTimeout(timers[k]); timers[k]=setTimeout(()=>guardarCli(k,{nota:t.value}),600); }
+  if(t.matches('input.nota')){ if(soloLectura||CLI_RO()) return; const k=t.dataset.k; clearTimeout(timers[k]); timers[k]=setTimeout(()=>guardarCli(k,{nota:t.value}),600); }
   else if(t.id==='q') renderClientes();
 });
 document.addEventListener('click', e=>{

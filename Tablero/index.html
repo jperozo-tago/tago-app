@@ -725,10 +725,14 @@ function escuchaRuta() {
       RUTA.acceso = true; if (seccion === "llamar" && T) T.pinta(); },
     () => { RUTA.acceso = false; if (seccion === "llamar" && T) T.pinta(); });
   escuchas.push([r1, cb1]);
-  const r2 = ref("clientes");
+  /* Las tareas de Clientes en Pedidos: estado (los 7 propios del espacio) y nota, por RUT o ID. Solo los
+     administradores de la base pueden leer tago_tareas entero, y son los mismos que entran al tablero. */
+  const r2 = firebase.database().ref("tago_tareas");
   const cb2 = r2.on("value", x => { const m = {};
-      Object.values(x.val() || {}).forEach(c => { if (c && c.k) m[c.k] = c; });
-      RUTA.cli = m; if (seccion === "llamar" && T) T.pintaTablaRuta(); }, () => {});
+      Object.entries(x.val() || {}).forEach(([id, t]) => { if (!t || !t.lista || !PEDC.listaSeg[t.lista] || !t.campos) return;
+        const k = t.campos[PEDC.cid.rut]; if (!k) return;
+        m[k] = { k, tareaId: id, estado: PEDC.codigo[t.estado] || "por", nota: t.campos[PEDC.cid.nota] || "", cuando: t.updatedAt || "", quien: (t.updatedBy || {}).nombre || "" }; });
+      RUTA.cli = m; if (seccion === "llamar" && T) T.pintaTablaRuta(); }, e => console.warn("tareas", e));
   escuchas.push([r2, cb2]);
 }
 
@@ -779,6 +783,13 @@ let _dorm = null, _hist = null, _fielCache = {}, _eq = null;
    Ruta en tago_ruta/clientes; los escribe solo quien está en tago_ruta/editores. */
 let _segRuta = null;
 const RUTA = { seg: "R", q: "", soloTel: false, ocultar: true, cli: {}, C: null, corte: null, acceso: null, edita: false };
+/* El seguimiento de clientes (estado y nota) vive en Control de producción (app Pedidos, espacio
+   Clientes, una tarea por cliente en su lista de prioridad). Aquí se lee de esas tareas y se escribe
+   en ellas; lo que las vendedoras marquen allá se ve aquí. Los ids los deja informe/ruta/cargar_pedidos.py. */
+const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"contacto": "-P1Sj9za67Zlcp5aWv9B", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {"MR": "m.perez@tago.cl", "AQ": "a.querales@tago.cl", "CO": "c.oviedo@tago.cl"}};
+PEDC.codigo = Object.fromEntries(Object.entries(PEDC.est).map(([c,id]) => [id, c]));
+PEDC.listaSeg = Object.fromEntries(Object.entries(PEDC.listas).map(([k,id]) => [id, k]));
+const QUIEN_P = { "a.rodriguez@tago.cl": { id: "AR", nombre: "Andreina Rodriguez" }, "a.rodriguez.alizo1492@gmail.com": { id: "AR", nombre: "Andreina Rodriguez" }, "j.perozo@tago.cl": { id: "JP", nombre: "José Perozo" } };
 /* La venta del día en vivo, tal como la escribe el pipeline en tago_tablero/hoy. */
 const vivo = { rb: null, rbEstado: null };
 /* La meta de venta de cada mes, editable y guardada. Se guarda SIN IVA, igual que
@@ -3398,7 +3409,7 @@ function sLlamar() {
       <span class="verMas">${on ? "Viendo esta lista ↓" : "Ver la lista ↓"}</span></button>`; }).join("")}
   </div>
   <div class="panel" style="margin-top:12px">
-    <p class="bajo">Quién llama a cada lista y en qué semana está en la <a href="/ruta">Ruta TAGO</a>. El estado y la nota de cada cliente son los mismos allá y aquí.</p>
+    <p class="bajo">Quién llama a cada lista y en qué semana está en la <a href="/ruta">Ruta TAGO</a>. El estado y la nota de cada cliente son los de <a href="/pedidos">Control de producción</a> (espacio Clientes): lo que las vendedoras marquen allá se ve aquí, y lo que cambies aquí se escribe allá.</p>
     ${explicable("ruta", `Las listas se arman con las mismas reglas de la Ruta TAGO, sobre los documentos de relBase que
       ya tiene el tablero (montos netos, sin las dos máquinas, un cliente por RUT). <b>Se están yendo</b>: compraban
       seguido, llevan más del doble de su ritmo sin comprar, menos de 45 días, y más de $500 mil en el año.
@@ -3419,11 +3430,41 @@ function sLlamar() {
   </div>
   <div id="rutaTabla">${tablaRuta()}</div>`;
 }
+function filaRutaDe(k) {
+  const S = segRuta();
+  for (const sg of ["R","A","B","D","E"]) for (const x of S[sg]) if (x.k === k) return { sg, x };
+  for (const x of (RUTA.C || [])) if (x.ghlId === k) return { sg: "C", x };
+  return null;
+}
+/* Estado y nota se escriben en la tarea del cliente en Pedidos. Si el cliente aún no tiene tarea (entró a la
+   lista con el paquete de hoy), se crea como las demás: en su lista de prioridad, asignada a Mari, Andrea y Carol. */
 function guardaCliRuta(k, patch) {
   if (!RUTA.edita) return;
-  const v = Object.assign({}, RUTA.cli[k] || {}, patch, { cuando: new Date().toISOString(), k });
-  RUTA.cli[k] = v;
-  firebase.database().ref("tago_ruta/clientes/" + claveRuta(k)).set(v).catch(e => console.warn("ruta", e));
+  const now = new Date().toISOString(), yo = QUIEN_P[(sesion && sesion.email) || ""] || { id: "AR", nombre: "Andreina Rodriguez" };
+  const c = RUTA.cli[k]; RUTA.cli[k] = Object.assign({}, c || { k }, patch, { cuando: now });
+  const up = {};
+  if (c && c.tareaId) {
+    const b = "tago_tareas/" + c.tareaId + "/";
+    if (patch.estado !== undefined) up[b + "estado"] = PEDC.est[patch.estado] || PEDC.est.por;
+    if (patch.nota !== undefined) up[b + "campos/" + PEDC.cid.nota] = patch.nota || null;
+    up[b + "updatedAt"] = now; up[b + "updatedBy"] = yo;
+  } else {
+    const f = filaRutaDe(k); if (!f) { console.warn("cliente sin fila", k); return; }
+    const x = f.x, sg = f.sg, tid = firebase.database().ref("tago_tareas").push().key;
+    const tel = x.telRaw ? "+56" + x.telRaw : (x.tel || ""), mail = x.mail || "";
+    const contacto = [tel || (sg !== "C" ? "sin teléfono" : ""), mail].filter(Boolean).join(" · ") || "sin teléfono";
+    let compra, ultima, ritmo, gasto;
+    if (sg === "C") { compra = x.pista ? ("Pidió: " + String(x.pista).trim()).slice(0, 300) : "Escribió por WhatsApp y no compró"; ultima = x.ultimo || null; ritmo = `${x.msjs || 0} mensajes` + (x.origen ? ` · llegó por ${x.origen}` : ""); gasto = null; }
+    else { compra = (x.familia || "") + (x.familia2 ? ` · ${x.familia2}` : ""); ultima = x.ultima >= 0 ? deDias(x.ultima) : null; ritmo = (x.cada ? `cada ${x.cada} días · ` : "") + `${x.compras12 || 0} compras en 12 m · lleva ${x.dias} días sin comprar`; gasto = sg === "D" ? Math.max(x.gasto12 || 0, x.gasto25 || 0) : (x.gasto12 || 0); }
+    const nom = sg === "C" ? ((x.nombre || k) + (x.empresa ? ` (${x.empresa})` : "")) : nombreBonito(x.nombre || k);
+    const asignados = {}, asigEmails = {}; Object.entries(PEDC.asignados).forEach(([id, e]) => { asignados[id] = true; asigEmails[claveRuta(e)] = true; });
+    const campos = {}; campos[PEDC.cid.contacto] = contacto; campos[PEDC.cid.compra] = compra; campos[PEDC.cid.ultima] = ultima; campos[PEDC.cid.ritmo] = ritmo; campos[PEDC.cid.gasto] = gasto; campos[PEDC.cid.nota] = patch.nota || null; campos[PEDC.cid.rut] = k;
+    up["tago_tareas/" + tid] = { nombre: String(nom).slice(0, 120), notas: "", estado: PEDC.est[patch.estado || "por"], prioridad: "normal", lista: PEDC.listas[sg], pedidoId: null, fechaLimite: "", asignados, asignadosEmails: asigEmails, createdAt: now, createdBy: yo, creadoPorEmail: sesion.email, updatedAt: now, updatedBy: yo, campos };
+    up["tago_tareas_visibilidad/" + claveRuta(sesion.email) + "/" + tid] = true;
+    Object.values(PEDC.asignados).forEach(e => { up["tago_tareas_visibilidad/" + claveRuta(e) + "/" + tid] = true; });
+    RUTA.cli[k].tareaId = tid;
+  }
+  firebase.database().ref().update(up).catch(e => { console.warn("ruta", e); alert("No se pudo guardar en Control de producción: " + (e && e.message || e)); });
 }
 const timersR = {};
 document.addEventListener("click", e => {
