@@ -303,6 +303,8 @@ button.pfila.on .pl{color:var(--azul);font-family:"DM Sans",sans-serif;font-weig
 .own.pedc.ok{background:var(--verde-suave);color:var(--verde)}
 .own.pedc.ok i{background:var(--verde-fill)}
 .go.asig{background:var(--tinta);color:var(--film)}
+.go.mio{background:var(--azul);color:#FFFFFF}
+.go.mio:hover{background:var(--btn-hover);color:#FFFFFF}
 .go.asig:hover{background:var(--btn-hover);color:#FFFFFF}
 .asignar{margin-top:14px;padding:14px 16px;border:1px solid var(--linea2);border-radius:12px;background:var(--papel2)}
 .asignar .personas{display:flex;gap:8px 14px;flex-wrap:wrap;margin:10px 0}
@@ -702,7 +704,7 @@ const SEGS = {
    Solo se usa en la app de TAGO: el artifact de Claude no llega a Firebase. */
 const EQUIPO_P = {CO:{n:'Carol',e:'c.oviedo@tago.cl'},MR:{n:'Mari',e:'m.perez@tago.cl'},AQ:{n:'Andrea',e:'a.querales@tago.cl'},MG:{n:'Miguel',e:'produccion.tago@gmail.com'},IP:{n:'Ignacio',e:'producciondtf.tago@gmail.com'},EM:{n:'Eva',e:'emartinez.tago@gmail.com'},AL:{n:'Allyson',e:'allysonalvarez.tago@gmail.com'},JP:{n:'José',e:'j.perozo@tago.cl'}};
 const OWNER_P = {CA:['CO'],V:['MR','AQ'],P:['MG','IP'],CO:['EM'],D:['AL'],J:['JP'],CT:['JP']};
-const PED = {espacio:'-P1SlqW2R4wvheoBgQoK', lista:'-P1SlrNER5GYraLxArIZ', activo:false, estados:{}, porHacer:null, listo:null};
+const PED = {espacio:'-P1SlqW2R4wvheoBgQoK', lista:'-P1SlrNER5GYraLxArIZ', personal:{"espacio": "-P1TS2qGucMAyj8rzLJV", "lista": "-P1TS3aSaWQxvNL32S4N"}, activo:false, estados:{}, porHacer:null, listo:null};
 /* El seguimiento de clientes (estado y nota) vive en Control de producción: una tarea por cliente en el
    espacio Clientes. Aquí se lee y se escribe allá. El artifact de Claude no llega: solo muestra la foto. */
 const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"contacto": "-P1Sj9za67Zlcp5aWv9B", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {}};
@@ -732,7 +734,7 @@ const $=s=>document.querySelector(s);
 function pedDe(id){ const e=state.enlaces[id]; return e&&e.tareaId? (state.ped[e.tareaId]||null) : null; }
 function pedListo(id){ const p=pedDe(id); return !!(p && PED.listo && p.estado===PED.listo); }
 function estaHecha(id){ return !!state.hecho[id] || pedListo(id); }
-function estaDelegada(id){ return !!state.delegado[id] || !!state.enlaces[id]; }
+function estaDelegada(id){ const e=state.enlaces[id]; return !!state.delegado[id] || !!(e && e.espacio!=='personal'); }
 function hechoTs(id){ return state.hecho[id] || ((pedDe(id)||{}).updatedAt) || ''; }
 function hechas(ids){ return ids.filter(t=>estaHecha(t.id)).length; }
 function renderHeader(){
@@ -740,8 +742,11 @@ function renderHeader(){
   const del=ALL.filter(t=>t.o!=='A'&&estaDelegada(t.id)).length, delT=ALL.filter(t=>t.o!=='A').length; $('#pillHechas').textContent=`${hechas(ALL)} de ${ALL.length} tareas · ${del} de ${delT} delegadas`;
 }
 function ownChip(t){ const o=OWNERS[t.o]; return `<span class="own${t.o==='A'?' me':''}" style="--c:${o.c}"><i></i>${o.n}${t.con?` <span class="faint">con ${OWNERS[t.con].n}</span>`:''}</span>`; }
-function pedChip(t){ const e=state.enlaces[t.id]; if(!e) return ''; const p=pedDe(t.id); const est=p&&PED.estados[p.estado]; const quien=(e.asignados||[]).map(k=>(EQUIPO_P[k]||{}).n||k).join(', ');
+function pedChip(t){ const e=state.enlaces[t.id]; if(!e) return ''; const p=pedDe(t.id); const est=p&&PED.estados[p.estado];
+  if(e.espacio==='personal') return `<span class="own pedc${pedListo(t.id)?' ok':''}"><i></i>Mi espacio${est?` · ${esc(est.nombre)}`:''}</span>`;
+  const quien=(e.asignados||[]).map(k=>(EQUIPO_P[k]||{}).n||k).join(', ');
   return `<span class="own pedc${pedListo(t.id)?' ok':''}"><i></i>Control de producción · ${esc(quien)}${est?` · ${esc(est.nombre)}`:''}</span>`; }
+function miChip(t){ if(soloLectura||!PED.activo||!PED.personal) return ''; if(state.enlaces[t.id]) return t.o==='A'?pedChip(t):''; return `<button class="go mio" data-mio="${t.id}">Enviar a mi espacio</button>`; }
 function delChip(t,pref){ if(t.o==='A'||soloLectura) return ''; if(state.enlaces[t.id]) return pedChip(t);
   if(PED.activo) return `<button class="go asig" data-asignar="${t.id}">Asignar en Control de producción</button>`;
   const on=!!state.delegado[t.id]; return `<label class="del${on?' on':''}"><input type="checkbox" id="${pref}-${t.id}" data-del="${t.id}" ${on?'checked':''}> ${on?'Delegado':'Delegar'}</label>`; }
@@ -749,7 +754,7 @@ function semChip(t){ return `<span class="qchip">semana ${WEEKOF[t.id]+1}</span>
 function taskLi(t,conSemana){ return `<li class="task${estaHecha(t.id)?' done':''}">
     <input type="checkbox" id="t-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}">
     <div><button class="tt" data-open="${t.id}">${esc(t.t)}</button>${t.por?`<div class="why clamp">${esc(t.por)}</div>`:''}
-    <div class="chips">${conSemana?semChip(t):''}${qChip(t)}${ownChip(t)}${delChip(t,'d')}${(t.det&&t.det.length)?`<button class="go mas" data-open="${t.id}">Ver el detalle</button>`:''}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}</div></div></li>`; }
+    <div class="chips">${conSemana?semChip(t):''}${qChip(t)}${ownChip(t)}${delChip(t,'d')}${miChip(t)}${(t.det&&t.det.length)?`<button class="go mas" data-open="${t.id}">Ver el detalle</button>`:''}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}</div></div></li>`; }
 function qChip(t){ return `<span class="qchip">${t.rut?'Cada semana':QUAD[t.q].n}</span>`; }
 function hitosHtml(w){ return w.hitos.map(h=>`<span class="hito ${h.c}">${esc(h.t)}</span>`).join(''); }
 function rangoTxt(w){ const a=d(w.ini), b=d(w.fin); return a.getMonth()===b.getMonth()? `${a.getDate()} al ${b.getDate()} de ${MESL[a.getMonth()]}` : `${a.getDate()} de ${MESL[a.getMonth()]} al ${b.getDate()} de ${MESL[b.getMonth()]}`; }
@@ -807,8 +812,8 @@ function renderPanel(){
     ${tile('Tareas hechas',`${hech} <span class="faint" style="font-size:16px">de ${tot}</span>`,`${pct(hech,tot)}% de las doce semanas`,false,'hechas')}
     ${tile('Atrasadas',String(atras.length),atras.length?'de semanas que ya pasaron':'nada pendiente de semanas pasadas',atras.length>0,'atrasadas')}
     ${tile('Esta semana',`${hoyW.tareas.length-pendSem.length} <span class="faint" style="font-size:16px">de ${hoyW.tareas.length}</span>`,`semana ${wHoy+1} · ${esc(rangoTxt(hoyW))}`,false,'semana')}
-    ${tile('Rutina de la semana',`${rutH} <span class="faint" style="font-size:16px">de ${rut.length}</span>`,'métricas, Meta, Google, Klaviyo y seguimiento',false,'rutina')}
-    ${tile('Delegadas',`${delegOn.length} <span class="faint" style="font-size:16px">de ${deleg.length}</span>`,`${Object.keys(state.enlaces).length} en Control de producción · ${ALL.filter(t=>pedListo(t.id)).length} listas allá`,false,'delegadas')}
+    ${tile('Rutina de la semana',`${rutH} <span class="faint" style="font-size:16px">de ${rut.length}</span>`,`métricas, Meta, Google, Klaviyo y seguimiento${(()=>{ const m=Object.values(state.enlaces).filter(e=>e.espacio==='personal').length; return m?` · ${m} en tu espacio Personal`:''; })()}`,false,'rutina')}
+    ${tile('Delegadas',`${delegOn.length} <span class="faint" style="font-size:16px">de ${deleg.length}</span>`,`${Object.values(state.enlaces).filter(e=>e.espacio!=='personal').length} en Control de producción · ${ALL.filter(t=>pedListo(t.id)&&(state.enlaces[t.id]||{}).espacio!=='personal').length} listas allá`,false,'delegadas')}
     ${tile('Próximo arranque',prox.length?(prox[0].dias===0?'hoy':`${prox[0].dias} d`):'—',prox.length?esc(prox[0].f):'no quedan en el año',false,'arranque')}
   </div>
   ${detalle}
@@ -835,7 +840,7 @@ function renderEquipo(){
   $('#eqTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
   $('#eqPrev').disabled=state.week===0; $('#eqNext').disabled=state.week===WEEKS.length-1;
   const alFinal=L=>[...L].sort((a,b)=>estaHecha(a.id)-estaHecha(b.id));
-  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=alFinal(w.tareas.filter(t=>t.q===q)); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
+  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=alFinal(w.tareas.filter(t=>t.q===q)); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}${miChip(t)}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
   $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=alFinal(w.tareas.filter(t=>t.o===k||t.con===k)); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${estaHecha(t.id)?'ok':''}"><button class="tt${estaHecha(t.id)?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}${RO()}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
 }
 function keyOf(x){ return x.rut || x.ghlId; }
@@ -916,8 +921,8 @@ function fillDet(id){ const t=BYID[id]; if(!t) return; const wi=WEEKOF[id]; cons
       <div class="personas">${Object.keys(EQUIPO_P).map(k=>`<label><input type="checkbox" data-per="${k}"${(OWNER_P[t.o]||[]).includes(k)?' checked':''}> ${EQUIPO_P[k].n}</label>`).join('')}</div>
       <p class="small faint">Se crea como tarea en Pedidos, en Equipo / Encargos de la Ruta, con fecha límite el domingo de la semana ${WEEKOF[t.id]+1}. Cuando la marquen Listo allá, aquí queda hecha.</p>
       <div class="chips"><button class="go" data-crear="${t.id}">Crear la tarea</button><button class="go mas" data-nocrear="1">Cancelar</button></div></div>`:''}
-    ${(pedDe(t.id))?`<p class="small faint" style="margin-top:10px">En Control de producción: ${esc((PED.estados[pedDe(t.id).estado]||{}).nombre||'')}${pedDe(t.id).updatedBy?` · última vez ${esc(pedDe(t.id).updatedBy.nombre||'')}`:''}.</p>`:''}
-    <div class="det-foot">${soloLectura?'':`<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}> Hecho</label>`}${delChip(t,'dgd')}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
+    ${(pedDe(t.id))?`<p class="small faint" style="margin-top:10px">${(state.enlaces[t.id]||{}).espacio==='personal'?'En tu espacio Personal':'En Control de producción'}: ${esc((PED.estados[pedDe(t.id).estado]||{}).nombre||'')}${pedDe(t.id).updatedBy?` · última vez ${esc(pedDe(t.id).updatedBy.nombre||'')}`:''}.</p>`:''}
+    <div class="det-foot">${soloLectura?'':`<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${estaHecha(t.id)?'checked':''}> Hecho</label>`}${delChip(t,'dgd')}${miChip(t)}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
 function openDet(id,asignar){ detId=id; state.detAsignar=!!asignar; fillDet(id); const dlg=$('#det'); if(!dlg.open) dlg.showModal(); }
 function renderAll(){ renderHeader(); renderPanel(); renderSemana(); renderCalendario(); renderEquipo(); if(state.view==='clientes') renderClientes(); if(detId && $('#det').open) fillDet(detId); }
 function showView(v){ state.view=v; document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.view===v))); document.querySelectorAll('.view').forEach(s=>s.hidden = s.id!=='view-'+v); if(v==='clientes') renderClientes(); window.scrollTo({top:0}); }
@@ -961,19 +966,22 @@ function escuchaPedidos(){
       const k=t.lista&&PEDC.listaSeg[t.lista]&&t.campos&&t.campos[PEDC.cid.rut]; if(k) cli[k]={k, tareaId:id, estado:PEDC.codigo[t.estado]||'por', nota:(t.campos[PEDC.cid.nota]||''), cuando:t.updatedAt||'', quien:(t.updatedBy||{}).nombre||''}; });
     state.ped=m; state.cli=cli; renderAll(); }, e=>console.warn('tareas',e)); escuchas.push([r2,cb2]);
 }
-function asignarEnPedidos(id, ids){
+function enviarAMiEspacio(id){ asignarEnPedidos(id, ['AR'], 'personal'); }
+function asignarEnPedidos(id, ids, destino){
   const t=BYID[id]; if(!t||!sesion) return;
+  const personal=destino==='personal'; if(personal&&!PED.personal){ alert('Falta el espacio Personal en Pedidos.'); return; }
+  const listaDestino=personal?PED.personal.lista:PED.lista;
   if(!PED.porHacer){ alert('Todavía no llegan los estados de Control de producción. Espera un segundo y vuelve a intentar.'); return; }
   const wi=WEEKOF[id], w=WEEKS[wi], now=new Date().toISOString(), quien={id:'AR',nombre:'Andreina Rodriguez'};
   const notas=[t.por||'', ...(t.det||[]).map(x=>'• '+x), '', `De la Ruta TAGO, semana ${wi+1} (${rangoTxt(w)}). Cuando la marques Listo, en la Ruta queda hecha.`].join('\n').trim();
-  const asignados={}, asigEmails={}; ids.forEach(k=>{ asignados[k]=true; if(EQUIPO_P[k]) asigEmails[claveDb(EQUIPO_P[k].e)]=true; });
+  const asignados={}, asigEmails={}; ids.forEach(k=>{ if(k==='AR'){ asignados.AR=true; asigEmails[claveDb(sesion.email)]=true; return; } asignados[k]=true; if(EQUIPO_P[k]) asigEmails[claveDb(EQUIPO_P[k].e)]=true; });
   const tid=firebase.database().ref('tago_tareas').push().key, up={};
-  up['tago_tareas/'+tid]={nombre:t.t, notas, estado:PED.porHacer, prioridad:t.q===1?'alta':'normal', lista:PED.lista, pedidoId:null, fechaLimite:w.fin, asignados, asignadosEmails:asigEmails, createdAt:now, createdBy:quien, creadoPorEmail:sesion.email, updatedAt:now, updatedBy:quien, origenRuta:{id:t.id, semana:wi+1}};
+  up['tago_tareas/'+tid]={nombre:t.t, notas, estado:PED.porHacer, prioridad:t.q===1?'alta':'normal', lista:listaDestino, pedidoId:null, fechaLimite:w.fin, asignados, asignadosEmails:asigEmails, createdAt:now, createdBy:quien, creadoPorEmail:sesion.email, updatedAt:now, updatedBy:quien, origenRuta:{id:t.id, semana:wi+1}};
   up['tago_tareas_visibilidad/'+claveDb(sesion.email)+'/'+tid]=true;
   ids.forEach(k=>{ if(EQUIPO_P[k]) up['tago_tareas_visibilidad/'+claveDb(EQUIPO_P[k].e)+'/'+tid]=true; });
-  up['tago_ruta/enlaces/'+t.id]={tareaId:tid, asignados:ids, cuando:now};
-  up['tago_ruta/estado/delegado/'+t.id]=now;
-  firebase.database().ref().update(up).then(()=>{ state.detAsignar=false; state.delegado[t.id]=now; state.enlaces[t.id]={tareaId:tid,asignados:ids,cuando:now}; renderAll(); setGuardado('nube'); })
+  up['tago_ruta/enlaces/'+t.id]={tareaId:tid, asignados:ids, cuando:now, espacio:personal?'personal':'equipo'};
+  if(!personal) up['tago_ruta/estado/delegado/'+t.id]=now;
+  firebase.database().ref().update(up).then(()=>{ state.detAsignar=false; if(!personal) state.delegado[t.id]=now; state.enlaces[t.id]={tareaId:tid,asignados:ids,cuando:now,espacio:personal?'personal':'equipo'}; renderAll(); setGuardado('nube'); })
     .catch(e=>{ console.warn('asignar',e); alert('No se pudo crear la tarea en Control de producción: '+(e&&e.message||e)); });
 }
 function marcar(campo,id,val){
@@ -1053,7 +1061,8 @@ document.addEventListener('input', e=>{
 });
 document.addEventListener('click', e=>{
   const b=e.target.closest('button'); if(!b) return;
-  if(b.dataset.asignar) openDet(b.dataset.asignar,true);
+  if(b.dataset.mio) enviarAMiEspacio(b.dataset.mio);
+  else if(b.dataset.asignar) openDet(b.dataset.asignar,true);
   else if(b.dataset.crear){ const ids=[...document.querySelectorAll('#det input[data-per]:checked')].map(x=>x.dataset.per); if(!ids.length){ alert('Elige al menos una persona.'); return; } asignarEnPedidos(b.dataset.crear,ids); }
   else if(b.dataset.nocrear){ state.detAsignar=false; fillDet(detId); }
   else if(b.dataset.pancerrar){ state.pan=null; renderPanel(); }
