@@ -499,6 +499,12 @@
     .tt-head .tt-cell{font-family:'DM Sans',sans-serif;font-weight:600;font-size:11.5px;color:var(--text-muted);white-space:nowrap;cursor:default;position:relative;overflow:visible}
     .tt-head .tt-cell .tt-txt{flex:1}
     .tt-head .col-resizer{top:0;bottom:0}
+    .tt-head .tt-cell[data-col]:not(.tt-nombre){cursor:grab}
+    .tt-col-arrastrada{opacity:.45}
+    .tt-drop-izq{box-shadow:inset 3px 0 0 var(--azul)}
+    .tt-drop-der{box-shadow:inset -3px 0 0 var(--azul)}
+    body.tt-reordenando{user-select:none;cursor:grabbing}
+    body.tt-reordenando .tt-head .tt-cell{cursor:grabbing}
     .tt-cell{padding:6px 12px;font-size:13px;color:var(--text);min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden;min-height:42px;contain:inline-size} /* contain: el texto largo no ensancha su columna, así todos los grupos alinean igual */
     .tt-head .tt-cell{min-height:34px}
     .tt-cell.tt-nombre{position:sticky;left:0;z-index:1;background:inherit;padding-left:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;box-shadow:inset -1px 0 0 var(--border-soft)}
@@ -2548,8 +2554,49 @@ function ttColumnas(){ // columnas de la vista: las de la lista; en «Todas» / 
   const agregar=c=>{ if(vistos.has(c.cid))return; vistos.add(c.cid); cols.push({k:"c:"+c.cid,tipo:"campo",cid:c.cid,c,t:c.etiqueta,w:ttAnchoCampo(c)}); };
   if(enLista) cfg.personalizados.forEach(agregar);
   else Object.values(tareas).filter(t=>t.lista&&listas[t.lista]&&puedeVerTarea(t)&&tareaEnFiltro(t)).forEach(t=>ttCfg(t.lista).personalizados.forEach(agregar));
+  const orden=ttOrdenGuardado();
+  if(orden&&orden.length){ const pos=k=>{ const i=orden.indexOf(k); return i<0?1e6:i; }; cols.sort((a,b)=>pos(a.k)-pos(b.k)); } // estable: las que no están en el orden quedan al final tal cual
   return cols;
 }
+// Orden de columnas: de la lista (lo guarda un admin y lo ve todo el equipo) o de este navegador
+var ttOrdenLocal={}; try{ ttOrdenLocal=JSON.parse(localStorage.getItem("tago_tareas_orden")||"{}")||{}; }catch(e){}
+function ttOrdenGuardado(){
+  const local=ttOrdenLocal[ttAnchoKey()];
+  if(tareaFiltro.tipo==="lista"){ const l=listas[tareaFiltro.id]; const c=l&&l.campos&&l.campos.columnas; if(Array.isArray(c)&&c.length) return c; }
+  return Array.isArray(local)?local:null;
+}
+function ttMoverColumna(k,destino){ // destino = posición entre las columnas que no son Nombre
+  const idx=ttColsActuales.findIndex(c=>c.k===k); if(idx>=0&&idx<destino) destino--; // al quitarla de su sitio, lo de la derecha corre un lugar
+  const claves=ttColsActuales.map(c=>c.k).filter(x=>x!==k);
+  claves.splice(Math.max(0,Math.min(destino,claves.length)),0,k);
+  if(tareaFiltro.tipo==="lista"&&currentUser&&currentUser.isAdmin&&listas[tareaFiltro.id]){
+    firebase.database().ref("tago_listas/"+tareaFiltro.id+"/campos/columnas").set(claves).catch(err=>toast("No se pudo guardar el orden: "+err.message,"error"));
+  }else{
+    ttOrdenLocal[ttAnchoKey()]=claves; try{ localStorage.setItem("tago_tareas_orden",JSON.stringify(ttOrdenLocal)); }catch(e){}
+    renderTareas();
+  }
+}
+(function initTtReorden(){
+  const cont=document.getElementById("tareas-list"); if(!cont)return;
+  let d=null;
+  const limpiar=()=>{ cont.querySelectorAll(".tt-drop-izq,.tt-drop-der").forEach(x=>x.classList.remove("tt-drop-izq","tt-drop-der")); };
+  cont.addEventListener("pointerdown",e=>{
+    if(window.innerWidth<=700||e.target.closest(".tt-resizer,.tt-plus"))return;
+    const cel=e.target.closest(".tt-head .tt-cell[data-col]"); if(!cel||cel.dataset.col==="nombre")return;
+    d={k:cel.dataset.col,x0:e.clientX,activo:false,cel,head:cel.parentElement,id:e.pointerId,destino:undefined};
+  });
+  cont.addEventListener("pointermove",e=>{
+    if(!d)return;
+    if(!d.activo){ if(Math.abs(e.clientX-d.x0)<6)return; d.activo=true; try{ d.cel.setPointerCapture(d.id); }catch(err){} document.body.classList.add("tt-reordenando"); d.cel.classList.add("tt-col-arrastrada"); }
+    const celdas=[...d.head.querySelectorAll(".tt-cell[data-col]")].filter(c=>c.dataset.col!=="nombre");
+    let destino=celdas.length;
+    for(let i=0;i<celdas.length;i++){ const r=celdas[i].getBoundingClientRect(); if(e.clientX<r.left+r.width/2){ destino=i; break; } }
+    d.destino=destino; limpiar();
+    const ref=celdas[Math.min(destino,celdas.length-1)]; if(ref) ref.classList.add(destino>=celdas.length?"tt-drop-der":"tt-drop-izq");
+  });
+  const fin=()=>{ if(!d)return; const dd=d; d=null; document.body.classList.remove("tt-reordenando"); limpiar(); dd.cel.classList.remove("tt-col-arrastrada"); if(!dd.activo||dd.destino===undefined)return; ttMoverColumna(dd.k,dd.destino); };
+  cont.addEventListener("pointerup",fin); cont.addEventListener("pointercancel",fin);
+})();
 function ttEditable(t,col){
   if(col.tipo==="int") return ["asignados","fechaLimite","fechaInicio","prioridad","pedido"].includes(col.k);
   return !!t.lista&&ttCfg(t.lista).personalizados.some(c=>c.cid===col.cid);
