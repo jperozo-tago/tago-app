@@ -496,7 +496,9 @@
     .tt-row:last-child{border-bottom:none}
     .tt-row:not(.tt-head):not(.tt-add-row):hover{background:var(--surface-alt)}
     .tt-head{min-height:34px;border-bottom:1px solid var(--border)}
-    .tt-head .tt-cell{font-family:'DM Sans',sans-serif;font-weight:600;font-size:11.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
+    .tt-head .tt-cell{font-family:'DM Sans',sans-serif;font-weight:600;font-size:11.5px;color:var(--text-muted);white-space:nowrap;cursor:default;position:relative;overflow:visible}
+    .tt-head .tt-cell .tt-txt{flex:1}
+    .tt-head .col-resizer{top:0;bottom:0}
     .tt-cell{padding:6px 12px;font-size:13px;color:var(--text);min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden;min-height:42px;contain:inline-size} /* contain: el texto largo no ensancha su columna, así todos los grupos alinean igual */
     .tt-head .tt-cell{min-height:34px}
     .tt-cell.tt-nombre{position:sticky;left:0;z-index:1;background:inherit;padding-left:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;box-shadow:inset -1px 0 0 var(--border-soft)}
@@ -2502,8 +2504,10 @@ function renderTareas(){
   // Si se estaba escribiendo el nombre de una tarea nueva, el repintado no se lo lleva
   const escribiendo=document.getElementById("tt-add-input"), textoNuevo=escribiendo?escribiendo.value:null;
   const cols=ttColumnas(), enLista=tareaFiltro.tipo==="lista", admin=!!(currentUser&&currentUser.isAdmin);
-  const resto=`${cols.map(c=>c.w).join(" ")} 44px`, plantilla=`minmax(220px,1.6fr) ${resto}`, plantillaM=`minmax(150px,1.2fr) ${resto}`; // en el celular el nombre cede espacio
-  const head=`<div class="tt-row tt-head"><div class="tt-cell tt-nombre">Nombre</div>${cols.map(c=>`<div class="tt-cell" title="${esc(c.t)}">${esc(c.t)}</div>`).join("")}<div class="tt-cell tt-acc">${enLista&&admin?`<button class="tt-plus" title="Agregar o quitar campos de esta lista" onclick="abrirCampos()">${ic("plus")}</button>`:""}</div></div>`;
+  ttColsActuales=cols;
+  const {plantilla,plantillaM}=ttPlantilla(cols);
+  const asa=`<span class="col-resizer col-resizer-der tt-resizer" title="Arrastra para cambiar el ancho · doble clic para restablecer"></span>`;
+  const head=`<div class="tt-row tt-head"><div class="tt-cell tt-nombre" data-col="nombre"><span class="tt-txt">Nombre</span>${asa}</div>${cols.map(c=>`<div class="tt-cell" data-col="${esc(c.k)}" title="${esc(c.t)}"><span class="tt-txt">${esc(c.t)}</span>${asa}</div>`).join("")}<div class="tt-cell tt-acc">${enLista&&admin?`<button class="tt-plus" title="Agregar o quitar campos de esta lista" onclick="abrirCampos()">${ic("plus")}</button>`:""}</div></div>`;
   cont.innerHTML=estadosOrdenados.map(([estId,est])=>{
     const tareasDelEstado=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&t.estado===estId&&puedeVerTarea(t)&&tareaEnFiltro(t));
     const abierto=!ttPlegados.has(estId);
@@ -2585,6 +2589,37 @@ function renderTareaRow(id,t,cols){
     <div class="tt-cell tt-acc"><button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button></div>
   </div>`;
 }
+// Anchos de columna ajustables: se recuerdan por lista (o por vista) en este navegador
+var ttAnchos={}, ttColsActuales=[]; try{ ttAnchos=JSON.parse(localStorage.getItem("tago_tareas_anchos")||"{}")||{}; }catch(e){}
+function ttAnchoKey(){ return tareaFiltro.tipo==="lista"?tareaFiltro.id:(tareaFiltro.tipo==="espacio"?"esp:"+tareaFiltro.id:"todas"); }
+function ttAnchoDe(k,def){ const a=ttAnchos[ttAnchoKey()]; return a&&a[k]?a[k]+"px":def; }
+function ttPlantilla(cols){
+  const resto=cols.map(c=>ttAnchoDe(c.k,c.w)).join(" ")+" 44px";
+  return {plantilla:`${ttAnchoDe("nombre","minmax(220px,1.6fr)")} ${resto}`,plantillaM:`${ttAnchoDe("nombre","minmax(150px,1.2fr)")} ${resto}`}; // en el celular el nombre cede espacio
+}
+function ttAplicarAnchos(){ const p=ttPlantilla(ttColsActuales); document.querySelectorAll(".tarea-tabla").forEach(t=>{ t.style.setProperty("--tt-cols",p.plantilla); t.style.setProperty("--tt-cols-m",p.plantillaM); }); }
+function ttGuardarAnchos(){ try{ localStorage.setItem("tago_tareas_anchos",JSON.stringify(ttAnchos)); }catch(e){} }
+(function initTtResizers(){
+  const cont=document.getElementById("tareas-list"); if(!cont)return;
+  let arr=null;
+  cont.addEventListener("pointerdown",e=>{
+    const h=e.target.closest(".tt-resizer"); if(!h)return;
+    e.stopPropagation(); e.preventDefault();
+    const cel=h.parentElement;
+    arr={k:cel.dataset.col,x0:e.clientX,w0:Math.round(cel.getBoundingClientRect().width)};
+    try{ h.setPointerCapture(e.pointerId); }catch(err){}
+    document.body.classList.add("col-arrastrando");
+  });
+  cont.addEventListener("pointermove",e=>{
+    if(!arr)return;
+    const min=arr.k==="nombre"?140:70, w=Math.max(min,Math.round(arr.w0+e.clientX-arr.x0)), key=ttAnchoKey();
+    (ttAnchos[key]=ttAnchos[key]||{})[arr.k]=w; ttAplicarAnchos();
+  });
+  const fin=()=>{ if(!arr)return; arr=null; document.body.classList.remove("col-arrastrando"); ttGuardarAnchos(); };
+  cont.addEventListener("pointerup",fin); cont.addEventListener("pointercancel",fin);
+  cont.addEventListener("click",e=>{ if(e.target.closest(".tt-resizer")) e.stopPropagation(); });
+  cont.addEventListener("dblclick",e=>{ const h=e.target.closest(".tt-resizer"); if(!h)return; e.stopPropagation(); const key=ttAnchoKey(); if(ttAnchos[key]) delete ttAnchos[key][h.parentElement.dataset.col]; ttAplicarAnchos(); ttGuardarAnchos(); });
+})();
 function ttPlegar(estId){ ttPlegados.has(estId)?ttPlegados.delete(estId):ttPlegados.add(estId); try{ localStorage.setItem("tago_tareas_plegados",JSON.stringify([...ttPlegados])); }catch(e){} renderTareas(); }
 // Agregar tarea al pie del grupo: basta el nombre; si la lista tiene campos obligatorios, o no se está en una lista, se abre la ficha completa
 function ttFilaNueva(estId){

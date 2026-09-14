@@ -103,8 +103,9 @@ Firestore).
   Tareas es una tabla por estado (`renderTareas`/`renderTareaRow`, funciones
   `tt*`): una columna por propiedad y por campo, celdas editables con el
   popover `celdaPop`, «+ Agregar tarea» al pie crea con solo el nombre (si la
-  lista tiene campos obligatorios, abre el modal) y los grupos se pliegan
-  (`localStorage` `tago_tareas_plegados`).
+  lista tiene campos obligatorios, abre el modal), los grupos se pliegan
+  (`localStorage` `tago_tareas_plegados`) y las columnas se ensanchan
+  arrastrando el borde del encabezado (`tago_tareas_anchos`, por lista).
 
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de
