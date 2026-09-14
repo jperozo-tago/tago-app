@@ -1615,11 +1615,12 @@
 <div class="modal-overlay" id="modal-estados" onclick="ovc(event,'modal-estados')">
   <div class="modal modal-sm">
     <div class="modal-header">
-      <div class="modal-title"><div class="modal-bar"></div>Estados del tablero</div>
+      <div class="modal-title"><div class="modal-bar"></div>Estados de las tareas</div>
       <button class="modal-close" onclick="closeEstadosModal()">✕</button>
     </div>
+    <div class="form-row f-12" style="margin-bottom:12px;align-items:center"><label style="margin:0;white-space:nowrap">Estados de</label><select id="f-estados-espacio" onchange="estadosEditando=this.value||null;renderEstadosModal()"></select></div>
     <div id="estados-list"></div>
-    <div class="form-row f-12" style="margin-top:12px">
+    <div class="form-row f-12" style="margin-top:12px" id="estados-agregar">
       <input id="f-nuevo-estado-nombre" placeholder="Nombre del estado nuevo"/>
       <button class="btn btn-teal" onclick="agregarEstado()">+ Agregar</button>
     </div>
@@ -2530,11 +2531,25 @@ function puedeVerTarea(t){
 // La descripción de la lista (tago_listas/<id>/descripcion), bajo el título, cuando se está dentro de una lista.
 // La usan las listas de clientes del espacio "Clientes" (por qué esa prioridad); si no hay, no se ve nada.
 function ttDescripcionLista(){ const l=tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]; return l&&l.descripcion?`<div class="tt-desc">${esc(l.descripcion)}</div>`:""; }
+// ── Estados por espacio: con `espacio` son propios de ese espacio; sin `espacio`, generales ──
+function estadosGenerales(){ return Object.entries(tareaEstados).filter(([,e])=>e&&!e.espacio).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); }
+function estadosPropios(esp){ return esp?Object.entries(tareaEstados).filter(([,e])=>e&&e.espacio===esp).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)):[]; }
+function estadosDe(esp){ const p=estadosPropios(esp); return p.length?p:estadosGenerales(); } // los del espacio si tiene; si no, los generales
+function espacioDeLista(lid){ const l=lid&&listas[lid]; const e=l?l.espacio:null; return e&&e!=="tareas"?e:null; } // el espacio fijo «Tareas» usa los generales
+function espacioDeTarea(t){ return espacioDeLista(t&&t.lista); }
+function estadosDelContexto(){
+  if(tareaFiltro.tipo==="lista") return estadosDe(espacioDeLista(tareaFiltro.id));
+  if(tareaFiltro.tipo==="espacio") return estadosDe(tareaFiltro.id==="tareas"?null:tareaFiltro.id);
+  // Todas las tareas: generales + los propios de cada espacio con tareas a la vista
+  const vistos=new Set(), extra=[];
+  Object.values(tareas).filter(t=>puedeVerTarea(t)&&tareaEnFiltro(t)).forEach(t=>{ const esp=espacioDeTarea(t); if(esp&&!vistos.has(esp)){ vistos.add(esp); extra.push(...estadosPropios(esp)); } });
+  return estadosGenerales().concat(extra);
+}
 function renderTareas(){
-  const estadosOrdenados=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+  const estadosOrdenados=estadosDelContexto();
   const cont=document.getElementById("tareas-list");
   if(!cont)return;
-  if(estadosOrdenados.length===0){ cont.innerHTML=`<div class="empty">Cargando estados...</div>`; return; }
+  if(!Object.keys(tareaEstados).length){ cont.innerHTML=`<div class="empty">Cargando estados...</div>`; return; }
   actualizarBotonCampos();
   ttCfgCache=Object.create(null);
   // Si se estaba escribiendo el nombre de una tarea nueva, el repintado no se lo lleva
@@ -2544,19 +2559,26 @@ function renderTareas(){
   const {plantilla,plantillaM}=ttPlantilla(cols);
   const asa=`<span class="col-resizer col-resizer-der tt-resizer" title="Arrastra para cambiar el ancho · doble clic para restablecer"></span>`;
   const head=`<div class="tt-row tt-head"><div class="tt-cell tt-nombre" data-col="nombre"><span class="tt-txt">Nombre</span>${asa}</div>${cols.map(c=>`<div class="tt-cell" data-col="${esc(c.k)}" title="${esc(c.t)}"><span class="tt-txt">${esc(c.t)}</span>${asa}</div>`).join("")}<div class="tt-cell tt-acc">${enLista&&admin?`<button class="tt-plus" title="Agregar o quitar campos de esta lista" onclick="abrirCampos()">${ic("plus")}</button>`:""}</div></div>`;
-  cont.innerHTML=ttDescripcionLista()+estadosOrdenados.map(([estId,est])=>{
-    const tareasDelEstado=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&t.estado===estId&&puedeVerTarea(t)&&tareaEnFiltro(t));
+  const visibles=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&puedeVerTarea(t)&&tareaEnFiltro(t));
+  const idsEstados=new Set(estadosOrdenados.map(([id])=>id));
+  const grupos=estadosOrdenados.slice();
+  const huerfanas=visibles.filter(([,t])=>!idsEstados.has(t.estado));
+  if(huerfanas.length) grupos.push(["_sin_estado",{nombre:"Sin estado",color:"#858AA3",_huerfano:true}]); // su estado no es de este espacio: se abren y se les elige uno
+  const mezcla=tareaFiltro.tipo==="todas";
+  cont.innerHTML=ttDescripcionLista()+grupos.map(([estId,est])=>{
+    const tareasDelEstado=est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId);
     const abierto=!ttPlegados.has(estId);
+    const espNombre=mezcla&&est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:"";
     return`<div class="tarea-grupo">
       <div class="tarea-grupo-header" onclick="ttPlegar('${estId}')" title="${abierto?"Plegar":"Desplegar"}">
         <span class="tt-caret">${abierto?"▾":"▸"}</span>
-        <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${esc(est.nombre)}</span>
+        <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${esc(est.nombre)}${espNombre}</span>
         <span class="tarea-grupo-count">${tareasDelEstado.length}</span>
       </div>
       ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
         ${head}
         ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cols)).join("")}
-        ${ttFilaNueva(estId)}
+        ${est._huerfano?"":ttFilaNueva(estId)}
       </div></div>`:""}
     </div>`;
   }).join("");
@@ -2810,8 +2832,8 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
   document.getElementById("f-tarea-notas").value=t?.notas||"";
   document.getElementById("f-tarea-prioridad").value=t?.prioridad||"normal";
   document.getElementById("f-tarea-fecha").value=t?.fechaLimite||"";
-  buildEstadoSelect(t?.estado||estadoPreseleccionado);
   buildListaSelect(t?.lista||(tareaFiltro.tipo==="lista"?tareaFiltro.id:""));
+  buildEstadoSelect(t?.estado||estadoPreseleccionado);
   document.getElementById("f-tarea-inicio").value=t?.fechaInicio||"";
   aplicarCamposModal(gv("f-tarea-lista")||null,t?.campos||{},true);
   buildPedidosDatalist();
@@ -2821,8 +2843,9 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
   document.getElementById("modal-tarea").classList.add("open");
 }
 function closeTareaModal(){ document.getElementById("modal-tarea").classList.remove("open"); editTareaId=null; }
-function buildEstadoSelect(selectedId){
-  const ordered=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+function buildEstadoSelect(selectedId){ // los estados del espacio de la lista elegida en el modal
+  const ordered=estadosDe(espacioDeLista(gv("f-tarea-lista")||null));
+  if(!ordered.some(([id])=>id===selectedId)) selectedId=ordered[0]?.[0];
   document.getElementById("f-tarea-estado").innerHTML=ordered.map(([id,e])=>
     `<option value="${id}" ${id===selectedId?"selected":""}>${esc(e.nombre)}</option>`
   ).join("");
@@ -2858,7 +2881,7 @@ function saveTarea(){
   const now=new Date().toISOString();
   const data={
     nombre, notas:gv("f-tarea-notas").trim(),
-    estado:gv("f-tarea-estado"), prioridad:gv("f-tarea-prioridad"),
+    estado:(()=>{ const s=gv("f-tarea-estado"), set=estadosDe(espacioDeLista(gv("f-tarea-lista")||null)); return set.some(([id])=>id===s)?s:(set[0]?.[0]||s); })(), prioridad:gv("f-tarea-prioridad"),
     lista:gv("f-tarea-lista")||null,
     pedidoId:pedidoDesdeInputTarea()||null,
     fechaLimite:gv("f-tarea-fecha"), fechaInicio:gv("f-tarea-inicio")||null, asignados, asignadosEmails,
@@ -2905,10 +2928,27 @@ function delTarea(id){
 }
 
 // ── Estados de tareas ─────────────────────────────────────
-function openEstadosModal(){ renderEstadosModal(); document.getElementById("modal-estados").classList.add("open"); }
+var estadosEditando=null; // null = generales; si no, id del espacio cuyos estados se editan
+function openEstadosModal(){
+  estadosEditando=tareaFiltro.tipo==="lista"?espacioDeLista(tareaFiltro.id):(tareaFiltro.tipo==="espacio"&&tareaFiltro.id!=="tareas"?tareaFiltro.id:null);
+  renderEstadosModal(); document.getElementById("modal-estados").classList.add("open");
+}
+function estadosEditados(){ return estadosEditando?estadosPropios(estadosEditando):estadosGenerales(); }
+function crearEstadosPropios(){ // copia los generales como punto de partida para este espacio y pasa sus tareas al estado equivalente
+  if(!estadosEditando)return;
+  const base=estadosGenerales(), updates={}, equivalente={};
+  base.forEach(([gid,e],i)=>{ const nid=tareasEstadosRef.push().key; equivalente[gid]=nid; updates["tago_tareas_estados/"+nid]={nombre:e.nombre,color:e.color,orden:i,espacio:estadosEditando}; });
+  let movidas=0;
+  Object.entries(tareas).forEach(([id,t])=>{ if(espacioDeTarea(t)===estadosEditando&&equivalente[t.estado]){ updates["tago_tareas/"+id+"/estado"]=equivalente[t.estado]; movidas++; } });
+  firebase.database().ref().update(updates).then(()=>toast(`Este espacio ya tiene estados propios${movidas?` (${movidas} tareas pasaron al equivalente)`:""}: cámbialos a gusto`,"ok")).catch(err=>toast("No se pudo: "+err.message,"error"));
+}
 function closeEstadosModal(){ document.getElementById("modal-estados").classList.remove("open"); }
 function renderEstadosModal(){
-  const ordered=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+  const sel=document.getElementById("f-estados-espacio");
+  if(sel){ const esps=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); sel.innerHTML=`<option value="">Generales (todos los espacios)</option>`+esps.map(([id,e])=>`<option value="${id}"${estadosEditando===id?" selected":""}>${esc(e.nombre)}${estadosPropios(id).length?" · propios":""}</option>`).join(""); if(estadosEditando&&!espacios[estadosEditando]) estadosEditando=null; sel.value=estadosEditando||""; }
+  const ordered=estadosEditados();
+  const pie=document.getElementById("estados-agregar"); if(pie) pie.style.display=(estadosEditando&&!ordered.length)?"none":"";
+  if(estadosEditando&&!ordered.length){ document.getElementById("estados-list").innerHTML=`<div class="fi-muted" style="padding:6px 0 10px">Este espacio usa los estados generales. Si necesita otros (por ejemplo, las etapas de un cliente), créale los suyos.</div><button class="btn btn-teal" onclick="crearEstadosPropios()">+ Crear estados propios para este espacio</button>`; return; }
   document.getElementById("estados-list").innerHTML=ordered.map(([id,e])=>`
     <div class="admin-user-row">
       <div class="tarea-color-swatch" style="background:${e.color}" title="Click para cambiar color" onclick="cycleEstadoColor('${id}')"></div>
@@ -2926,7 +2966,7 @@ function cycleEstadoColor(id){
 }
 function renombrarEstado(id,nombre){ nombre=nombre.trim(); if(!nombre)return; tareasEstadosRef.child(id).update({nombre}); }
 function moverEstadoTarea(id,dir){
-  const ordered=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+  const ordered=estadosEditados();
   const idx=ordered.findIndex(([eid])=>eid===id);
   const swapIdx=idx+dir;
   if(swapIdx<0||swapIdx>=ordered.length)return;
@@ -2943,10 +2983,11 @@ function borrarEstado(id){
 function agregarEstado(){
   const nombre=gv("f-nuevo-estado-nombre").trim();
   if(!nombre){ toast("Ponle un nombre al estado","error"); return; }
-  const valores=Object.values(tareaEstados);
+  const valores=estadosEditados().map(([,e])=>e);
   const maxOrden=valores.length?Math.max(...valores.map(e=>e.orden||0)):-1;
   const color=TAREA_COLORES[valores.length%TAREA_COLORES.length].valor;
-  tareasEstadosRef.push({nombre,color,orden:maxOrden+1});
+  const nuevo={nombre,color,orden:maxOrden+1}; if(estadosEditando) nuevo.espacio=estadosEditando;
+  tareasEstadosRef.push(nuevo);
   document.getElementById("f-nuevo-estado-nombre").value="";
 }
 
@@ -4261,7 +4302,7 @@ function docCambiado(){
 // ── Panel: resumen automático de las tareas del espacio ──
 function renderPanel(cont,e){
   const filas=tareasDelEspacio(e.espacio), ts=filas.map(([,t])=>t);
-  const estados=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+  const estados=estadosDe(e.espacio==="tareas"?null:e.espacio);
   const ultimo=estados.length?estados[estados.length-1][0]:null;
   const abiertas=ts.filter(t=>t.estado!==ultimo);
   const hoy=new Date(); hoy.setHours(0,0,0,0); const en7=new Date(hoy); en7.setDate(hoy.getDate()+7);
@@ -4371,7 +4412,7 @@ function fmEnviar(){
   if(!e.lista||!listas[e.lista]){ toast("Este formulario no tiene lista destino. Elígela en Editar.","error"); return; }
   const primerTexto=respuestas.find(([c,v])=>c.tipo==="texto"&&v);
   const primeraFecha=respuestas.find(([c,v])=>c.tipo==="fecha"&&v);
-  const estados=Object.entries(tareaEstados).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+  const estados=estadosDe(espacioDeLista(e.lista));
   const now=new Date().toISOString();
   const data={ nombre:primerTexto?primerTexto[1]:`${e.nombre} · ${currentUser.nombre}`, notas:respuestas.map(([c,v])=>`${c.etiqueta}: ${v||"—"}`).join("\n"),
     estado:estados[0]?.[0]||"", prioridad:"normal", lista:e.lista, pedidoId:null, fechaLimite:primeraFecha?primeraFecha[1]:"", asignados:{}, asignadosEmails:{},
@@ -4481,7 +4522,7 @@ function cpEditarEnFila(ev,id,cid){ // edición de un campo personalizado en la 
   el.focus(); if(el.select) try{ el.select(); }catch(e){}
 }
 // ── Modal de tarea: bloques integrados que la lista oculta + campos personalizados ──
-function tareaListaCambio(){ aplicarCamposModal(gv("f-tarea-lista")||null); }
+function tareaListaCambio(){ buildEstadoSelect(gv("f-tarea-estado")); aplicarCamposModal(gv("f-tarea-lista")||null); }
 function aplicarCamposModal(listaId,valores,reiniciar){
   const cfg=cpConfig(listaId), I=cfg.integrados;
   document.querySelectorAll("#modal-tarea [data-campo]").forEach(el=>{ const p=CP_PROPIEDADES.find(x=>x.k===el.dataset.campo); el.style.display=(p&&p.modal&&!I[p.k])?"none":""; });

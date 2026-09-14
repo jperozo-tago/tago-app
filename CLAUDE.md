@@ -71,7 +71,12 @@ Firestore).
 - `tago_chats` / `tago_mensajes` — chat del equipo (grupos y directos)
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
-- `tago_tareas*` — módulo de tareas internas
+- `tago_tareas*` — módulo de tareas internas. `tago_tareas_estados/<id>` puede
+  llevar `espacio`: es un estado propio de ese espacio (como en ClickUp); los
+  estados sin `espacio` son los generales y NO deben tocarse (la app Ruta los
+  usa: menor `orden` = por hacer, mayor = listo). Cada vista agrupa por los
+  estados del espacio que se mira (`estadosDe`, `estadosDelContexto`); las
+  tareas cuyo estado no es de su espacio caen en «Sin estado».
 - `tago_mail_alertas` — correos detectados como pedidos
 - `tago_permitidos` — lista de emails autorizados a entrar (control de acceso)
 - `tago_admins` — quiénes son admin (para el módulo de Tareas)
