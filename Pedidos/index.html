@@ -1214,7 +1214,7 @@
     .el-doc-editor{min-height:60vh;padding:28px 40px;outline:none;font-family:'Open Sans',sans-serif;font-size:15px;line-height:1.7;color:var(--text);max-width:860px}
     .el-doc-editor:empty::before{content:attr(data-placeholder);color:var(--text-muted)}
     .el-doc-editor h2{font-family:'DM Sans',sans-serif;font-weight:600;font-size:20px;margin:18px 0 6px}
-    .el-doc-editor a{color:var(--azul)}
+    .el-doc-editor a{color:var(--azul);cursor:pointer}
     .el-doc-editor ul{padding-left:22px}
     /* Documento con páginas (referencia: Docs de ClickUp) */
     .el-doc-paginas{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:60vh}
@@ -4606,6 +4606,8 @@ function renderDocumento(cont,e){
     </div>
   </div>`);
   document.getElementById("doc-editor").addEventListener("change",ev=>{ if(ev.target.type==="checkbox"){ ev.target.toggleAttribute("checked",ev.target.checked); docCambiado(); } });
+  // Un clic en un enlace lo abre en una pestaña nueva (dentro de un editor el navegador no lo hace solo); para editar el texto, el cursor se pone al lado o con las flechas
+  document.getElementById("doc-editor").addEventListener("click",ev=>{ const a=ev.target.closest("a[href]"); if(!a)return; const href=a.getAttribute("href")||""; if(!/^(https?:|mailto:)/i.test(href))return; ev.preventDefault(); window.open(href,"_blank","noopener"); });
 }
 function docQuien(){ return {id:currentUser.id,nombre:currentUser.nombre}; }
 function docGuardarContenido(pid,html){
