@@ -85,8 +85,13 @@ Firestore).
   nodo desconocido.
   Campos opcionales nuevos: en `tago_mensajes` `reacciones`, `audio`,
   `audioSeg`; en `tago_tareas` `lista`, `pedidoId`, `origenFormulario`; en
-  `tago_listas` `carpeta`. Los audios e imágenes del chat van en base64
-  dentro de la base — conviene pasarlos a Storage.
+  `tago_listas` `carpeta`; en `tago_elementos` tipo documento, `paginas/<pid>
+  = {titulo, contenido, orden, createdAt, createdBy, updatedAt, updatedBy}`
+  (documentos con varias páginas, como los Docs de ClickUp; un documento sin
+  `paginas` sigue leyendo y escribiendo `contenido`, y al agregarle una página
+  ese contenido pasa a ser la primera sin borrar `contenido`). Los audios e
+  imágenes del chat van en base64 dentro de la base — conviene pasarlos a
+  Storage.
 - `tago_campos` — campos personalizados de las listas de tareas (septiembre
   2026, referencia: panel «Campos» de ClickUp). Cada campo es
   `{espacio, etiqueta, tipo, opciones, archivado, creadoPor, createdAt}` y
