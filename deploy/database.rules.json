@@ -189,6 +189,13 @@
         ".write": false
       }
     },
+    "tago_packs": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      "$packId": {
+        ".write": "auth != null && $packId.matches(/^[A-Za-z0-9_-]+$/) && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (newData.exists() || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists())",
+        ".validate": "newData.hasChildren(['cliente', 'tipo', 'metros']) && newData.child('cliente').isString() && newData.child('cliente').val().length > 0 && (newData.child('tipo').val() == 'textil' || newData.child('tipo').val() == 'uv') && newData.child('metros').isNumber() && newData.child('metros').val() > 0"
+      }
+    },
     "$other": {
       ".read": false,
       ".write": false

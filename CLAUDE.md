@@ -146,6 +146,31 @@ Firestore).
   reordenan arrastrando el título: un admin dentro de una lista lo guarda en
   `tago_listas/<id>/campos/columnas` (para todos); si no, en `localStorage`
   `tago_tareas_orden`.
+- `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
+  2026, reemplaza la planilla «Control packs»). Cada pack es
+  `{cliente, tipo:"textil"|"uv", metros, codigo, documento (n° boleta o
+  factura), fechaCompra, vence, precio, notas, cerrado?, alias{<nombre
+  normalizado>:true}, consumos{<cid>:{fecha, metros, nota, quien, ts}},
+  createdAt/By, updatedAt/By}`; los 45 de la planilla llevan
+  `origen:"planilla"`. La vigencia se calcula sola al crear o al cambiar
+  fecha/metros: 3 meses, 4 si el pack es de 100 m o más (`packVence`), y se
+  puede corregir a mano. **El saldo no se guarda**: se calcula al vuelo
+  (`packResumen`) como metros − consumos a mano − cantidad de los pedidos
+  con `packId` (solo si su unidad es metros), así nunca se desfasa aunque el
+  pedido se edite o se borre. Un pedido guarda `packId`; en su ficha, si el
+  producto va en metros (DTF Textil y Flúor → packs textil; DTF UV → packs
+  UV), la fila «Pack DTF» lista los packs abiertos del tipo ordenados por
+  parecido con el nombre del cliente (`packSimilitud`: sin tildes ni
+  puntuación, sin SpA/Ltda…, palabras y pares de letras) y en un pedido
+  nuevo preselecciona si hay un único candidato con parecido ≥ 0,85; al
+  enlazar con un nombre distinto el pack aprende el `alias`. Cambiar el
+  producto a uno en unidades o al otro tipo de DTF desenlaza el pack
+  (`packAjustarEnlace`). Estados derivados: activo, por vencer (≤ 15 días),
+  agotado (saldo ≤ 0, con sobregiro en rojo), vencido, cerrado (a mano).
+  Vista «Packs DTF» bajo Pedidos en la barra (`renderPacks`) y ficha propia
+  `#ficha-pack` (`abrirPack`/`renderPack`, movimientos y «Registrar
+  consumo»). Reglas: leen y escriben todos los permitidos; borrar un pack
+  (`newData` nulo) solo admins; borrar consumos se limita en el JS a admins.
 
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de

@@ -682,6 +682,67 @@
     .fi-actividad{margin:6px 18px 22px;padding-top:10px;border-top:1px solid var(--border-soft)}
     .fh-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 22px}
     @media(max-width:900px){.ficha{width:100vw;border-left:none}.fi-grid,.fi-sec-body{grid-template-columns:1fr}.fi-numpedido{width:100%}body.ficha-abierta #btn-nuevo{display:none}}
+    /* ══ PACKS DTF: metros comprados por adelantado ══ */
+    .packs-avisos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .packs-avisos:empty{display:none}
+    .packs-avisos .alert-pill{flex:0 0 auto;min-width:0;padding:5px 12px;font-size:12px;border-radius:999px;gap:6px;cursor:pointer;border:1px solid transparent}
+    .packs-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+    .packs-kpis .stat-num{font-size:28px}
+    .packs-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .packs-top .search-input{flex:0 1 240px}
+    .pk-head,.pk-row{display:grid;grid-template-columns:minmax(170px,1.4fr) 84px 76px minmax(190px,1fr) 118px 130px 112px;gap:8px;padding:11px 14px;align-items:center;min-width:900px}
+    .pk-head{color:var(--azul-oscuro);background:var(--surface);border-bottom:2px solid var(--azul-oscuro);font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:600;padding:10px 14px}
+    .pk-row{border-bottom:1px solid var(--border-soft);cursor:pointer;transition:background .1s}
+    .pk-row:hover{background:var(--surface-alt)}
+    .pk-row:last-child{border-bottom:none}
+    .pk-row>div,.pk-head>div{min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .pk-cli{font-family:'DM Sans',sans-serif;font-weight:600;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pk-sub{font-size:12.5px;color:var(--text-sec);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+    .pk-tipo{display:inline-block;border-radius:999px;padding:3px 9px;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap}
+    .pk-num{font-family:'DM Sans',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;font-size:14px;color:var(--text)}
+    .pk-barra{display:flex;align-items:center;gap:8px}
+    .pk-barra .bar-track{flex:1;height:9px}
+    .pk-barra .bar-val{font-size:12.5px;white-space:nowrap}
+    .pk-barra .bar-val.neg,.pk-vence.pasado{color:var(--danger-c)}
+    .pk-vence.pronto{color:var(--azul)}
+    .pk-estado{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap;border:1px solid transparent}
+    .pk-activo{background:var(--green-bg);color:var(--green-c);border-color:var(--green-bd)}
+    .pk-por_vencer{background:var(--blue-bg);color:var(--blue-c);border-color:var(--blue-bd)}
+    .pk-agotado{background:var(--grey-bg);color:var(--grey-c);border-color:var(--grey-bd)}
+    .pk-vencido{background:var(--danger-bg);color:var(--danger-c);border-color:var(--danger-bd)}
+    .pk-cerrado{background:var(--surface);color:var(--text-muted);border-color:var(--border)}
+    .pk-saldo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 18px 4px}
+    .pk-saldo-box{background:var(--panel);border-radius:10px;padding:10px 12px}
+    .pk-saldo-num{font-family:'DM Sans',sans-serif;font-weight:600;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--text)}
+    .pk-saldo-num.neg{color:var(--danger-c)}
+    .pk-saldo-lbl{font-size:11px;color:var(--text-muted);margin-top:3px}
+    .pk-saldo-barra{margin:6px 18px 2px}
+    .pk-movs{margin:10px 18px 6px}
+    .pk-mov{display:grid;grid-template-columns:82px 76px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:13px}
+    .pk-mov:last-child{border-bottom:none}
+    .pk-mov-fecha{font-size:12px;color:var(--text-sec);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .pk-mov-m{font-family:'DM Sans',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;color:var(--text)}
+    .pk-mov-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+    .pk-link{color:var(--azul);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;text-decoration:none}
+    .pk-link:hover{text-decoration:underline}
+    .pk-mov-quien{font-size:11.5px;color:var(--text-muted);white-space:nowrap;display:flex;align-items:center;gap:4px}
+    .pk-mov-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:5px;font-family:inherit;line-height:1}
+    .pk-mov-del:hover{color:var(--danger-c);background:var(--danger-bg)}
+    .pk-nuevo-mov{display:grid;grid-template-columns:132px 96px minmax(0,1fr) auto;gap:6px;align-items:center;margin-top:10px}
+    .pk-nuevo-mov .fi{border-color:var(--border);background:var(--surface)}
+    .fi-pack-hint{grid-column:1/-1;font-size:12px;color:var(--teal-dark);font-weight:600;padding:3px 0 6px;font-family:'DM Sans',sans-serif;line-height:1.4}
+    .fi-pack-hint.mal{color:var(--danger-c)}
+    .fi-pack-hint .pk-link{margin-left:6px}
+    .job-pack{color:var(--teal-dark);font-size:12px;margin-left:4px;vertical-align:-1px}
+    @media(max-width:700px){
+      .packs-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .pk-head{display:none}
+      .pk-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cli est" "tipo tam" "barra barra" "vence doc";min-width:0;gap:6px 10px}
+      .pk-row>div:nth-child(1){grid-area:cli}.pk-row>div:nth-child(2){grid-area:tipo}.pk-row>div:nth-child(3){grid-area:tam;justify-self:end}.pk-row>div:nth-child(4){grid-area:barra}.pk-row>div:nth-child(5){grid-area:vence}.pk-row>div:nth-child(6){grid-area:doc;justify-self:end}.pk-row>div:nth-child(7){grid-area:est;justify-self:end}
+      .pk-mov{grid-template-columns:70px 64px minmax(0,1fr) auto}
+      .pk-nuevo-mov{grid-template-columns:1fr 1fr}
+      .pk-nuevo-mov .pk-full{grid-column:1/-1}
+    }
     /* ══ PROPUESTA (copia local): vistas como pestañas + calendario + carga ══ */
     .vistas-tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;box-shadow:0 1px 3px rgba(11,20,71,0.04)}
     .vistas-tabs button{background:transparent;border:none;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--text-sec);cursor:pointer;font-family:inherit;white-space:nowrap}
@@ -1606,12 +1667,28 @@
     </div>
     <div id="bandeja-lista"></div>
   </div>
+
+  <!-- ── VISTA PACKS DTF ── -->
+  <div id="view-packs" style="display:none">
+    <div class="packs-kpis" id="packs-kpis"></div>
+    <div class="packs-avisos" id="packs-avisos"></div>
+    <div class="packs-top">
+      <input class="search-input" type="text" id="packs-buscar" placeholder="Buscar cliente, código o boleta..." oninput="renderPacks()"/>
+      <div class="status-seg" role="group" aria-label="Filtrar packs" id="packs-filtros"></div>
+      <span class="fh-spacer"></span>
+      <button class="chip-toggle" id="packs-tipo-textil" onclick="packsToggleTipo('textil')" title="Solo packs de DTF Textil"><svg class="ic" aria-hidden="true"><use href="#i-printer"/></svg>Textil</button>
+      <button class="chip-toggle" id="packs-tipo-uv" onclick="packsToggleTipo('uv')" title="Solo packs de DTF UV"><svg class="ic" aria-hidden="true"><use href="#i-droplets"/></svg>UV</button>
+    </div>
+    <div class="table-wrap" id="packs-tabla"></div>
+  </div>
   </div>
  </div>
 </div>
 
 <!-- FICHA DE PEDIDO (propuesta, copia local): reemplaza al panel expandible y al formulario de edición -->
 <aside class="ficha" id="ficha"></aside>
+<!-- FICHA DE PACK DTF -->
+<aside class="ficha" id="ficha-pack"></aside>
 
 <!-- PANEL «CAMPOS» DE UNA LISTA (referencia: ClickUp) -->
 <aside class="cp-panel" id="cp-panel" aria-label="Campos de la lista"></aside>
@@ -1914,6 +1991,7 @@ const CATEGORIAS_PRODUCTO=[
 const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||"impresiones";
 const categoriaDePedido=j=>j.categoria||categoriaDeTipo(j.tipoDtf);
 let categoriasCustom={},categoriaSeleccionada="impresiones";
+var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackManual=false, packsFiltro="abiertos", packsTipo=null; // Packs DTF
 function todasLasCategorias(){
   const custom=Object.entries(categoriasCustom).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,c])=>({key:id,label:c.nombre,icono:c.icono||""}));
   return[...CATEGORIAS_PRODUCTO,...custom];
@@ -2007,7 +2085,7 @@ function toggleAlerta(tipo){
 }
 let filasAbiertas=new Set(),borradoresComentario={};
 let historialListeners={},historialData={};
-const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado"};
+const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF"};
 let chatRef=null,chatsMeta={},currentChatId=null,chatMessagesRef=null,chatMessages={},chatInitialized=false,selectedGrupoMiembros=[];
 let tareasRef=null,tareas={},tareasEstadosRef=null,tareaEstados={},tareasInitialized=false,editTareaId=null,selectedTareaAsignados=[];
 let tareasVisIndexRef=null,tareaChildListeners={},tareasPersonales={},tareasPorLista={},tareasListaListeners={};
@@ -2232,6 +2310,7 @@ function fmtHistValor(campo,v){
   if(campo==="estado")return ST[v]?.label||v||"—";
   if(campo==="precio")return v?fmtCLP(v):"—";
   if(campo==="categoria")return v?(todasLasCategorias().find(c=>c.key===v)?.label||v):"—";
+  if(campo==="packId")return v?packNombre(v):"—";
   return(v===undefined||v===null||v==="")?"—":String(v);
 }
 function registrarLog(pedidoId,campo,valorAnterior,valorNuevo){
@@ -2327,13 +2406,16 @@ function renderComentarioImagenPreview(id){
 }
 
 // ── Tab nav ───────────────────────────────────────────────
-const TAB_TITLES={pedidos:"Pedidos",stats:"Estadísticas",tareas:"Tareas",chat:"Chat",bandeja:"Bandeja"};
-const TAB_ICONS={pedidos:"clipboard-list",stats:"chart-column",tareas:"square-check-big",chat:"message-circle",bandeja:"inbox"};
+const TAB_TITLES={pedidos:"Pedidos",stats:"Estadísticas",tareas:"Tareas",chat:"Chat",bandeja:"Bandeja",packs:"Packs DTF"};
+const TAB_ICONS={pedidos:"clipboard-list",stats:"chart-column",tareas:"square-check-big",chat:"message-circle",bandeja:"inbox",packs:"package"};
 function switchTab(tab){
   currentTab=tab;
   if(tab==="chat") chatPideAvisos();
   if(tab!=="pedidos"&&typeof cerrarFicha==="function")cerrarFicha();
+  if(tab!=="packs"&&typeof cerrarPack==="function")cerrarPack();
   document.getElementById("view-pedidos").style.display=tab==="pedidos"?"block":"none";
+  document.getElementById("view-packs").style.display=tab==="packs"?"block":"none";
+  { const bn=document.getElementById("btn-nuevo"); if(bn){ if(tab==="packs"){ bn.textContent="+ Nuevo pack"; bn.onclick=()=>abrirPack(); } else { bn.textContent="+ Nuevo Pedido"; bn.onclick=()=>openModal(); } } }
   document.getElementById("view-stats").classList.toggle("show",tab==="stats");
   document.getElementById("view-chat").style.display=tab==="chat"?"block":"none";
   document.getElementById("view-tareas").style.display=tab==="tareas"?"block":"none";
@@ -2346,6 +2428,7 @@ function switchTab(tab){
   if(tab==="chat"){ initChat(); renderChatSidebar(); }
   if(tab==="tareas"){ initTareas(); renderTareas(); actualizarTituloTareas(); }
   if(tab==="bandeja") renderBandeja();
+  if(tab==="packs") renderPacks();
   closeSidebar();
 }
 function toggleSidebar(){ document.getElementById("app-sidebar").classList.toggle("open"); document.getElementById("sidebar-backdrop").classList.toggle("show"); }
@@ -3374,12 +3457,16 @@ function initFirebaseData(){
     if(currentUser.isAdmin) firebase.database().ref("tago_elementos").on("value",snap=>{ elementos=snap.val()||{}; renderSidebar(); if(currentTab==="elemento")renderElemento(); if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); } },err=>console.error(err));
     dbRef=firebase.database().ref("tago_pedidos");
     dbRef.on("value",
-      snap=>{ jobs=snap.val()||{}; render(); if(currentTab==="stats")renderStatsView(); renderNotifBadge(); if(notifPanelOpen)renderNotifPanel(); },
+      snap=>{ jobs=snap.val()||{}; render(); if(currentTab==="stats")renderStatsView(); if(currentTab==="packs")renderPacks(); if(packFichaId)renderPack(); renderNotifBadge(); if(notifPanelOpen)renderNotifPanel(); },
       err=>{ toast("Error de sincronización: "+err.message,"error"); console.error(err); }
     );
     firebase.database().ref("tago_categorias_custom").on("value",
       snap=>{ categoriasCustom=snap.val()||{}; render(); if(document.getElementById("f-categoria")?.offsetParent) renderCategoriaOptions(); },
       err=>console.error(err)
+    );
+    firebase.database().ref("tago_packs").on("value",
+      snap=>{ packs=snap.val()||{}; if(currentTab==="packs")renderPacks(); if(packFichaId)renderPack(); if(fichaId)renderFicha(); renderSidebar(); },
+      err=>{ console.error(err); toast("No se pudieron cargar los packs DTF: "+err.message,"error"); }
     );
     notifRef=firebase.database().ref("tago_notificaciones/"+sanitizeEmailKey(currentUser.email));
     notifRef.on("value",
@@ -3869,7 +3956,7 @@ function renderRow(id,j){
     <div class="job-client celda-edit" onclick="editarCelda(event,'${id}','cliente')" title="Clic para editar el cliente">${esc(j.cliente)}</div>
     <div><span class="job-type-pill celda-edit" onclick="editarCelda(event,'${id}','tipoDtf')" title="Clic para cambiar el tipo" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span></div>
     <div><div class="creator-badge"><div class="creator-dot ${cAvClass}" style="${cLight?'color:#fff':'color:var(--azul-oscuro)'}">${j.createdBy?.id||"?"}</div><span>${esc(j.createdBy?.nombre||"—")}</span></div><div class="job-sub">${timeAgo(j.createdAt)}</div></div>
-    <div><div class="job-qty celda-edit" onclick="editarCelda(event,'${id}','cantidad')" title="Clic para editar la cantidad">${qty}</div><div class="job-unit celda-edit" onclick="editarCelda(event,'${id}','responsable')" title="Clic para cambiar el responsable">Resp: ${j.responsable?esc(j.responsable.split(" ")[0]):"—"}</div></div>
+    <div><div class="job-qty celda-edit" onclick="editarCelda(event,'${id}','cantidad')" title="Clic para editar la cantidad">${qty}${j.packId&&packs[j.packId]?`<span class="job-pack" title="Descuenta del pack ${esc(packNombre(j.packId))}">${ic("package")}</span>`:""}</div><div class="job-unit celda-edit" onclick="editarCelda(event,'${id}','responsable')" title="Clic para cambiar el responsable">Resp: ${j.responsable?esc(j.responsable.split(" ")[0]):"—"}</div></div>
     <div><span class="badge badge-doc-${j.documento==="SI"?"ok":j.documento==="NA"?"na":"no"} celda-edit" onclick="editarCelda(event,'${id}','documento')" title="Clic para cambiar boleta / factura">${j.documento==="SI"?"✓":j.documento==="NA"?"➖":"✗"}</span></div>
     <div>${j.drive?`<a href="${esc(safeUrl(j.drive))}" target="_blank" class="drive-link" onclick="event.stopPropagation()">${ic("folder")}</a>`:`<span class="job-sub celda-edit" style="margin-top:0" onclick="editarCelda(event,'${id}','drive')" title="Clic para agregar el link de Drive">—</span>`}</div>
     <div><span class="badge badge-${j.estado}">${st.label}</span>${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
@@ -4098,9 +4185,9 @@ function updateClienteHint(){
 }
 
 // ── Exportar CSV ──────────────────────────────────────────
-const CSV_HEAD=["ID","# Pedido","Cliente","Tipo","Cantidad","Unidad","Precio CLP","Estado","Boleta/Factura","Entrega","Fecha límite","Creado por","Fecha creación","Producido por","Fecha listo","Enviado a impresión por","Fecha envío a impresión"];
+const CSV_HEAD=["ID","# Pedido","Cliente","Tipo","Cantidad","Unidad","Precio CLP","Estado","Boleta/Factura","Entrega","Fecha límite","Creado por","Fecha creación","Producido por","Fecha listo","Enviado a impresión por","Fecha envío a impresión","Pack DTF"];
 function csvEsc(v){ v=String(v??""); return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
-function jobToRow(id,j){ return[id,j.pedido||"",j.cliente||"",j.tipoDtf||"",j.cantidad||"",j.unidad||"",j.precio||0,ST[j.estado]?.label||j.estado||"",j.documento||"",j.tipoEntrega||"",j.fechaLimite||"",j.createdBy?.nombre||"",j.createdAt?fmtFull(j.createdAt):"",j.listaBy?.nombre||"",j.listaAt?fmtFull(j.listaAt):"",j.impresionBy?.nombre||"",j.impresionAt?fmtFull(j.impresionAt):""]; }
+function jobToRow(id,j){ return[id,j.pedido||"",j.cliente||"",j.tipoDtf||"",j.cantidad||"",j.unidad||"",j.precio||0,ST[j.estado]?.label||j.estado||"",j.documento||"",j.tipoEntrega||"",j.fechaLimite||"",j.createdBy?.nombre||"",j.createdAt?fmtFull(j.createdAt):"",j.listaBy?.nombre||"",j.listaAt?fmtFull(j.listaAt):"",j.impresionBy?.nombre||"",j.impresionAt?fmtFull(j.impresionAt):"",j.packId?packNombre(j.packId):""]; }
 function downloadCSV(rows,filename){
   const csv="\uFEFF"+rows.map(r=>r.map(csvEsc).join(";")).join("\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
@@ -5189,7 +5276,7 @@ function renderSidebar(){
   h+=`<div class="sb-sep"></div>`;
   // Pedidos: sus listas son las categorías
   const pedAbierto=sbAbiertos.has("pedidos")&&!col;
-  const pedActivo=currentTab==="pedidos"||currentTab==="stats";
+  const pedActivo=currentTab==="pedidos"||currentTab==="stats"||currentTab==="packs";
   h+=`<div class="sb-space${pedActivo?" active":""}"><div class="sb-node sb-space-head" onclick="${col?"irAPedidosLista('todos')":"sbToggleEspacio('pedidos')"}" title="Pedidos"><span class="sb-caret">${pedAbierto?"▾":"▸"}</span><span class="sb-ic">${ic("clipboard-list")}</span><span class="sb-label">Pedidos</span><span class="sb-count">${all.length}</span></div>`;
   if(pedAbierto){
     [{key:"todos",label:"Todos"},...todasLasCategorias()].forEach(c=>{
@@ -5198,6 +5285,7 @@ function renderSidebar(){
       h+=`<div class="sb-node sb-list${activo?" active":""}" onclick="irAPedidosLista('${c.key}')">${icCat?`<span class="sb-ic sb-ic-sm">${icCat}</span>`:""}<span class="sb-label">${esc(c.label)}</span><span class="sb-count">${nCat(c.key)}</span>${custom&&puedeCat?delBtn("categoria",c.key):""}${confirmar("categoria",c.key)}</div>`;
     });
     h+=`<div class="sb-node sb-list${currentTab==="stats"?" active":""}" onclick="switchTab('stats')"><span class="sb-ic sb-ic-sm">${ic("chart-column")}</span><span class="sb-label">Estadísticas</span></div>`;
+    { const nPk=Object.keys(packs).filter(id=>packAbierto(id)).length; h+=`<div class="sb-node sb-list${currentTab==="packs"?" active":""}" onclick="switchTab('packs')" title="Packs DTF: metros comprados por adelantado"><span class="sb-ic sb-ic-sm">${ic("package")}</span><span class="sb-label">Packs DTF</span><span class="sb-count">${nPk||""}</span></div>`; }
     if(puedeCat) h+=sbEditando?.tipo==="categoria"?inputInline("Nombre de la lista (categoría)","sbCrearCategoria(this.value)","sbEditando=null;renderSidebar()",true):`<div class="sb-node sb-list sb-new" onclick="sbEditando={tipo:'categoria'};renderSidebar()"><span class="sb-label">+ Nueva lista</span></div>`;
   }
   h+=`</div>`;
@@ -5419,12 +5507,13 @@ const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF UV","DTF Flúor","St
 const FICHA_ENTREGAS=[["Retiro","Retiro en tienda"],["OTS","OTS (RM)"],["Bluexpress","Bluexpress (Regiones)"],["Chilexpress","Chilexpress (Regiones)"]];
 const FICHA_DOCS=[["NO","✗ No emitida"],["SI","✓ Emitida"],["NA","➖ No aplica (muestra gratis)"]];
 const FICHA_RESPONSABLES=["Miguel Gonzalez","Carol Oviedo","Andreina Rodriguez","José Perozo"];
-const FICHA_ESTRUCTURAL=new Set(["tipoDtf","tipoEntrega","estado","prioridad","documento","categoria","fechaLimite","precio","accesorio.material","accesorio.packaging"]);
+const FICHA_ESTRUCTURAL=new Set(["tipoDtf","tipoEntrega","estado","prioridad","documento","categoria","fechaLimite","precio","accesorio.material","accesorio.packaging","packId"]);
 const fiVal=v=>(v===undefined||v===null)?"":String(v);
 
 function openModal(id=null){ abrirFicha(id); }
 function abrirFicha(id=null){
-  fichaNuevo=!id; fichaAsigAbierto=false;
+  if(typeof cerrarPack==="function") cerrarPack();
+  fichaNuevo=!id; fichaAsigAbierto=false; fichaPackManual=false;
   fichaId=id||"__nuevo__";
   if(fichaNuevo) fichaDraft={pedido:"",cliente:"",tipoDtf:"DTF Textil",categoria:"impresiones",cantidad:"",precio:"",drive:"",documento:"NO",tipoEntrega:"Retiro",responsable:"",estado:"recibido",prioridad:"normal",fechaLimite:"",notas:"",personas:[]};
   document.getElementById("ficha").classList.add("open");
@@ -5440,7 +5529,7 @@ function cerrarFicha(){
   const el=document.getElementById("ficha"); el.classList.remove("open"); el.innerHTML="";
   document.body.classList.remove("ficha-abierta");
 }
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&fichaId&&!document.querySelector(".modal-overlay.open")) cerrarFicha(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&fichaId&&!document.querySelector(".modal-overlay.open")) cerrarFicha(); if(e.key==="Escape"&&packFichaId&&!document.querySelector(".modal-overlay.open")) cerrarPack(); });
 document.getElementById("ficha").addEventListener("focusout",()=>{ setTimeout(()=>{ const el=document.getElementById("ficha"); if(fichaPendiente&&fichaId&&!el.contains(document.activeElement)) renderFicha(true); },0); });
 
 function fichaJob(){ return fichaNuevo?fichaDraft:jobs[fichaId]; }
@@ -5473,8 +5562,12 @@ function fichaCampo(campo,valor){
   if(campo==="cantidad"&&!fichaNuevo&&valor===""){ toast("La cantidad es obligatoria","error"); renderFicha(true); return; }
   if(campo==="cliente"&&!fichaNuevo&&!valor){ toast("El cliente es obligatorio","error"); renderFicha(true); return; }
   fichaSetPath(nuevo,campo,valor);
-  if(campo==="tipoDtf"){ nuevo.unidad=getUnit(valor); if(!j.categoria||j.categoria===categoriaDeTipo(j.tipoDtf)) nuevo.categoria=categoriaDeTipo(valor); }
+  if(campo==="tipoDtf"){ nuevo.unidad=getUnit(valor); if(!j.categoria||j.categoria===categoriaDeTipo(j.tipoDtf)) nuevo.categoria=categoriaDeTipo(valor); packAjustarEnlace(nuevo); }
+  if(campo==="packId"){ fichaPackManual=true; if(!valor) delete nuevo.packId; else packAprender(valor,nuevo.cliente); }
+  if(campo==="cliente"&&!fichaNuevo&&nuevo.packId) packAprender(nuevo.packId,valor);
+  if(campo==="cliente"&&fichaNuevo&&!fichaPackManual){ packSugerirEnDraft(nuevo); }
   fichaAplicar(nuevo,j,FICHA_ESTRUCTURAL.has(campo));
+  if((campo==="cliente"||campo==="cantidad")&&!FICHA_ESTRUCTURAL.has(campo)){ const fila=document.getElementById("fc-pack-fila"); if(fila) fila.outerHTML=fichaPackHtml(nuevo); } // la fila del pack se refresca sola, sin rearmar la ficha (el foco sigue donde estaba)
 }
 function fichaTogglePersona(pid){ const j=fichaJob(); if(!j)return; const nuevo=JSON.parse(JSON.stringify(j)); const set=new Set(nuevo.personas||[]); set.has(pid)?set.delete(pid):set.add(pid); nuevo.personas=[...set]; fichaAplicar(nuevo,j,true); }
 function fichaToggleTinta(t){ const j=fichaJob(); if(!j)return; const nuevo=JSON.parse(JSON.stringify(j)); fichaSecciones(nuevo); const set=new Set(nuevo.sticker.tintas||[]); set.has(t)?set.delete(t):set.add(t); nuevo.sticker.tintas=[...set]; fichaAplicar(nuevo,j,true); }
@@ -5489,6 +5582,7 @@ function guardarPedido(id,nuevo,anterior){
   if(!ES_STICKER(nuevo.tipoDtf)) delete nuevo.sticker;
   if(!ES_ACC(nuevo.tipoDtf)) delete nuevo.accesorio;
   if((nuevo.tipoEntrega||"Retiro")==="Retiro") delete nuevo.envio;
+  if(!nuevo.packId) delete nuevo.packId;
   const nuevas=(nuevo.personas||[]).filter(p=>!(anterior.personas||[]).includes(p));
   if(dbRef){ dbRef.child(id).set(nuevo); registrarCambios(id,anterior,nuevo); notificarAsignados(id,nuevo.cliente,nuevas); }
   else{ jobs[id]=nuevo; saveLocal(); render(); }
@@ -5503,7 +5597,7 @@ function guardarPedidoCampo(id,campo,valor){
   if(campo==="cantidad"&&valor===""){ toast("La cantidad es obligatoria","error"); return false; }
   if(campo==="cliente"&&!valor){ toast("El cliente es obligatorio","error"); return false; }
   fichaSetPath(nuevo,campo,valor);
-  if(campo==="tipoDtf"){ nuevo.unidad=getUnit(valor); if(!j.categoria||j.categoria===categoriaDeTipo(j.tipoDtf)) nuevo.categoria=categoriaDeTipo(valor); }
+  if(campo==="tipoDtf"){ nuevo.unidad=getUnit(valor); if(!j.categoria||j.categoria===categoriaDeTipo(j.tipoDtf)) nuevo.categoria=categoriaDeTipo(valor); packAjustarEnlace(nuevo); }
   fichaSecciones(nuevo);
   guardarPedido(id,nuevo,j);
   if(fichaId===id&&!fichaNuevo) renderFicha(true);
@@ -5524,8 +5618,9 @@ function crearDesdeFicha(){
   if(!ES_STICKER(data.tipoDtf)) delete data.sticker;
   if(!ES_ACC(data.tipoDtf)) delete data.accesorio;
   if((data.tipoEntrega||"Retiro")==="Retiro") delete data.envio;
+  packAjustarEnlace(data); if(!data.packId) delete data.packId;
   const listo=id=>{ toast("Pedido agregado ✓","ok"); fichaNuevo=false; fichaDraft=null; fichaId=id; renderFicha(true); cargarActividad(id); };
-  if(dbRef){ nextIdTransaction(id=>{ dbRef.child(id).set(data); notificarAsignados(id,data.cliente,data.personas); registrarCreacion(id); listo(id); }); }
+  if(dbRef){ nextIdTransaction(id=>{ dbRef.child(id).set(data); if(data.packId){ registrarLog(id,"Pack DTF","—",packNombre(data.packId)); packAprender(data.packId,data.cliente); } notificarAsignados(id,data.cliente,data.personas); registrarCreacion(id); listo(id); }); }
   else{ const id=genId(); jobs[id]=data; saveLocal(); render(); listo(id); }
 }
 
@@ -5587,6 +5682,7 @@ function renderFicha(forzar){
   <div class="fi-grid">
     ${fiFila("Tipo de producto",`<select class="fi fi-sel" onchange="fichaCampo('tipoDtf',this.value)">${tipoOpts}</select>`)}
     ${fiFila(`Cantidad (${unidad}) *`,fiNum("cantidad",j.cantidad,unidad==="metros"?"0.01":"1",unidad==="metros"?"ej: 1.5":"ej: 100"))}
+    ${fichaPackHtml(j)}
     ${fiFila("Categoría",fiSelect("categoria",categoriaDePedido(j),todasLasCategorias().map(c=>[c.key,c.label])))}
     ${fiFila(ic("banknote")+" Precio (CLP, con IVA)",fiNum("precio",j.precio,"1","ej: 45220")+(j.precio?`<span class="fi-neto">${fmtCLPNeto(j.precio)} neto</span>`:""))}
     ${fiFila("Tipo de entrega",fiSelect("tipoEntrega",j.tipoEntrega||"Retiro",FICHA_ENTREGAS))}
@@ -5669,6 +5765,259 @@ function renderFicha(forzar){
   }
   el.innerHTML=html;
   if(!fichaNuevo) renderActividad(fichaId);
+}
+
+// ══ PACKS DTF: metros comprados por adelantado, con vigencia y descuento automático desde los pedidos ══
+const PACK_TIPO={textil:{l:"Textil",color:"#4063F9",tipoDtf:"DTF Textil"},uv:{l:"UV",color:"#1C7A63",tipoDtf:"DTF UV"}};
+const PACK_ESTADO={activo:"Activo",por_vencer:"Por vencer",agotado:"Agotado",vencido:"Vencido",cerrado:"Cerrado"};
+const PACK_DIAS_AVISO=15, PACK_POCO=2;
+const fmtM=n=>(Math.round((+n||0)*100)/100).toLocaleString("es-CL",{maximumFractionDigits:2})+" m";
+function packFecha(iso){ if(!iso||typeof iso!=="string")return"—"; const[y,m,d]=iso.split("-"); return parseInt(d)+" "+MESES_CORTO[parseInt(m)-1]+" "+y; }
+function packVence(fechaCompra,metros){ // 3 meses de vigencia; 4 para los de 100 m
+  if(!fechaCompra)return""; const d=new Date(fechaCompra+"T12:00:00"); if(isNaN(d))return"";
+  const dia=d.getDate(); d.setMonth(d.getMonth()+((+metros||0)>=100?4:3)); if(d.getDate()!==dia) d.setDate(0);
+  return ymdLocal(d);
+}
+function packNombre(id){ const p=packs[id]; if(!p) return id; return `${p.cliente}${p.codigo?" · "+p.codigo:""} · ${fmtM(p.metros)} ${PACK_TIPO[p.tipo]?PACK_TIPO[p.tipo].l:p.tipo}`; }
+function packTipoDePedido(j){ const t=j&&j.tipoDtf; if(t==="DTF UV")return"uv"; if(t==="DTF Textil"||t==="DTF Flúor")return"textil"; return null; }
+function packMetrosPedido(j){ return (j.unidad||getUnit(j.tipoDtf))==="metros"?(parseFloat(j.cantidad)||0):0; }
+function packMovs(id,sinPedido){ // movimientos del pack: consumos a mano + pedidos enlazados
+  const p=packs[id]; if(!p)return[];
+  const m=Object.entries(p.consumos||{}).map(([cid,c])=>({cid,fecha:c.fecha||"",metros:+c.metros||0,nota:c.nota||"",quien:c.quien,manual:true}));
+  Object.entries(jobs).forEach(([jid,j])=>{ if(j.packId===id&&jid!==sinPedido) m.push({pedidoId:jid,fecha:String(j.createdAt||"").slice(0,10),metros:packMetrosPedido(j),nota:j.pedido||"",quien:j.createdBy,job:j}); });
+  return m.sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")||(b.pedidoId||"").localeCompare(a.pedidoId||""));
+}
+function packResumen(id,sinPedido){
+  const p=packs[id]; if(!p)return null;
+  const consumido=Math.round(packMovs(id,sinPedido).reduce((a,m)=>a+m.metros,0)*100)/100;
+  const metros=+p.metros||0, disponible=Math.round((metros-consumido)*100)/100;
+  const hoy=ymdLocal(new Date()), vencido=!!(p.vence&&p.vence<hoy);
+  const dias=p.vence?Math.round((new Date(p.vence+"T12:00:00")-new Date(hoy+"T12:00:00"))/86400000):null;
+  const estado=p.cerrado?"cerrado":disponible<=0?"agotado":vencido?"vencido":(dias!==null&&dias<=PACK_DIAS_AVISO)?"por_vencer":"activo";
+  return {consumido,disponible,metros,vencido,dias,estado,pct:metros?Math.min(100,Math.max(0,consumido/metros*100)):0};
+}
+function packAbierto(id){ const r=packResumen(id); return !!r&&(r.estado==="activo"||r.estado==="por_vencer"); }
+// Parecido entre nombres de cliente: sin tildes ni puntuación, sin «SpA/Ltda…», comparando palabras y pares de letras
+function packNorm(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\b(spa|ltda|limitada|eirl|sa|cia|y|e|de|del|la|el|los|las|muestra)\b/g," ").replace(/\s+/g," ").trim(); }
+function packSimilitud(a,b){
+  a=packNorm(a); b=packNorm(b); if(!a||!b)return 0; if(a===b)return 1;
+  if(a.length>=4&&b.length>=4&&(a.includes(b)||b.includes(a)))return .92;
+  const ta=new Set(a.split(" ")), tb=new Set(b.split(" ")); let inter=0; ta.forEach(x=>{ if(tb.has(x))inter++; }); const jac=inter/(ta.size+tb.size-inter);
+  const big=s=>{ const t=s.replace(/ /g,""), r=new Set(); for(let i=0;i<t.length-1;i++) r.add(t.slice(i,i+2)); return r; };
+  const ba=big(a), bb=big(b); let ib=0; ba.forEach(x=>{ if(bb.has(x))ib++; }); const dice=(ba.size+bb.size)?2*ib/(ba.size+bb.size):0;
+  return Math.max(jac,dice);
+}
+function packPuntaje(p,nombre){ let s=packSimilitud(p.cliente,nombre); Object.keys(p.alias||{}).forEach(k=>{ s=Math.max(s,packSimilitud(k.replace(/_/g," "),nombre)); }); return s; }
+function packCandidatos(j,sinPedido){ // packs abiertos del tipo del pedido, del más parecido al menos
+  const tipo=packTipoDePedido(j); if(!tipo)return[];
+  return Object.keys(packs).filter(id=>packs[id].tipo===tipo&&(packAbierto(id)||id===j.packId)).map(id=>({id,p:packs[id],r:packResumen(id,sinPedido),s:packPuntaje(packs[id],j.cliente)})).sort((a,b)=>b.s-a.s||(a.p.vence||"").localeCompare(b.p.vence||""));
+}
+function packSugerirEnDraft(n){ // pedido nuevo: se preselecciona solo si el parecido es claro y hay un único candidato
+  const c=packCandidatos(n).filter(x=>x.s>=.85);
+  if(c.length===1) n.packId=c[0].id; else delete n.packId;
+}
+function packAjustarEnlace(n){ // si el producto ya no va en metros o cambió de textil a UV, el pack deja de corresponder
+  if(!n.packId)return; const p=packs[n.packId]; const tipo=packTipoDePedido(n);
+  if(!tipo||(p&&p.tipo!==tipo)) delete n.packId;
+}
+function packAprender(id,nombre){ // el pack aprende el nombre con que se escribió el cliente, para sugerirlo la próxima vez
+  const p=packs[id], k=packNorm(nombre).replace(/ /g,"_"); if(!p||!k||k.length<3)return;
+  if(packSimilitud(p.cliente,nombre)>=1||(p.alias&&p.alias[k]))return;
+  firebase.database().ref("tago_packs/"+id+"/alias/"+k).set(true).catch(err=>console.error(err));
+}
+function fichaPackHtml(j){ // fila «Pack DTF» de la ficha del pedido (solo productos en metros)
+  const tipo=packTipoDePedido(j); if(!tipo) return `<span id="fc-pack-fila" style="display:none"></span>`;
+  const sinPedido=fichaNuevo?null:fichaId, cand=packCandidatos(j,sinPedido), sel=j.packId||"";
+  const opts=[["","— Sin pack —"],...cand.map(x=>[x.id,`${x.p.cliente}${x.p.codigo?" · "+x.p.codigo:""} · quedan ${fmtM(x.r.disponible)}${x.r.estado==="por_vencer"?" · vence pronto":x.r.estado==="agotado"?" · agotado":x.r.estado==="vencido"?" · vencido":x.r.estado==="cerrado"?" · cerrado":""}`])];
+  if(sel&&!packs[sel]) opts.push([sel,"Pack eliminado"]);
+  let hint="", mal=false;
+  if(sel&&packs[sel]){
+    const r=packResumen(sel,sinPedido), m=packMetrosPedido(j), queda=Math.round((r.disponible-m)*100)/100;
+    if(r.vencido) { hint=`Este pack venció el ${packFecha(packs[sel].vence)}`; mal=true; }
+    else if(queda<0){ hint=`Este pedido supera el pack por ${fmtM(-queda)} (quedaban ${fmtM(r.disponible)})`; mal=true; }
+    else hint=`Quedan ${fmtM(queda)} en el pack con este pedido${r.dias!==null&&r.dias<=PACK_DIAS_AVISO?` · vence en ${r.dias} día${r.dias===1?"":"s"}`:""}`;
+    hint+=`<span class="pk-link" onclick="verPack('${esc(sel)}')">Ver pack</span>`;
+  } else if(cand.length&&cand[0].s>=.6){
+    const c=cand.filter(x=>x.s>=.6);
+    hint=c.length===1?`Sugerido: ${esc(c[0].p.cliente)}${c[0].p.codigo?" · "+esc(c[0].p.codigo):""} · quedan ${fmtM(c[0].r.disponible)}<span class="pk-link" onclick="fichaCampo('packId','${esc(c[0].id)}')">Enlazar</span>`:`Este cliente tiene ${c.length} packs abiertos: elige uno`;
+  }
+  return `<div id="fc-pack-fila" style="display:contents">${fiFila(ic("package")+" Pack DTF",fiSelect("packId",sel,opts),true)}${hint?`<div class="fi-pack-hint${mal?" mal":""}">${hint}</div>`:""}</div>`;
+}
+function verPack(id){ switchTab("packs"); abrirPack(id); }
+// ── Vista Packs ──
+function packsToggleTipo(t){ packsTipo=packsTipo===t?null:t; renderPacks(); }
+function packsSetFiltro(f){ packsFiltro=f; renderPacks(); }
+function renderPacks(){
+  const cont=document.getElementById("packs-tabla"); if(!cont)return;
+  const q=(document.getElementById("packs-buscar")?.value||"").trim().toLowerCase();
+  const todos=Object.keys(packs).map(id=>({id,p:packs[id],r:packResumen(id)}));
+  const abiertos=todos.filter(x=>x.r.estado==="activo"||x.r.estado==="por_vencer");
+  const disp=t=>abiertos.filter(x=>x.p.tipo===t).reduce((a,x)=>a+x.r.disponible,0);
+  const nVencer=todos.filter(x=>x.r.estado==="por_vencer").length, pocos=abiertos.filter(x=>x.r.disponible<PACK_POCO), sobre=todos.filter(x=>x.r.disponible<0&&!x.p.cerrado);
+  document.getElementById("packs-kpis").innerHTML=[
+    ["Packs abiertos",abiertos.length,"var(--teal)"],["Metros textil disponibles",fmtM(disp("textil")),PACK_TIPO.textil.color],["Metros UV disponibles",fmtM(disp("uv")),PACK_TIPO.uv.color],[`Vencen en ${PACK_DIAS_AVISO} días`,nVencer,nVencer?"var(--azul)":"var(--border)"],
+  ].map(([l,v,c])=>`<div class="stat-card" style="border-top-color:${c}"><div class="stat-num">${v}</div><div class="stat-label">${l}</div></div>`).join("");
+  const avisos=[];
+  if(nVencer) avisos.push(`<span class="alert-pill ap-stale" onclick="packsSetFiltro('por_vencer')">${ic("timer")} ${nVencer} pack${nVencer===1?"":"s"} vence${nVencer===1?"":"n"} en menos de ${PACK_DIAS_AVISO} días</span>`);
+  if(pocos.length) avisos.push(`<span class="alert-pill ap-orange" onclick="packsSetFiltro('abiertos')" title="${esc(pocos.map(x=>x.p.cliente).join(", "))}">${ic("triangle-alert")} ${pocos.length} con menos de ${PACK_POCO} m</span>`);
+  if(sobre.length) avisos.push(`<span class="alert-pill ap-danger" onclick="packsSetFiltro('agotado')" title="${esc(sobre.map(x=>x.p.cliente).join(", "))}">${ic("triangle-alert")} ${sobre.length} sobregirado${sobre.length===1?"":"s"}</span>`);
+  document.getElementById("packs-avisos").innerHTML=avisos.join("");
+  const n=f=>todos.filter(x=>f==="abiertos"?(x.r.estado==="activo"||x.r.estado==="por_vencer"):f==="todos"?true:x.r.estado===f).length;
+  document.getElementById("packs-filtros").innerHTML=[["abiertos","Abiertos","var(--green-c)"],["por_vencer","Por vencer","var(--blue-c)"],["agotado","Agotados","var(--grey-c)"],["vencido","Vencidos","var(--danger-c)"],["cerrado","Cerrados",""],["todos","Todos",""]]
+    .map(([f,l,c])=>`<button class="filter-tab${packsFiltro===f?" active":""}" onclick="packsSetFiltro('${f}')">${c?`<span class="dot" style="background:${c}"></span>`:""}${l} <span class="tab-count">${n(f)}</span></button>`).join("");
+  document.getElementById("packs-tipo-textil").classList.toggle("active",packsTipo==="textil");
+  document.getElementById("packs-tipo-uv").classList.toggle("active",packsTipo==="uv");
+  const ordenEst={por_vencer:0,activo:1,agotado:2,vencido:3,cerrado:4};
+  const filas=todos.filter(x=>{
+    if(packsFiltro==="abiertos"&&!(x.r.estado==="activo"||x.r.estado==="por_vencer"))return false;
+    if(packsFiltro!=="abiertos"&&packsFiltro!=="todos"&&x.r.estado!==packsFiltro)return false;
+    if(packsTipo&&x.p.tipo!==packsTipo)return false;
+    if(q&&![x.p.cliente,x.p.codigo,x.p.documento,x.p.notas,...Object.keys(x.p.alias||{})].some(v=>String(v||"").toLowerCase().includes(q)))return false;
+    return true;
+  }).sort((a,b)=>(ordenEst[a.r.estado]-ordenEst[b.r.estado])||((a.r.estado==="activo"||a.r.estado==="por_vencer")?(a.p.vence||"").localeCompare(b.p.vence||""):(b.p.vence||"").localeCompare(a.p.vence||"")));
+  if(!filas.length){ cont.innerHTML=`<div class="empty">${Object.keys(packs).length?"Ningún pack coincide con el filtro":"Todavía no hay packs. Crea el primero con «+ Nuevo pack»."}</div>`; return; }
+  cont.innerHTML=`<div class="pk-head"><div>Cliente</div><div>Tipo</div><div>Tamaño</div><div>Disponible</div><div>Vence</div><div>Boleta / Factura</div><div>Estado</div></div>`+filas.map(({id,p,r})=>{
+    const t=PACK_TIPO[p.tipo]||{l:p.tipo,color:"var(--grey-c)"};
+    const fill=r.disponible<0?"var(--danger-c)":r.estado==="vencido"||r.estado==="cerrado"?"var(--text-muted)":r.disponible<r.metros*.1?"var(--azul)":"var(--teal)";
+    const venceCls=r.estado==="vencido"?"pasado":r.estado==="por_vencer"?"pronto":"";
+    const venceSub=p.vence?(r.dias<0?`hace ${-r.dias} día${r.dias===-1?"":"s"}`:r.dias===0?"hoy":`en ${r.dias} día${r.dias===1?"":"s"}`):"";
+    return `<div class="pk-row" onclick="abrirPack('${esc(id)}')">
+      <div><div class="pk-cli">${esc(p.cliente)}</div><div class="pk-sub">${p.codigo?esc(p.codigo)+" · ":""}compra ${packFecha(p.fechaCompra)}</div></div>
+      <div><span class="pk-tipo" style="background:color-mix(in srgb, ${t.color} 18%, white);color:${t.color}">${esc(t.l)}</span></div>
+      <div class="pk-num">${fmtM(p.metros)}</div>
+      <div class="pk-barra"><div class="bar-track"><div class="bar-fill" style="width:${r.pct}%;background:${fill}"></div></div><span class="bar-val${r.disponible<0?" neg":""}">${fmtM(r.disponible)}</span></div>
+      <div class="pk-vence ${venceCls}"><div class="pk-num" style="color:inherit">${packFecha(p.vence)}</div><div class="pk-sub" style="color:inherit;opacity:.8">${venceSub}</div></div>
+      <div class="pk-sub" style="margin-top:0;font-size:13px;color:var(--text)">${p.documento?esc(p.documento):`<span style="color:var(--text-muted)">—</span>`}</div>
+      <div><span class="pk-estado pk-${r.estado}">${PACK_ESTADO[r.estado]}</span></div>
+    </div>`;
+  }).join("");
+}
+// ── Ficha del pack ──
+function abrirPack(id=null){
+  if(fichaId) cerrarFicha();
+  packNuevo=!id; packFichaId=id||"__nuevo__";
+  if(packNuevo){ const hoy=ymdLocal(new Date()); packDraft={cliente:"",tipo:"textil",metros:20,codigo:"",documento:"",fechaCompra:hoy,vence:packVence(hoy,20),precio:"",notas:""}; }
+  document.getElementById("ficha-pack").classList.add("open");
+  document.body.classList.add("ficha-abierta");
+  buildClientesList();
+  renderPack(true);
+  if(packNuevo) setTimeout(()=>document.getElementById("pk-cliente")?.focus(),60);
+}
+function cerrarPack(){
+  if(!packFichaId)return;
+  packFichaId=null; packNuevo=false; packDraft=null; packPendiente=false;
+  const el=document.getElementById("ficha-pack"); el.classList.remove("open"); el.innerHTML="";
+  if(!fichaId) document.body.classList.remove("ficha-abierta");
+}
+document.getElementById("ficha-pack").addEventListener("focusout",()=>{ setTimeout(()=>{ const el=document.getElementById("ficha-pack"); if(packPendiente&&packFichaId&&!el.contains(document.activeElement)) renderPack(true); },0); });
+function packActual(){ return packNuevo?packDraft:packs[packFichaId]; }
+function packCampo(campo,valor){
+  const p=packActual(); if(!p)return;
+  if(typeof valor==="string"&&campo!=="notas") valor=valor.trim();
+  if(campo==="metros"||campo==="precio"){ valor=valor===""?"":(parseFloat(valor)||0); if(valor<0){ toast("No puede ser negativo","error"); renderPack(true); return; } }
+  if(campo==="metros"&&!(valor>0)){ toast("Los metros del pack son obligatorios","error"); renderPack(true); return; }
+  if(campo==="cliente"&&!packNuevo&&!valor){ toast("El cliente es obligatorio","error"); renderPack(true); return; }
+  if(campo==="tipo"&&!PACK_TIPO[valor])return;
+  const cambios={[campo]:valor};
+  if(campo==="fechaCompra"||campo==="metros"){ const v=packVence(campo==="fechaCompra"?valor:p.fechaCompra,campo==="metros"?valor:p.metros); if(v) cambios.vence=v; } // la vigencia se recalcula sola
+  if(packNuevo){ Object.assign(packDraft,cambios); renderPack(true); return; }
+  cambios.updatedAt=new Date().toISOString(); cambios.updatedBy={id:currentUser.id,nombre:currentUser.nombre};
+  firebase.database().ref("tago_packs/"+packFichaId).update(cambios).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function crearPack(){
+  const d=packDraft; if(!d)return;
+  if(!(d.cliente||"").trim()){ toast("El cliente es obligatorio","error"); return; }
+  if(!(+d.metros>0)){ toast("Indica los metros del pack","error"); return; }
+  if(!d.fechaCompra){ toast("Indica la fecha de compra","error"); return; }
+  const now=new Date().toISOString(), me={id:currentUser.id,nombre:currentUser.nombre};
+  const data={cliente:d.cliente.trim(),tipo:d.tipo,metros:+d.metros,codigo:(d.codigo||"").trim(),documento:(d.documento||"").trim(),fechaCompra:d.fechaCompra,vence:d.vence||packVence(d.fechaCompra,d.metros),precio:+d.precio||0,notas:(d.notas||"").trim(),createdAt:now,createdBy:me,updatedAt:now,updatedBy:me};
+  const ref=firebase.database().ref("tago_packs").push();
+  ref.set(data).then(()=>{ toast("Pack agregado ✓","ok"); packNuevo=false; packDraft=null; packFichaId=ref.key; renderPack(true); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function packToggleCerrado(){ const p=packActual(); if(!p||packNuevo)return; packCampo("cerrado",!p.cerrado); }
+function packEliminar(id){
+  if(!currentUser?.isAdmin){ toast("Solo un administrador puede eliminar packs","error"); return; }
+  const enlazados=Object.keys(jobs).filter(jid=>jobs[jid].packId===id);
+  if(!confirm(`¿Eliminar el pack ${packNombre(id)}?${enlazados.length?` Sus ${enlazados.length} pedido${enlazados.length===1?"":"s"} enlazado${enlazados.length===1?"":"s"} quedará${enlazados.length===1?"":"n"} sin pack.`:""}`))return;
+  const up={["tago_packs/"+id]:null}; enlazados.forEach(jid=>{ up["tago_pedidos/"+jid+"/packId"]=null; });
+  firebase.database().ref().update(up).then(()=>{ toast("Pack eliminado"); cerrarPack(); }).catch(err=>toast("No se pudo eliminar: "+err.message,"error"));
+}
+function packRegistrarConsumo(){
+  const id=packFichaId; if(!id||packNuevo)return;
+  const fecha=gv("pk-mov-fecha"), metros=parseFloat(gv("pk-mov-metros")), nota=(gv("pk-mov-nota")||"").trim();
+  if(!fecha){ toast("Indica la fecha","error"); return; }
+  if(!(metros>0)){ toast("Indica los metros consumidos","error"); return; }
+  firebase.database().ref("tago_packs/"+id+"/consumos").push({fecha,metros:Math.round(metros*100)/100,nota,quien:{id:currentUser.id,nombre:currentUser.nombre},ts:Date.now()})
+    .then(()=>toast("Consumo registrado ✓","ok")).catch(err=>toast("No se pudo registrar: "+err.message,"error"));
+}
+function packBorrarConsumo(cid){
+  if(!currentUser?.isAdmin){ toast("Solo un administrador puede borrar consumos","error"); return; }
+  if(!confirm("¿Borrar este consumo?"))return;
+  firebase.database().ref("tago_packs/"+packFichaId+"/consumos/"+cid).remove().catch(err=>toast("No se pudo borrar: "+err.message,"error"));
+}
+function pkText(campo,val,ph,tipo){ return `<input class="fi" type="${tipo||"text"}" value="${esc(fiVal(val))}" placeholder="${esc(ph||"")}" onchange="packCampo('${campo}',this.value)"/>`; }
+function pkNum(campo,val,step,ph){ return `<input class="fi" type="number" min="0" step="${step}" value="${esc(fiVal(val))}" placeholder="${esc(ph||"")}" onchange="packCampo('${campo}',this.value)"/>`; }
+function renderPack(forzar){
+  const el=document.getElementById("ficha-pack"); if(!el||!packFichaId)return;
+  const act=document.activeElement;
+  if(!forzar&&el.contains(act)&&["INPUT","TEXTAREA","SELECT"].includes(act.tagName)){ packPendiente=true; return; }
+  packPendiente=false;
+  const p=packActual(); if(!p){ cerrarPack(); return; }
+  const r=packNuevo?null:packResumen(packFichaId), t=PACK_TIPO[p.tipo]||PACK_TIPO.textil;
+  const movs=packNuevo?[]:packMovs(packFichaId);
+  const nPed=movs.filter(m=>m.pedidoId).length;
+  let html=`
+  <div class="fh-top">
+    <span class="fh-crumb">Packs DTF<span class="fh-sep">›</span><span class="fh-id">${packNuevo?"Nuevo pack":esc(p.codigo||`Pack de ${fmtM(p.metros)}`)}</span></span>
+    <span class="fh-tools">
+      ${!packNuevo&&currentUser?.isAdmin?`<button class="fh-ico" title="Eliminar pack" onclick="packEliminar('${esc(packFichaId)}')">${ic("trash")}</button>`:""}
+      <button class="fh-ico" title="Cerrar (Esc)" onclick="cerrarPack()">✕</button>
+    </span>
+  </div>
+  <div class="fh-title">
+    <input class="fi fi-titulo" id="pk-cliente" list="clientes-list" value="${esc(p.cliente)}" placeholder="Nombre del cliente *" onchange="packCampo('cliente',this.value)"/>
+    <div class="fi-hint">${packNuevo?"3 meses de vigencia · 4 meses para los de 100 m":`${nPed} pedido${nPed===1?"":"s"} enlazado${nPed===1?"":"s"}${Object.keys(p.alias||{}).length?` · también como ${esc(Object.keys(p.alias).map(k=>k.replace(/_/g," ")).join(", "))}`:""}`}</div>
+  </div>
+  <div class="fh-pills">
+    ${packNuevo?"":`<span class="pk-estado pk-${r.estado}">${PACK_ESTADO[r.estado]}</span>`}
+    <span class="pk-tipo" style="background:color-mix(in srgb, ${t.color} 18%, white);color:${t.color}">${p.tipo==="uv"?ic("droplets"):ic("printer")} DTF ${esc(t.l)}</span>
+    ${packNuevo?"":`<span class="fh-spacer"></span><button class="fi-pill${p.cerrado?" urg":""}" title="Un pack cerrado no se ofrece en los pedidos" onclick="packToggleCerrado()">${p.cerrado?"Reabrir pack":"Cerrar pack"}</button>`}
+  </div>`;
+  if(!packNuevo){
+    const fill=r.disponible<0?"var(--danger-c)":r.estado==="vencido"||r.estado==="cerrado"?"var(--text-muted)":r.disponible<r.metros*.1?"var(--azul)":"var(--teal)";
+    html+=`<div class="pk-saldo">
+      <div class="pk-saldo-box"><div class="pk-saldo-num">${fmtM(r.metros)}</div><div class="pk-saldo-lbl">Comprados</div></div>
+      <div class="pk-saldo-box"><div class="pk-saldo-num">${fmtM(r.consumido)}</div><div class="pk-saldo-lbl">Consumidos</div></div>
+      <div class="pk-saldo-box"><div class="pk-saldo-num${r.disponible<0?" neg":""}">${fmtM(r.disponible)}</div><div class="pk-saldo-lbl">${r.disponible<0?"Sobregirado":"Disponibles"}</div></div>
+    </div>
+    <div class="pk-saldo-barra"><div class="bar-track" style="height:10px"><div class="bar-fill" style="width:${r.pct}%;background:${fill}"></div></div></div>`;
+  }
+  html+=`<div class="fi-grid">
+    ${fiFila("Tipo de DTF",`<select class="fi fi-sel" onchange="packCampo('tipo',this.value)">${Object.entries(PACK_TIPO).map(([k,v])=>`<option value="${k}"${p.tipo===k?" selected":""}>DTF ${v.l}</option>`).join("")}</select>`)}
+    ${fiFila("Metros del pack *",pkNum("metros",p.metros,"1","20, 50 o 100"))}
+    ${fiFila(ic("hash")+" Código",pkText("codigo",p.codigo,"ej: UV10-0809 o # pedido"))}
+    ${fiFila(ic("receipt")+" N° boleta / factura",pkText("documento",p.documento,"ej: Factura 14002"))}
+    ${fiFila(ic("calendar")+" Fecha de compra *",pkText("fechaCompra",p.fechaCompra,"","date"))}
+    ${fiFila(ic("timer")+" Vence",pkText("vence",p.vence,"","date"))}
+    ${fiFila(ic("banknote")+" Precio (CLP, con IVA)",pkNum("precio",p.precio||"","1","opcional"))}
+    ${!packNuevo?fiFila("Creado por",fiRO(`${esc(p.createdBy?.nombre||"—")} · ${fmtFull(p.createdAt)}`)):""}
+    ${!packNuevo&&p.updatedBy?fiFila("Actualizado por",fiRO(`${esc(p.updatedBy.nombre||"—")} · ${timeAgo(p.updatedAt)}`)):""}
+  </div>
+  <div class="fi-notas"><div class="fi-sec-title">Notas</div><textarea class="fi fi-area" rows="2" placeholder="Observaciones del pack..." onchange="packCampo('notas',this.value)">${esc(p.notas)}</textarea></div>`;
+  if(packNuevo){
+    html+=`<div class="fh-actions"><button class="btn btn-secondary" onclick="cerrarPack()">Cancelar</button><button class="btn btn-primary" onclick="crearPack()">Agregar pack</button></div>`;
+  }else{
+    const filas=movs.map(m=>{
+      const quien=m.quien?`<span title="${esc(m.quien.nombre||m.quien.id||"")}">${esc(m.quien.id||m.quien.nombre||"")}</span>`:"";
+      const txt=m.pedidoId?`<span class="pk-link" onclick="switchTab('pedidos');abrirFicha('${esc(m.pedidoId)}')" title="Abrir el pedido">${esc(m.pedidoId)}</span> ${esc(m.job?.cliente||"")}${m.nota?" · "+esc(m.nota):""}${m.job?.estado?` <span class="badge badge-${esc(m.job.estado)}" style="font-size:10px;padding:2px 7px">${ST[m.job.estado]?.label||""}</span>`:""}`:esc(m.nota||"Consumo registrado a mano");
+      return `<div class="pk-mov"><span class="pk-mov-fecha">${m.fecha?packFecha(m.fecha):"—"}</span><span class="pk-mov-m">− ${fmtM(m.metros)}</span><span class="pk-mov-txt">${txt}</span><span class="pk-mov-quien">${quien}${m.manual&&currentUser?.isAdmin?`<button class="pk-mov-del" title="Borrar consumo" onclick="packBorrarConsumo('${esc(m.cid)}')">✕</button>`:""}</span></div>`;
+    }).join("");
+    html+=`<div class="pk-movs"><div class="fi-sec-title">${ic("clipboard-list")} Movimientos <span class="fi-tareas-n">${movs.length}</span></div>${filas||`<div class="fi-muted">Sin consumos todavía. Los pedidos en metros enlazados a este pack descuentan solos.</div>`}
+      <div class="pk-nuevo-mov"><input class="fi" type="date" id="pk-mov-fecha" value="${ymdLocal(new Date())}" title="Fecha del consumo"/><input class="fi" type="number" id="pk-mov-metros" min="0" step="0.01" placeholder="metros" title="Metros consumidos"/><input class="fi pk-full" type="text" id="pk-mov-nota" placeholder="Nota (ej: 2 diseños, 12/9)" onkeydown="if(event.key==='Enter')packRegistrarConsumo()"/><button class="btn btn-teal pk-full" onclick="packRegistrarConsumo()">Registrar consumo</button></div>
+      <div class="fi-muted" style="margin-top:6px;font-size:11.5px">Para un pedido que se registra en la app no hace falta anotarlo aquí: enlázalo al pack desde su ficha.</div>
+    </div>`;
+  }
+  el.innerHTML=html;
 }
 
 // La sesión se restaura sola vía Firebase Auth (onAuthStateChanged más arriba).
