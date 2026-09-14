@@ -682,6 +682,32 @@
     .fi-actividad{margin:6px 18px 22px;padding-top:10px;border-top:1px solid var(--border-soft)}
     .fh-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 22px}
     @media(max-width:900px){.ficha{width:100vw;border-left:none}.fi-grid,.fi-sec-body{grid-template-columns:1fr}.fi-numpedido{width:100%}body.ficha-abierta #btn-nuevo{display:none}}
+    /* ══ SUBTAREAS Y FICHA DE TAREA (referencia: ClickUp) ══ */
+    .tt-row.tt-hija .tt-cell.tt-nombre{padding-left:46px}
+    .tt-row.tt-hija .tt-cell.tt-nombre::before{content:"";position:absolute;left:27px;top:0;bottom:0;border-left:2px solid var(--border)}
+    .tt-row.tt-hija .tt-nombre-txt{font-weight:600;color:var(--text-sec)}
+    .tt-sub-caret{width:14px;flex-shrink:0;color:var(--text-muted);font-size:10px;cursor:pointer;text-align:center;margin-left:-8px;user-select:none}
+    .tt-sub-caret:hover{color:var(--azul)}
+    .tt-sub-n{font-size:10.5px;color:var(--text-muted);background:var(--panel);border-radius:999px;padding:1px 7px;font-weight:600;white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'DM Sans',sans-serif}
+    .tt-madre-ref{font-size:11px;color:var(--text-muted);font-weight:400;font-family:'Open Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+    .tt-sub-add{display:none;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:12px;padding:1px 5px;font-family:inherit;line-height:1.4}
+    .tt-row:hover .tt-sub-add{display:inline-flex}
+    .tt-sub-add:hover{color:var(--azul);border-color:var(--azul)}
+    @media(hover:none){.tt-sub-add{display:inline-flex}}
+    .tt-add-row.tt-hija .tt-cell.tt-nombre{padding-left:46px}
+    .ft-sub{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:13px;cursor:pointer}
+    .ft-sub:last-of-type{border-bottom:none}
+    .ft-sub:hover .ft-sub-nombre{color:var(--azul)}
+    .ft-sub-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'DM Sans',sans-serif;font-weight:600;color:var(--text)}
+    .ft-sub.hecha .ft-sub-nombre{text-decoration:line-through;color:var(--text-muted)}
+    .ft-sub-add{display:flex;gap:6px;margin-top:8px}
+    .ft-sub-add .fi{border-color:var(--azul);background:var(--surface);box-shadow:0 0 0 3px var(--azul-glow)}
+    .ft-estado{width:auto;max-width:60%;appearance:none;-webkit-appearance:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;border-radius:999px;padding:4px 22px 4px 10px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230B1447' stroke-width='1.5' stroke-opacity='.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
+    .ft-madre{font-size:12px;color:var(--text-sec);margin-bottom:2px}
+    .ft-madre .pk-link{margin-left:2px}
+    .fi-ctl .ft-campo{width:auto;max-width:100%;text-align:right}
+    .fi-ctl textarea.ft-campo{width:100%;text-align:left;resize:vertical;min-height:38px}
+    .fi-ctl .ft-campo[type=checkbox]{width:16px;height:16px;accent-color:var(--azul)}
     /* ══ PACKS DTF: metros comprados por adelantado ══ */
     .packs-avisos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
     .packs-avisos:empty{display:none}
@@ -1699,6 +1725,8 @@
 <aside class="ficha" id="ficha"></aside>
 <!-- FICHA DE PACK DTF -->
 <aside class="ficha" id="ficha-pack"></aside>
+<!-- FICHA DE TAREA (referencia: ClickUp): datos, subtareas y actividad -->
+<aside class="ficha" id="ficha-tarea"></aside>
 
 <!-- PANEL «CAMPOS» DE UNA LISTA (referencia: ClickUp) -->
 <aside class="cp-panel" id="cp-panel" aria-label="Campos de la lista"></aside>
@@ -1751,6 +1779,7 @@
     </div>
     <div class="form-grid">
       <div><label>Nombre *</label><input id="f-tarea-nombre" placeholder="ej: Crear 5 diseños de recuerditos"/></div>
+      <div id="f-tarea-padre-info" class="fi-hint" style="display:none;margin-top:-8px"></div>
       <div data-campo="notas"><label>Descripción</label><textarea id="f-tarea-notas" rows="2" placeholder="Detalles de la tarea..."></textarea></div>
       <div class="form-row f-3">
         <div><label>Estado</label><select id="f-tarea-estado"></select></div>
@@ -2002,6 +2031,8 @@ const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||
 const categoriaDePedido=j=>j.categoria||categoriaDeTipo(j.tipoDtf);
 let categoriasCustom={},categoriaSeleccionada="impresiones";
 var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackBuscando=false, fichaPackRechazados=new Set(), packsFiltro="abiertos", packsTipo=null; // Packs DTF
+var tareaFichaId=null, tareaFichaPendiente=false, tareaFichaAsigAbierto=false, tareaSubNueva=false, ttSubNuevo=null, tareaPadrePreset=null; // ficha de tarea y subtareas
+var ttSubPlegadas=new Set(); try{ const v=JSON.parse(localStorage.getItem("tago_tareas_sub_plegadas")||"null"); if(Array.isArray(v)) ttSubPlegadas=new Set(v); }catch(e){}
 function todasLasCategorias(){
   const custom=Object.entries(categoriasCustom).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,c])=>({key:id,label:c.nombre,icono:c.icono||""}));
   return[...CATEGORIAS_PRODUCTO,...custom];
@@ -2230,7 +2261,7 @@ function crearNotificacion(destinatarioId,data){
   if(!destinatarioId||destinatarioId===currentUser.id)return;
   const email=idToEmail(destinatarioId); if(!email)return;
   firebase.database().ref("tago_notificaciones/"+sanitizeEmailKey(email)).push({
-    tipo:data.tipo, pedidoId:data.pedidoId, cliente:data.cliente||"",
+    tipo:data.tipo, pedidoId:data.pedidoId||null, tareaId:data.tareaId||null, cliente:data.cliente||"", nombre:data.nombre||"",
     texto:data.texto||"", autor:{id:currentUser.id,nombre:currentUser.nombre},
     ts:Date.now(), leido:false,
   });
@@ -2252,24 +2283,30 @@ function closeNotifPanel(){ notifPanelOpen=false; document.getElementById("modal
 function renderNotifPanel(){
   const entries=Object.entries(notificaciones).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
   document.getElementById("notif-list").innerHTML=entries.length?entries.map(([nid,n])=>{
-    const j=jobs[n.pedidoId];
+    const j=jobs[n.pedidoId], esTarea=!!n.tareaId, tituloN=esTarea?(tareas[n.tareaId]?.nombre||n.nombre||"Tarea"):(j?.cliente||n.cliente||n.pedidoId);
     const icono=n.tipo==="mencion"?ic("message-circle"):ic("bell");
     const desc=n.tipo==="mencion"
-      ?`${esc(n.autor?.nombre||"Alguien")} te mencionó: "${esc(n.texto||"")}"`
-      :`${esc(n.autor?.nombre||"Alguien")} te asignó a este pedido`;
+      ?`${esc(n.autor?.nombre||"Alguien")} te mencionó${esTarea?" en la tarea":""}: "${esc(n.texto||"")}"`
+      :`${esc(n.autor?.nombre||"Alguien")} te asignó ${esTarea?"esta tarea":"a este pedido"}`;
     return`
-    <div class="admin-user-row" style="align-items:flex-start;cursor:pointer;${n.leido?"opacity:.55":""}" onclick="abrirNotificacion('${nid}','${n.pedidoId}')">
+    <div class="admin-user-row" style="align-items:flex-start;cursor:pointer;${n.leido?"opacity:.55":""}" onclick="abrirNotificacion('${nid}','${esc(n.pedidoId||"")}','${esc(n.tareaId||"")}')">
       <div style="flex:1">
-        <div class="admin-user-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${icono} ${esc(j?.cliente||n.cliente||n.pedidoId)} ${!n.leido?`<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:rgba(224,72,61,.14);color:var(--danger-c)">● Nuevo</span>`:""}</div>
+        <div class="admin-user-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${icono} ${esc(tituloN)} ${!n.leido?`<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:rgba(224,72,61,.14);color:var(--danger-c)">● Nuevo</span>`:""}</div>
         <div class="admin-user-role">${desc}</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${timeAgo(new Date(n.ts).toISOString())}</div>
       </div>
     </div>`;
   }).join(""):`<div style="font-size:12px;color:var(--text-muted);padding:10px 0">No tienes notificaciones por ahora</div>`;
 }
-function abrirNotificacion(nid,pedidoId){
+function abrirNotificacion(nid,pedidoId,tareaId){
   if(notifRef)notifRef.child(nid).update({leido:true});
-  irAPedido(pedidoId);
+  if(tareaId) irATarea(tareaId); else irAPedido(pedidoId);
+}
+function irATarea(id){
+  closeNotifPanel();
+  if(!tareas[id]){ toast("Esa tarea ya no existe o no tienes acceso","error"); return; }
+  if(currentTab!=="tareas"){ if(!tareaEnFiltro(tareas[id])) tareaFiltro=tareas[id].lista&&listas[tareas[id].lista]?{tipo:"lista",id:tareas[id].lista}:{tipo:"mias"}; switchTab("tareas"); actualizarTituloTareas(); }
+  abrirTarea(id);
 }
 function irAPedido(id){
   closeNotifPanel();
@@ -2278,17 +2315,19 @@ function irAPedido(id){
 }
 
 // ── Actividad por pedido (comentarios + historial de cambios) ──
+function esTareaId(id){ return !!(tareas[id]&&!jobs[id])||(!jobs[id]&&!/^TG-\d+$/.test(String(id))); } // ámbito de la actividad: pedido (TG-xxxx) o tarea
+function actNodo(id,tipo){ return (esTareaId(id)?"tago_tareas_":"tago_pedido_")+tipo+"/"+id; }
 function cargarActividad(id){ cargarComentarios(id); cargarHistorial(id); }
 function cargarComentarios(id){
   if(comentariosListeners[id])return;
-  const ref=firebase.database().ref("tago_pedido_comentarios/"+id);
+  const ref=firebase.database().ref(actNodo(id,"comentarios"));
   comentariosListeners[id]=ref;
   ref.on("value", snap=>{ comentariosData[id]=snap.val()||{}; renderActividad(id); },
     err=>console.error(err));
 }
 function cargarHistorial(id){
   if(historialListeners[id])return;
-  const ref=firebase.database().ref("tago_pedido_historial/"+id);
+  const ref=firebase.database().ref(actNodo(id,"historial"));
   historialListeners[id]=ref;
   ref.on("value", snap=>{ historialData[id]=snap.val()||{}; renderActividad(id); },
     err=>console.error(err));
@@ -2301,7 +2340,7 @@ function renderActividad(id){
   cont.innerHTML=entries.length?entries.map(m=>{
     if(m._tipo==="log"){
       const hora=new Date(m.ts).toLocaleString("es-CL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-      const desc=m.tipo==="creacion"?"creó este pedido":`cambió <strong>${esc(m.campo)}</strong> de "${esc(m.valorAnterior)}" a "${esc(m.valorNuevo)}"`;
+      const desc=m.tipo==="creacion"?(esTareaId(id)?"creó esta tarea":"creó este pedido"):m.tipo==="texto"?esc(m.texto||""):`cambió <strong>${esc(m.campo)}</strong> de "${esc(m.valorAnterior)}" a "${esc(m.valorNuevo)}"`;
       return`<div class="hist-line">${ic("clock")} <strong>${esc(m.autor?.nombre||"?")}</strong> ${desc} <span class="hist-time">${hora}</span></div>`;
     }
     const mine=m.autor?.id===currentUser.id;
@@ -2324,15 +2363,47 @@ function fmtHistValor(campo,v){
   return(v===undefined||v===null||v==="")?"—":String(v);
 }
 function registrarLog(pedidoId,campo,valorAnterior,valorNuevo){
-  firebase.database().ref("tago_pedido_historial/"+pedidoId).push({
+  firebase.database().ref(actNodo(pedidoId,"historial")).push({
     autor:{id:currentUser.id,nombre:currentUser.nombre},ts:Date.now(),campo,valorAnterior,valorNuevo,
-  });
+  }).catch(err=>console.error("historial",err));
 }
 function registrarCreacion(pedidoId){
-  firebase.database().ref("tago_pedido_historial/"+pedidoId).push({
+  firebase.database().ref(actNodo(pedidoId,"historial")).push({
     autor:{id:currentUser.id,nombre:currentUser.nombre},ts:Date.now(),tipo:"creacion",
-  });
+  }).catch(err=>console.error("historial",err));
 }
+// ── Historial de tareas: cada cambio con quién, cuándo y de → a ──
+const TAREA_TRACK={nombre:"Nombre",notas:"Descripción",estado:"Estado",prioridad:"Prioridad",fechaLimite:"Fecha límite",fechaInicio:"Fecha de inicio",lista:"Lista",pedidoId:"Pedido",padre:"Tarea madre"};
+function fmtTareaValor(k,v){
+  if(v===undefined||v===null||v==="")return "—";
+  switch(k){
+    case "estado": return tareaEstados[v]?tareaEstados[v].nombre:String(v);
+    case "prioridad": return (PRIO[v]||PRIO.normal).label;
+    case "fechaLimite": case "fechaInicio": return fmtDate(String(v));
+    case "lista": return listas[v]?listas[v].nombre:"Espacio privado";
+    case "pedidoId": return etiquetaPedidoTarea(v)||String(v);
+    case "padre": return tareas[v]?tareas[v].nombre:String(v);
+    case "notas": { const s=String(v).replace(/\s+/g," ").trim(); return s.length>60?s.slice(0,57)+"…":s; }
+  }
+  return String(v);
+}
+function tareaLog(id,campo,antes,despues){ registrarLog(id,campo,antes,despues); }
+function tareaLogCreacion(id){ registrarCreacion(id); }
+function tareaLogTexto(id,texto){ firebase.database().ref("tago_tareas_historial/"+id).push({autor:{id:currentUser.id,nombre:currentUser.nombre},ts:Date.now(),tipo:"texto",texto}).catch(err=>console.error("historial",err)); }
+function tareaRegistrarDiff(id,a,b){
+  a=a||{}; b=b||{}; const norm=v=>(v===undefined||v===null)?"":String(v);
+  Object.entries(TAREA_TRACK).forEach(([k,label])=>{ if(norm(a[k])!==norm(b[k])) tareaLog(id,label,fmtTareaValor(k,a[k]),fmtTareaValor(k,b[k])); });
+  const nombres=o=>EQUIPO.filter(p=>o&&o[p.id]).map(p=>p.nombre).join(", ")||"—";
+  if(nombres(a.asignados)!==nombres(b.asignados)) tareaLog(id,"Asignados",nombres(a.asignados),nombres(b.asignados));
+  const cids=new Set([...Object.keys(a.campos||{}),...Object.keys(b.campos||{})]);
+  cids.forEach(cid=>{ const c=camposCat[cid]; if(!c)return; const va=(a.campos||{})[cid], vb=(b.campos||{})[cid]; if(norm(va)!==norm(vb)) tareaLog(id,c.etiqueta,cpValorTexto(c,va)||"—",cpValorTexto(c,vb)||"—"); });
+}
+function tareaLogDesdeUpdates(id,antes,updates){ // reconstruye la tarea después del update y anota las diferencias
+  const nuevo=JSON.parse(JSON.stringify(antes||{})), pref="tago_tareas/"+id+"/"; let hubo=false;
+  Object.entries(updates||{}).forEach(([ruta,v])=>{ if(!ruta.startsWith(pref))return; const rel=ruta.slice(pref.length); if(!rel||/^(updatedAt|updatedBy|asignadosEmails)$/.test(rel))return; fichaSetPath(nuevo,rel.replace(/\//g,"."),v); hubo=true; });
+  if(hubo) tareaRegistrarDiff(id,antes,nuevo);
+}
+function notificarAsignadosTarea(id,nombre,ids){ (ids||[]).forEach(pid=>crearNotificacion(pid,{tipo:"asignacion",tareaId:id,nombre:nombre||(tareas[id]&&tareas[id].nombre)||""})); }
 function registrarCambios(pedidoId,oldJob,newData){
   const norm=v=>(v===undefined||v===null)?"":v;
   Object.entries(CAMPOS_TRACKEADOS).forEach(([campo,label])=>{
@@ -2391,9 +2462,9 @@ function enviarComentario(id){
   const menciones=extraerMenciones(texto);
   const payload={autor:{id:currentUser.id,nombre:currentUser.nombre},texto,ts:Date.now(),menciones};
   if(imagen)payload.imagen=imagen;
-  firebase.database().ref("tago_pedido_comentarios/"+id).push(payload);
-  const j=jobs[id];
-  menciones.forEach(pid=>crearNotificacion(pid,{tipo:"mencion",pedidoId:id,cliente:j?.cliente,texto:texto||"📷 imagen"}));
+  firebase.database().ref(actNodo(id,"comentarios")).push(payload).catch(err=>toast("No se pudo enviar el comentario: "+err.message,"error"));
+  const j=jobs[id], tarea=esTareaId(id)?tareas[id]:null;
+  menciones.forEach(pid=>crearNotificacion(pid,tarea?{tipo:"mencion",tareaId:id,nombre:tarea.nombre,texto:texto||"📷 imagen"}:{tipo:"mencion",pedidoId:id,cliente:j?.cliente,texto:texto||"📷 imagen"}));
   input.value="";
   delete borradoresComentario[id];
   delete imagenesPendientesComentario[id];
@@ -2423,6 +2494,7 @@ function switchTab(tab){
   if(tab==="chat") chatPideAvisos();
   if(tab!=="pedidos"&&typeof cerrarFicha==="function")cerrarFicha();
   if(tab!=="packs"&&typeof cerrarPack==="function")cerrarPack();
+  if(typeof cerrarTarea==="function")cerrarTarea();
   document.getElementById("view-pedidos").style.display=tab==="pedidos"?"block":"none";
   document.getElementById("view-packs").style.display=tab==="packs"?"block":"none";
   { const bn=document.getElementById("btn-nuevo"); if(bn){ if(tab==="packs"){ bn.textContent="+ Nuevo pack"; bn.onclick=()=>abrirPack(); } else { bn.textContent="+ Nuevo Pedido"; bn.onclick=()=>openModal(); } } }
@@ -2749,6 +2821,7 @@ function estadosDelContexto(){
   return extra;
 }
 function renderTareas(){
+  if(tareaFichaId&&typeof renderTarea==="function") renderTarea();
   const estadosOrdenados=estadosDelContexto();
   const cont=document.getElementById("tareas-list");
   if(!cont)return;
@@ -2775,20 +2848,21 @@ function renderTareas(){
     grupos.length=0; grupos.push(...conTareas);
   }
   cont.innerHTML=ttDescripcionLista()+grupos.map(([estId,est])=>{
-    const tareasDelEstado=est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId);
+    const tareasDelEstado=ttArbolGrupo(est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId),visibles);
+    const filasGrupo=ttAplanar(tareasDelEstado);
     const abierto=!ttPlegados.has(estId);
     const espNombre=est.lista&&tareaFiltro.tipo!=="lista"?(listas[est.lista]?` · ${esc(listas[est.lista].nombre)}`:""):(mezcla&&est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:"");
     return`<div class="tarea-grupo">
       <div class="tarea-grupo-header" onclick="ttPlegar('${estId}')" title="${abierto?"Plegar":"Desplegar"}">
         <span class="tt-caret">${abierto?"▾":"▸"}</span>
         <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${est._huerfano?"":ttDot(est,estId,est.lista?estadosPropiosLista(est.lista):estadosDe(est.espacio||null))}${esc(est.nombre)}${espNombre}</span>
-        <span class="tarea-grupo-count">${tareasDelEstado.length}</span>
+        <span class="tarea-grupo-count">${filasGrupo.length}</span>
       </div>
       ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
         ${head}
-        ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cols)).join("")}
+        ${tareasDelEstado.map(([id,t,m])=>renderTareaRow(id,t,cols,m)+(m&&m.hijas.length&&!m.plegada?m.hijas.map(([hid,ht])=>renderTareaRow(hid,ht,cols,{hija:true})).join(""):"")+(ttSubNuevo===id?ttFilaNuevaSub(id):"")).join("")}
         ${est._huerfano||(tareaFiltro.tipo==="mias"&&est.espacio)?"":ttFilaNueva(estId)}
-        ${ttFilaCalc(tareasDelEstado,cols)}
+        ${ttFilaCalc(filasGrupo,cols)}
       </div></div>`:""}
     </div>`;
   }).join("");
@@ -2812,6 +2886,7 @@ function ttCard(id,t,mezcla){
   const campos=(t.lista&&listas[t.lista]?ttCfg(t.lista).personalizados:[]).map(c=>[c,cpValorTexto(c,t.campos?t.campos[c.cid]:undefined)]).filter(([,v])=>v).slice(0,3);
   return `<div class="tk-card" draggable="true" ondragstart="ttDragStart(event,'${id}')" ondragend="ttDragEnd(event)" onclick="openTareaModal('${id}')">
     <div class="tk-card-top"><span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(est,t.estado,estadosParaTarea(t))}</span><span class="tk-card-nombre">${esc(t.nombre)}</span></div>
+    ${t.padre&&tareas[t.padre]?`<div class="tk-card-lista">↳ ${esc(tareas[t.padre].nombre)}</div>`:""}
     ${mezcla?`<div class="tk-card-lista">${l?esc(l.nombre):(listaOculta(t)?"Espacio privado":"Sin lista")}</div>`:""}
     ${campos.map(([c,v])=>`<div class="tk-card-campo" title="${esc(c.etiqueta)}: ${esc(v)}">${esc(c.etiqueta)}: <b>${esc(v)}</b></div>`).join("")}
     <div class="tk-card-pie"><span class="tt-avatars">${asig}</span>${t.fechaLimite?`<span class="tt-fecha${overdueTarea(t)?" overdue":""}">${fmtDate(t.fechaLimite)}</span>`:""}${t.prioridad&&t.prioridad!=="normal"?`<span class="tt-prio" style="color:${p.color}">${ic("flag")} ${p.label}</span>`:""}</div>
@@ -2969,13 +3044,28 @@ function ttValor(id,t,col){ // cómo se ve cada celda
   }
   return "";
 }
-function renderTareaRow(id,t,cols){
-  cols=cols||ttColumnas();
+// Subtareas en la tabla: cada grupo lista sus madres y, bajo cada una, sus hijas (aunque tengan otro estado)
+function ttArbolGrupo(filas,visibles){
+  const idsVis=new Set(visibles.map(([id])=>id));
+  return filas.filter(([,t])=>!t.padre||!idsVis.has(t.padre)).map(([id,t])=>{
+    const hijas=visibles.filter(([,h])=>h.padre===id), todas=ttHijasDe(id); // filas: las que pasan el filtro; contador: todas las que puedo ver
+    return [id,t,{hijas,todas,plegada:ttSubPlegadas.has(id),madreRef:t.padre&&tareas[t.padre]?t.padre:null}];
+  });
+}
+function ttAplanar(arbol){ const out=[]; arbol.forEach(([id,t,m])=>{ out.push([id,t]); if(m&&m.hijas) m.hijas.forEach(h=>out.push(h)); }); return out; }
+function ttSubPlegar(ev,id){ ev.stopPropagation(); ttSubPlegadas.has(id)?ttSubPlegadas.delete(id):ttSubPlegadas.add(id); try{ localStorage.setItem("tago_tareas_sub_plegadas",JSON.stringify([...ttSubPlegadas])); }catch(e){} renderTareas(); }
+function ttHijasDe(id){ return Object.entries(tareas).filter(([hid,h])=>h&&h.padre===id&&idSeguro(hid)&&puedeVerTarea(h)); }
+function renderTareaRow(id,t,cols,m){
+  cols=cols||ttColumnas(); m=m||{};
   const celdas=cols.map(col=>{ const ed=ttEditable(t,col); return `<div class="tt-cell${ed?" tt-edit":""}"${ed?` onclick="ttEditar(event,'${id}','${col.k}')" title="Clic para editar"`:""}>${ttValor(id,t,col)}</div>`; }).join("");
-  return`<div class="tt-row" data-id="${id}">
-    <div class="tt-cell tt-nombre" onclick="openTareaModal('${id}')" title="Abrir la tarea"><span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,estadosParaTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span></div>
+  const hijas=m.hijas||[], todas=m.todas||hijas, hechas=todas.filter(([,h])=>!tareaPendiente(h)).length;
+  const caret=hijas.length?`<span class="tt-sub-caret" title="${m.plegada?"Mostrar":"Ocultar"} subtareas" onclick="ttSubPlegar(event,'${id}')">${m.plegada?"▸":"▾"}</span>`:"";
+  const contador=todas.length?`<span class="tt-sub-n" title="Subtareas hechas / total${todas.length>hijas.length?" · aquí solo se ven "+(hijas.length||"ninguna")+" de ellas":""}">${hechas}/${todas.length}</span>`:"";
+  const madreRef=m.madreRef?`<span class="tt-madre-ref" title="Subtarea de ${esc(tareas[m.madreRef].nombre)}">↳ ${esc(tareas[m.madreRef].nombre)}</span>`:"";
+  return`<div class="tt-row${m.hija?" tt-hija":""}" data-id="${id}">
+    <div class="tt-cell tt-nombre" onclick="abrirTarea('${id}')" title="Abrir la tarea">${caret}<span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,estadosParaTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span>${contador}${madreRef}</div>
     ${celdas}
-    <div class="tt-cell tt-acc">${currentUser&&currentUser.isAdmin?`<button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button>`:""}</div>
+    <div class="tt-cell tt-acc">${!t.padre&&!m.hija?`<button class="tt-sub-add" title="Agregar subtarea" onclick="event.stopPropagation();ttSubAgregar('${id}')">${ic("plus")}</button>`:""}${currentUser&&currentUser.isAdmin?`<button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button>`:""}</div>
   </div>`;
 }
 // Anchos de columna ajustables: se recuerdan por lista (o por vista) en este navegador
@@ -2983,7 +3073,7 @@ var ttAnchos={}, ttColsActuales=[]; try{ ttAnchos=JSON.parse(localStorage.getIte
 function ttAnchoKey(){ return tareaFiltro.tipo==="lista"?tareaFiltro.id:(tareaFiltro.tipo==="espacio"?"esp:"+tareaFiltro.id:tareaFiltro.tipo); }
 function ttAnchoDe(k,def){ const a=ttAnchos[ttAnchoKey()]; return a&&a[k]?a[k]+"px":def; }
 function ttPlantilla(cols){
-  const resto=cols.map(c=>ttAnchoDe(c.k,c.w)).join(" ")+" 44px";
+  const resto=cols.map(c=>ttAnchoDe(c.k,c.w)).join(" ")+" 68px";
   return {plantilla:`${ttAnchoDe("nombre","minmax(220px,1.6fr)")} ${resto}`,plantillaM:`${ttAnchoDe("nombre","minmax(150px,1.2fr)")} ${resto}`}; // en el celular el nombre cede espacio
 }
 function ttAplicarAnchos(){ const p=ttPlantilla(ttColsActuales); document.querySelectorAll(".tarea-tabla").forEach(t=>{ t.style.setProperty("--tt-cols",p.plantilla); t.style.setProperty("--tt-cols-m",p.plantillaM); }); }
@@ -3083,6 +3173,7 @@ function ttFilaNueva(estId){
   return `<div class="tt-row tt-add-row"><div class="tt-cell tt-nombre tt-add" onclick="ttAgregar('${estId}')">${ic("plus")} Agregar tarea</div></div>`;
 }
 function ttAgregar(estId){
+  ttSubNuevo=null;
   const enLista=tareaFiltro.tipo==="lista";
   if(tareaFiltro.tipo==="espacio"||(enLista&&ttCfg(tareaFiltro.id).personalizados.some(c=>c.requerido))){ openTareaModal(null,estId); return; } // en Mis tareas se crea ahí mismo, sin lista y asignada a uno
   ttNuevo=estId; renderTareas();
@@ -3093,16 +3184,32 @@ function ttNuevaTecla(ev,estId){
   if(ev.key==="Escape"){ ev.preventDefault(); ev.target.value=""; ttNuevo=null; renderTareas(); }
 }
 function ttNuevaBlur(estId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(v.trim()) ttCrear(estId,v); ttNuevo=null; setTimeout(renderTareas,0); }
-function ttCrear(estId,nombre){
+function ttCrear(estId,nombre,padreId){
   nombre=(nombre||"").trim(); if(!nombre)return;
   const now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre};
   const asignados={}, asignadosEmails={};
-  if(tareaFiltro.tipo==="mias"){ asignados[currentUser.id]=true; asignadosEmails[sanitizeEmailKey(currentUser.email)]=true; } // si no, no aparecería en Mis tareas
+  const madre=padreId&&tareas[padreId]; if(padreId&&!madre){ toast("La tarea madre ya no existe","error"); return; }
+  if(tareaFiltro.tipo==="mias"&&currentTab==="tareas"){ asignados[currentUser.id]=true; asignadosEmails[sanitizeEmailKey(currentUser.email)]=true; } // si no, no aparecería en Mis tareas
   const data={nombre,notas:"",estado:estId,prioridad:"normal",lista:tareaFiltro.tipo==="lista"?tareaFiltro.id:null,pedidoId:null,fechaLimite:"",asignados,asignadosEmails,createdAt:now,createdBy:quien,creadoPorEmail:currentUser.email,updatedAt:now,updatedBy:quien};
+  if(madre){ data.padre=padreId; data.lista=madre.lista||null; data.pedidoId=madre.pedidoId||null; const set=estadosParaTarea(madre); data.estado=set.length?set[0][0]:madre.estado; } // la subtarea hereda la lista (así la ve quien ve la lista) y nace en el primer estado
   const newId=tareasRef.push().key, updates={};
   updates["tago_tareas/"+newId]=data; updates["tago_tareas_visibilidad/"+sanitizeEmailKey(currentUser.email)+"/"+newId]=true;
-  firebase.database().ref().update(updates).then(()=>toast("Tarea creada ✓","ok")).catch(err=>toast("No se pudo crear: "+err.message,"error"));
+  firebase.database().ref().update(updates).then(()=>{ toast(madre?"Subtarea creada ✓":"Tarea creada ✓","ok"); tareaLogCreacion(newId); if(madre) tareaLogTexto(padreId,`agregó la subtarea «${nombre}»`); }).catch(err=>toast("No se pudo crear: "+err.message,"error"));
 }
+function ttFilaNuevaSub(padreId){
+  return `<div class="tt-row tt-add-row tt-hija"><div class="tt-cell tt-nombre"><input id="tt-add-input" class="tt-add-input" placeholder="Nombre de la subtarea · Enter crea · Esc cancela" onkeydown="ttSubTecla(event,'${padreId}')" onblur="ttSubBlur('${padreId}')"/></div></div>`;
+}
+function ttSubAgregar(padreId){
+  const m=tareas[padreId]; if(!m)return;
+  if(m.lista&&ttCfg(m.lista).personalizados.some(c=>c.requerido)){ openTareaModal(null,null,null,padreId); return; } // la lista exige campos: se crea desde el modal
+  ttNuevo=null; ttSubNuevo=padreId; ttSubPlegadas.delete(padreId); renderTareas();
+  setTimeout(()=>document.getElementById("tt-add-input")?.focus(),30);
+}
+function ttSubTecla(ev,padreId){
+  if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value; ev.target.value=""; ttCrear(null,v,padreId); }
+  if(ev.key==="Escape"){ ev.preventDefault(); ev.target.value=""; ttSubNuevo=null; renderTareas(); }
+}
+function ttSubBlur(padreId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(v.trim()) ttCrear(null,v,padreId); ttSubNuevo=null; setTimeout(renderTareas,0); }
 // Edición en la celda de las propiedades integradas (los campos personalizados usan cpEditarEnFila)
 function ttMenu(ops,actual){ return `<div class="celda-menu" role="listbox">${ops.map(o=>`<div class="celda-opcion${String(o.v)===String(actual??"")?" actual":""}" role="option" tabindex="0" data-v="${esc(o.v)}">${o.dot?`<span class="celda-dot" style="background:${o.dot}"></span>`:""}${o.av?`<span class="avatar ${o.av}" style="width:20px;height:20px;font-size:9px">${esc(o.v)}</span>`:""}${esc(o.l)}</div>`).join("")}</div>`; }
 function ttAbrirPop(cel,id,campo){
@@ -3181,7 +3288,7 @@ function tareaGuardarCampo(id,k,v){
   else if(k==="pedido"){ const pid=pedidoDesdeTexto(v); if(pid===false){ toast("No encontré ese pedido","error"); return; } updates[base+"pedidoId"]=pid; }
   else return;
   updates[base+"updatedAt"]=new Date().toISOString(); updates[base+"updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
-  firebase.database().ref().update(updates).then(()=>toast("Guardado","ok")).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+  firebase.database().ref().update(updates).then(()=>{ toast("Guardado","ok"); tareaLogDesdeUpdates(id,t,updates); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
 }
 function tareaGuardarAsignados(id,ids){ // misma lógica que saveTarea: asignados, correos y el índice de visibilidad
   const old=tareas[id]||{}, asignados={}, asignadosEmails={};
@@ -3193,18 +3300,22 @@ function tareaGuardarAsignados(id,ids){ // misma lógica que saveTarea: asignado
   updates[base+"updatedAt"]=new Date().toISOString(); updates[base+"updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
   newVis.forEach(ek=>{ if(!oldVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+id]=true; });
   oldVis.forEach(ek=>{ if(!newVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+id]=null; });
-  return firebase.database().ref().update(updates).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+  const nuevos=ids.filter(pid=>!(old.asignados||{})[pid]);
+  return firebase.database().ref().update(updates).then(()=>{ tareaLogDesdeUpdates(id,old,updates); notificarAsignadosTarea(id,old.nombre,nuevos); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
 }
-function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado=null){
-  editTareaId=id;
-  const t=id?tareas[id]:null;
-  document.getElementById("tarea-modal-title").textContent=id?"Editar tarea":"Nueva tarea";
+function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado=null,padreId=null){
+  if(id){ abrirTarea(id); return; } // las tareas existentes se ven y editan en su ficha
+  editTareaId=id; tareaPadrePreset=padreId&&tareas[padreId]?padreId:null;
+  const t=id?tareas[id]:null, madre=tareaPadrePreset?tareas[tareaPadrePreset]:null;
+  if(madre&&!estadoPreseleccionado){ const set=estadosParaTarea(madre); estadoPreseleccionado=set.length?set[0][0]:madre.estado; }
+  { const inf=document.getElementById("f-tarea-padre-info"); if(inf){ inf.style.display=madre?"":"none"; inf.innerHTML=madre?`↳ Subtarea de <b>${esc(madre.nombre)}</b>`:""; } }
+  document.getElementById("tarea-modal-title").textContent=id?"Editar tarea":(madre?"Nueva subtarea":"Nueva tarea");
   document.getElementById("tarea-save-btn").textContent=id?"Guardar cambios":"Crear tarea";
   document.getElementById("f-tarea-nombre").value=t?.nombre||"";
   document.getElementById("f-tarea-notas").value=t?.notas||"";
   document.getElementById("f-tarea-prioridad").value=t?.prioridad||"normal";
   document.getElementById("f-tarea-fecha").value=t?.fechaLimite||"";
-  let listaIni=t?.lista||(tareaFiltro.tipo==="lista"?tareaFiltro.id:"");
+  let listaIni=t?.lista||(madre?(madre.lista||""):(tareaFiltro.tipo==="lista"?tareaFiltro.id:""));
   if(!listaIni&&estadoPreseleccionado&&tareaEstados[estadoPreseleccionado]?.espacio){ // desde un grupo de un espacio: una lista de ese espacio, para conservar el estado
     const esp=tareaEstados[estadoPreseleccionado].espacio;
     listaIni=(Object.entries(listas).filter(([,l])=>l&&l.espacio===esp).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0))[0]||[""])[0];
@@ -3220,7 +3331,7 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
   buildTareaAsignadosGrid();
   document.getElementById("modal-tarea").classList.add("open");
 }
-function closeTareaModal(){ document.getElementById("modal-tarea").classList.remove("open"); editTareaId=null; }
+function closeTareaModal(){ document.getElementById("modal-tarea").classList.remove("open"); editTareaId=null; tareaPadrePreset=null; }
 function buildEstadoSelect(selectedId){ // los estados del espacio de la lista elegida en el modal
   const ordered=estadosDeLista(gv("f-tarea-lista")||null);
   if(!ordered.some(([id])=>id===selectedId)) selectedId=ordered[0]?.[0];
@@ -3348,32 +3459,39 @@ function saveTarea(){
     Object.keys(data).forEach(k=>{ updates["tago_tareas/"+editTareaId+"/"+k]=data[k]; });
     newVis.forEach(ek=>{ if(!oldVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+editTareaId]=true; });
     oldVis.forEach(ek=>{ if(!newVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+editTareaId]=null; });
+    const idEd=editTareaId, nuevosAsig=Object.keys(asignados).filter(pid=>!(old.asignados||{})[pid]); // closeTareaModal vacía editTareaId antes de que resuelva
     firebase.database().ref().update(updates)
-      .then(()=>toast("Tarea actualizada","ok"))
+      .then(()=>{ toast("Tarea actualizada","ok"); tareaLogDesdeUpdates(idEd,old,updates); notificarAsignadosTarea(idEd,nombre,nuevosAsig); })
       .catch(err=>toast("No se pudo actualizar: "+err.message,"error"));
   }else{
     data.createdAt=now; data.createdBy={id:currentUser.id,nombre:currentUser.nombre};
     data.creadoPorEmail=currentUser.email;
+    if(tareaPadrePreset&&tareas[tareaPadrePreset]) data.padre=tareaPadrePreset;
     const camposNuevos={}; Object.keys(camposVals).forEach(cid=>{ if(camposVals[cid]!==null) camposNuevos[cid]=camposVals[cid]; });
     if(Object.keys(camposNuevos).length) data.campos=camposNuevos;
     const newId=tareasRef.push().key;
     const vis=new Set([sanitizeEmailKey(currentUser.email),...Object.keys(asignadosEmails)]);
     updates["tago_tareas/"+newId]=data;
     vis.forEach(ek=>{ updates["tago_tareas_visibilidad/"+ek+"/"+newId]=true; });
+    const padreNuevo=data.padre;
     firebase.database().ref().update(updates)
-      .then(()=>toast("Tarea creada ✓","ok"))
+      .then(()=>{ toast(padreNuevo?"Subtarea creada ✓":"Tarea creada ✓","ok"); tareaLogCreacion(newId); if(padreNuevo) tareaLogTexto(padreNuevo,`agregó la subtarea «${nombre}»`); notificarAsignadosTarea(newId,nombre,Object.keys(asignados)); })
       .catch(err=>toast("No se pudo crear: "+err.message,"error"));
   }
   closeTareaModal();
 }
 function delTarea(id){
   if(!currentUser||!currentUser.isAdmin){ toast("Solo un administrador puede eliminar tareas","error"); return; }
-  if(!confirm("¿Eliminar esta tarea?"))return;
-  const t=tareas[id]||{};
-  const vis=new Set([...(t.creadoPorEmail?[sanitizeEmailKey(t.creadoPorEmail)]:[]),...Object.keys(t.asignadosEmails||{})]);
+  const hijas=Object.keys(tareas).filter(hid=>tareas[hid]&&tareas[hid].padre===id);
+  if(!confirm(hijas.length?`¿Eliminar esta tarea y sus ${hijas.length} subtarea${hijas.length===1?"":"s"}?`:"¿Eliminar esta tarea?"))return;
   const updates={};
-  updates["tago_tareas/"+id]=null;
-  vis.forEach(ek=>{ updates["tago_tareas_visibilidad/"+ek+"/"+id]=null; });
+  [id,...hijas].forEach(tid=>{
+    const t=tareas[tid]||{};
+    const vis=new Set([...(t.creadoPorEmail?[sanitizeEmailKey(t.creadoPorEmail)]:[]),...Object.keys(t.asignadosEmails||{})]);
+    updates["tago_tareas/"+tid]=null; updates["tago_tareas_historial/"+tid]=null; updates["tago_tareas_comentarios/"+tid]=null;
+    vis.forEach(ek=>{ updates["tago_tareas_visibilidad/"+ek+"/"+tid]=null; });
+  });
+  if(tareaFichaId&&[id,...hijas].includes(tareaFichaId)) cerrarTarea();
   firebase.database().ref().update(updates)
     .then(()=>toast("Eliminada"))
     .catch(err=>toast("No se pudo eliminar: "+err.message,"error"));
@@ -4582,14 +4700,16 @@ function renderBandeja(){
   cont.innerHTML=lista.length?lista.map(i=>i.tipo==="correos"?bandejaCorreo(i):bandejaNotif(i)).join(""):`<div class="empty">${bandejaVerLeidos?"Nada en la bandeja":"Todo al día · no tienes pendientes"}</div>`;
 }
 function bandejaNotif({id,n,leido}){
-  const j=jobs[n.pedidoId];
+  const j=jobs[n.pedidoId], esTarea=!!n.tareaId, t=esTarea?tareas[n.tareaId]:null;
   const icono=n.tipo==="mencion"?ic("message-circle"):ic("bell");
-  const desc=n.tipo==="mencion"?`${esc(n.autor?.nombre||"Alguien")} te mencionó: "${esc(n.texto||"")}"`:`${esc(n.autor?.nombre||"Alguien")} te asignó a este pedido`;
+  const desc=n.tipo==="mencion"?`${esc(n.autor?.nombre||"Alguien")} te mencionó${esTarea?" en la tarea":""}: "${esc(n.texto||"")}"`:`${esc(n.autor?.nombre||"Alguien")} te asignó ${esTarea?"esta tarea":"a este pedido"}`;
+  const titulo=esTarea?(t?.nombre||n.nombre||"Tarea"):(j?.cliente||n.cliente||n.pedidoId);
+  const ref=esTarea?(t&&t.lista&&listas[t.lista]?`<span class="bj-ref">${esc(listas[t.lista].nombre)}</span>`:""):(j?.pedido?`<span class="bj-ref">${esc(j.pedido)}</span>`:"");
   return `<div class="bj-item${leido?" leido":""}"><div class="bj-ico">${icono}</div><div class="bj-cuerpo">
-    <div class="bj-titulo">${esc(j?.cliente||n.cliente||n.pedidoId)}${j?.pedido?`<span class="bj-ref">${esc(j.pedido)}</span>`:""}${!leido?`<span class="bj-nuevo">Nuevo</span>`:""}</div>
+    <div class="bj-titulo">${esc(titulo)}${ref}${!leido?`<span class="bj-nuevo">Nuevo</span>`:""}</div>
     <div class="bj-desc">${desc}</div>
     <div class="bj-meta">${timeAgo(new Date(n.ts).toISOString())}</div></div>
-    <div class="bj-acciones"><button class="btn btn-edit" onclick="abrirNotificacion('${id}','${n.pedidoId}')">Abrir pedido</button>${!leido?`<button class="btn btn-secondary" onclick="if(notifRef)notifRef.child('${id}').update({leido:true})">✓ Leído</button>`:`<button class="btn btn-secondary" title="Vuelve a la bandeja como pendiente" onclick="if(notifRef)notifRef.child('${id}').update({leido:false})">Marcar como no leído</button>`}</div></div>`;
+    <div class="bj-acciones"><button class="btn btn-edit" onclick="abrirNotificacion('${id}','${esc(n.pedidoId||"")}','${esc(n.tareaId||"")}')">${esTarea?"Abrir tarea":"Abrir pedido"}</button>${!leido?`<button class="btn btn-secondary" onclick="if(notifRef)notifRef.child('${id}').update({leido:true})">✓ Leído</button>`:`<button class="btn btn-secondary" title="Vuelve a la bandeja como pendiente" onclick="if(notifRef)notifRef.child('${id}').update({leido:false})">Marcar como no leído</button>`}</div></div>`;
 }
 function bandejaCorreo({id,m,leido}){
   const esPedido=m.esPedido!==false;
@@ -4894,7 +5014,7 @@ function fmEnviar(){
     origenFormulario:elementoActual, createdAt:now, createdBy:{id:currentUser.id,nombre:currentUser.nombre}, creadoPorEmail:currentUser.email, updatedAt:now, updatedBy:{id:currentUser.id,nombre:currentUser.nombre} };
   const newId=tareasRef.push().key, updates={};
   updates["tago_tareas/"+newId]=data; updates["tago_tareas_visibilidad/"+sanitizeEmailKey(currentUser.email)+"/"+newId]=true;
-  firebase.database().ref().update(updates).then(()=>{ toast(`Respuesta enviada: se creó la tarea en «${listas[e.lista].nombre}»`,"ok"); elementoRenderizado=null; renderElemento(); }).catch(err=>toast("No se pudo enviar: "+err.message,"error"));
+  firebase.database().ref().update(updates).then(()=>{ toast(`Respuesta enviada: se creó la tarea en «${listas[e.lista].nombre}»`,"ok"); tareaLogCreacion(newId); elementoRenderizado=null; renderElemento(); }).catch(err=>toast("No se pudo enviar: "+err.message,"error"));
 }
 
 
@@ -4968,7 +5088,7 @@ function cpGuardarValor(id,cid,v){ // un valor de una tarea, escrito solo en su 
   const def=cpConfig(t.lista||null).personalizados.find(x=>x.cid===cid);
   if(def&&def.requerido&&val===null){ toast(`«${c.etiqueta}» es obligatorio en esta lista`,"error"); return; }
   const updates={}; updates["tago_tareas/"+id+"/campos/"+cid]=val; updates["tago_tareas/"+id+"/updatedAt"]=new Date().toISOString(); updates["tago_tareas/"+id+"/updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
-  firebase.database().ref().update(updates).then(()=>toast("Guardado","ok")).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+  firebase.database().ref().update(updates).then(()=>{ toast("Guardado","ok"); tareaLogDesdeUpdates(id,t,updates); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
 }
 function cpEditarEnFila(ev,id,cid){ // edición de un campo personalizado en la celda (popover de Pedidos)
   ev.stopPropagation(); ev.preventDefault();
@@ -5523,6 +5643,7 @@ const fiVal=v=>(v===undefined||v===null)?"":String(v);
 function openModal(id=null){ abrirFicha(id); }
 function abrirFicha(id=null){
   if(typeof cerrarPack==="function") cerrarPack();
+  if(typeof cerrarTarea==="function") cerrarTarea();
   fichaNuevo=!id; fichaAsigAbierto=false; fichaPackBuscando=false; fichaPackRechazados=new Set();
   fichaId=id||"__nuevo__";
   if(fichaNuevo) fichaDraft={pedido:"",cliente:"",tipoDtf:"DTF Textil",categoria:"impresiones",cantidad:"",precio:"",drive:"",documento:"NO",tipoEntrega:"Retiro",responsable:"",estado:"recibido",prioridad:"normal",fechaLimite:"",notas:"",personas:[]};
@@ -5539,7 +5660,7 @@ function cerrarFicha(){
   const el=document.getElementById("ficha"); el.classList.remove("open"); el.innerHTML="";
   document.body.classList.remove("ficha-abierta");
 }
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&fichaId&&!document.querySelector(".modal-overlay.open")) cerrarFicha(); if(e.key==="Escape"&&packFichaId&&!document.querySelector(".modal-overlay.open")) cerrarPack(); });
+document.addEventListener("keydown",e=>{ if(e.key!=="Escape"||document.querySelector(".modal-overlay.open"))return; if(document.querySelector(".mention-dropdown[style*='block']"))return; if(fichaId) cerrarFicha(); if(packFichaId) cerrarPack(); if(tareaFichaId) cerrarTarea(); });
 document.getElementById("ficha").addEventListener("focusout",()=>{ setTimeout(()=>{ const el=document.getElementById("ficha"); if(fichaPendiente&&fichaId&&!el.contains(document.activeElement)) renderFicha(true); },0); });
 
 function fichaJob(){ return fichaNuevo?fichaDraft:jobs[fichaId]; }
@@ -5926,7 +6047,7 @@ function renderPacks(){
 }
 // ── Ficha del pack ──
 function abrirPack(id=null){
-  if(fichaId) cerrarFicha();
+  if(fichaId) cerrarFicha(); cerrarTarea();
   packNuevo=!id; packFichaId=id||"__nuevo__";
   if(packNuevo){ const hoy=ymdLocal(new Date()); packDraft={cliente:"",tipo:"textil",metros:20,codigo:"",documento:"",fechaCompra:hoy,vence:packVence(hoy,20),precio:"",notas:""}; }
   document.getElementById("ficha-pack").classList.add("open");
@@ -5939,7 +6060,7 @@ function cerrarPack(){
   if(!packFichaId)return;
   packFichaId=null; packNuevo=false; packDraft=null; packPendiente=false;
   const el=document.getElementById("ficha-pack"); el.classList.remove("open"); el.innerHTML="";
-  if(!fichaId) document.body.classList.remove("ficha-abierta");
+  if(!fichaId&&!tareaFichaId) document.body.classList.remove("ficha-abierta");
 }
 document.getElementById("ficha-pack").addEventListener("focusout",()=>{ setTimeout(()=>{ const el=document.getElementById("ficha-pack"); if(packPendiente&&packFichaId&&!el.contains(document.activeElement)) renderPack(true); },0); });
 function packActual(){ return packNuevo?packDraft:packs[packFichaId]; }
@@ -6050,6 +6171,130 @@ function renderPack(forzar){
     </div>`;
   }
   el.innerHTML=html;
+}
+
+// ══ FICHA DE TAREA (referencia: ClickUp): se abre al hacer clic en una tarea; todo se guarda al cambiar cada campo ══
+function abrirTarea(id){
+  const t=tareas[id]; if(!t){ toast("Esa tarea ya no existe o no tienes acceso","error"); return; }
+  if(fichaId) cerrarFicha(); if(packFichaId) cerrarPack();
+  tareaFichaId=id; tareaFichaAsigAbierto=false; tareaSubNueva=false;
+  document.getElementById("ficha-tarea").classList.add("open");
+  document.body.classList.add("ficha-abierta");
+  buildPedidosDatalist();
+  renderTarea(true);
+  cargarActividad(id);
+}
+function cerrarTarea(){
+  if(!tareaFichaId)return;
+  tareaFichaId=null; tareaFichaPendiente=false; tareaSubNueva=false;
+  const el=document.getElementById("ficha-tarea"); el.classList.remove("open"); el.innerHTML="";
+  if(!fichaId&&!packFichaId) document.body.classList.remove("ficha-abierta");
+}
+document.getElementById("ficha-tarea").addEventListener("focusout",()=>{ setTimeout(()=>{ const el=document.getElementById("ficha-tarea"); if(tareaFichaPendiente&&tareaFichaId&&!el.contains(document.activeElement)) renderTarea(true); },0); });
+function tareaCampo(campo,valor){ // nombre, notas: se guardan al salir del campo
+  const id=tareaFichaId, t=tareas[id]; if(!t)return;
+  if(campo==="nombre"){ valor=(valor||"").trim(); if(!valor){ toast("La tarea necesita un nombre","error"); renderTarea(true); return; } }
+  const updates={}; updates["tago_tareas/"+id+"/"+campo]=valor; updates["tago_tareas/"+id+"/updatedAt"]=new Date().toISOString(); updates["tago_tareas/"+id+"/updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
+  firebase.database().ref().update(updates).then(()=>{ toast("Guardado","ok"); tareaLogDesdeUpdates(id,t,updates); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function tareaCampoPersonalizado(id,cid){ const c=camposCat[cid], el=document.getElementById("ft-c-"+cid); if(!c||!el)return; cpGuardarValor(id,cid,cpLeerControl(el,c)); }
+function tareaCambiarLista(id,listaId){ // mover de lista: el estado se ajusta a la lista nueva y las subtareas se van con la madre
+  const t=tareas[id]; if(!t)return; listaId=listaId||null;
+  if(listaId&&!listas[listaId]){ toast("Esa lista no está disponible","error"); return; }
+  if(!listaId&&!Object.keys(t.asignados||{}).length){ toast("Sin lista, la tarea debe tener a alguien asignado: si no, no tendría dónde verse","error"); renderTarea(true); return; }
+  const now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre}, updates={}, logs=[];
+  const mover=(tid,tt)=>{
+    const set=listaId?estadosDeLista(listaId):estadosDe(null);
+    const estado=set.some(([sid])=>sid===tt.estado)?tt.estado:(set.length?set[0][0]:tt.estado);
+    updates["tago_tareas/"+tid+"/lista"]=listaId; updates["tago_tareas/"+tid+"/estado"]=estado; updates["tago_tareas/"+tid+"/updatedAt"]=now; updates["tago_tareas/"+tid+"/updatedBy"]=quien;
+    logs.push([tid,tt]);
+  };
+  mover(id,t); ttHijasDe(id).forEach(([hid,h])=>mover(hid,h));
+  firebase.database().ref().update(updates).then(()=>{ toast("Guardado","ok"); logs.forEach(([tid,tt])=>tareaLogDesdeUpdates(tid,tt,updates)); }).catch(err=>{ toast("No se pudo mover: "+err.message,"error"); renderTarea(true); });
+}
+function tareaFichaToggleAsig(){ tareaFichaAsigAbierto=!tareaFichaAsigAbierto; renderTarea(true); }
+function tareaFichaTogglePersona(pid){ const t=tareas[tareaFichaId]; if(!t)return; const s=new Set(Object.keys(t.asignados||{})); s.has(pid)?s.delete(pid):s.add(pid); tareaGuardarAsignados(tareaFichaId,[...s]); }
+function ftSubAgregar(id){ const m=tareas[id]; if(!m)return; if(m.lista&&cpConfig(m.lista).personalizados.some(c=>c.requerido)){ openTareaModal(null,null,null,id); return; } tareaSubNueva=true; renderTarea(true); }
+function ftSubTecla(ev,id){
+  if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value.trim(); if(v){ ttCrear(null,v,id); ev.target.value=""; } }
+  if(ev.key==="Escape"){ ev.preventDefault(); tareaSubNueva=false; renderTarea(true); }
+}
+function renderTarea(forzar){
+  const el=document.getElementById("ficha-tarea"); if(!el||!tareaFichaId)return;
+  const act=document.activeElement;
+  if(!forzar&&el.contains(act)&&["INPUT","TEXTAREA","SELECT"].includes(act.tagName)){ tareaFichaPendiente=true; return; }
+  tareaFichaPendiente=false;
+  const id=tareaFichaId, t=tareas[id]; if(!t){ cerrarTarea(); return; }
+  const set=estadosParaTarea(t), est=tareaEstados[t.estado], l=t.lista&&listas[t.lista], esp=espacioDeTarea(t), cfg=cpConfig(t.lista||null), I=cfg.integrados;
+  const p=PRIO[t.prioridad]||PRIO.normal, ov=overdueTarea(t)&&tareaPendiente(t);
+  const madre=t.padre&&tareas[t.padre]?tareas[t.padre]:null;
+  const hijas=t.padre?[]:ttHijasDe(id), hechas=hijas.filter(([,h])=>!tareaPendiente(h)).length;
+  const asignados=Object.keys(t.asignados||{});
+  const avatars=asignados.map(pid=>{ const q=EQUIPO.find(x=>x.id===pid); if(!q)return""; const light=["av-dis","av-ger","av-vend"].includes(q.avClass); return `<div class="avatar ${q.avClass}" style="${light?"color:#fff":""}" title="${esc(q.nombre)}">${q.id}</div>`; }).join("");
+  const grid=["prod","dis","vend","sup"].map(rol=>`<div class="fi-rol">${ROL_LABEL[rol]}</div>`+EQUIPO.filter(q=>q.rol===rol).map(q=>`<div class="persona-chip${asignados.includes(q.id)?" selected":""}" onclick="tareaFichaTogglePersona('${q.id}')"><div class="chip-av ${q.avClass}">${q.id}</div>${esc(q.nombre)}</div>`).join("")).join("");
+  const crumb=(esp&&espacios[esp]?esc(espacios[esp].nombre):(t.lista?"Espacio privado":"Mis tareas"))+(l?`<span class="fh-sep">›</span>${esc(l.nombre)}`:"");
+  const estadoOpts=set.map(([sid,e])=>`<option value="${sid}"${sid===t.estado?" selected":""}>${esc(e.nombre)}</option>`).join("")+(set.some(([sid])=>sid===t.estado)?"":`<option value="${esc(t.estado||"")}" selected>${esc(est?est.nombre:"Sin estado")}</option>`);
+  const grupos=Object.entries(espacios).filter(([sid])=>espacioVisible(sid)).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
+  const listaOpts=`<option value="">— Sin lista —</option>`+grupos.map(([sid,e])=>{ const ls=Object.entries(listas).filter(([,x])=>x.espacio===sid).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); return ls.length?`<optgroup label="${esc(e.nombre)}">${ls.map(([lid,x])=>`<option value="${lid}"${lid===t.lista?" selected":""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`:""; }).join("")+(t.lista&&!l?`<option value="${esc(t.lista)}" selected>Lista de un espacio privado</option>`:"");
+  const campoCtl=c=>{ const v=t.campos?t.campos[c.cid]:undefined; const ctl=c.tipo==="casilla"?`<input id="ft-c-${c.cid}" class="ft-campo" type="checkbox"${v&&v!=="false"?" checked":""}/>`:cpControl("ft-c-"+c.cid,c,v,{clase:"fi ft-campo"}); return `<span onchange="tareaCampoPersonalizado('${id}','${c.cid}')" style="display:contents">${ctl}</span>`; };
+  let html=`
+  <div class="fh-top">
+    <span class="fh-crumb">${crumb}<span class="fh-sep">›</span><span class="fh-id">${t.padre?"Subtarea":"Tarea"}</span></span>
+    <span class="fh-tools">
+      ${currentUser&&currentUser.isAdmin?`<button class="fh-ico" title="Eliminar tarea" onclick="delTarea('${id}')">${ic("trash")}</button>`:""}
+      <button class="fh-ico" title="Cerrar (Esc)" onclick="cerrarTarea()">✕</button>
+    </span>
+  </div>
+  <div class="fh-title">
+    ${madre?`<div class="ft-madre">↳ Subtarea de <span class="pk-link" onclick="abrirTarea('${esc(t.padre)}')">${esc(madre.nombre)}</span></div>`:""}
+    <input class="fi fi-titulo" id="ft-nombre" value="${esc(t.nombre)}" placeholder="Nombre de la tarea *" onchange="tareaCampo('nombre',this.value)"/>
+    ${t.pedidoId&&jobs[t.pedidoId]?`<div class="fi-hint">Pedido <span class="pk-link" onclick="irAPedido('${esc(t.pedidoId)}')">${esc(t.pedidoId)} · ${esc(jobs[t.pedidoId].cliente)}</span></div>`:""}
+  </div>
+  <div class="fh-pills">
+    <span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(est,t.estado,set)}</span>
+    <select class="ft-estado" style="background-color:${est?est.color+"22":"var(--panel)"};color:${est?est.color:"var(--text-muted)"};border:1px solid ${est?est.color+"55":"var(--border)"}" title="Estado" onchange="tareaGuardarCampo('${id}','estado',this.value)">${estadoOpts}</select>
+    ${I.prioridad?`<span class="fi-pill fi-docpill" title="Prioridad" style="color:${p.color}">${ic("flag")}<select class="fi-doc" onchange="tareaGuardarCampo('${id}','prioridad',this.value)">${Object.entries(PRIO).map(([k,v])=>`<option value="${k}"${(t.prioridad||"normal")===k?" selected":""}>${v.label}</option>`).join("")}</select></span>`:""}
+    ${I.fechaInicio?`<label class="fi-pill fi-fecha" title="Fecha de inicio">${ic("calendar")} <input type="date" value="${esc(t.fechaInicio||"")}" onchange="tareaGuardarCampo('${id}','fechaInicio',this.value)"/></label>`:""}
+    ${I.fechaLimite?`<label class="fi-pill fi-fecha${ov?" overdue":""}" title="Fecha límite">${ic("timer")} <input type="date" value="${esc(t.fechaLimite||"")}" onchange="tareaGuardarCampo('${id}','fechaLimite',this.value)"/>${ov?ic("triangle-alert"):""}</label>`:""}
+    <span class="fh-spacer"></span>
+    ${I.asignados?`<button class="fi-asig${tareaFichaAsigAbierto?" abierto":""}" title="Personas asignadas" onclick="tareaFichaToggleAsig()"><span class="fi-asig-label">Asignados</span>${avatars?`<div class="avatars">${avatars}</div>`:`<span>—</span>`}<span class="fi-asig-plus">＋</span></button>`:""}
+  </div>
+  ${tareaFichaAsigAbierto?`<div class="fi-asig-grid">${grid}</div>`:""}
+  <div class="fi-grid">
+    ${fiFila("Lista",`<select class="fi fi-sel" ${t.lista&&!l?"disabled":""} onchange="tareaCambiarLista('${id}',this.value)">${listaOpts}</select>`)}
+    ${I.pedido?fiFila("Pedido",`<input class="fi" list="pedidos-list" value="${esc(etiquetaPedidoTarea(t.pedidoId))}" placeholder="# pedido o cliente" autocomplete="off" onchange="tareaGuardarCampo('${id}','pedido',this.value)"/>`):""}
+    ${cfg.personalizados.map(c=>fiFila(esc(c.etiqueta)+(c.requerido?" *":""),campoCtl(c),c.tipo==="parrafo")).join("")}
+    ${fiFila("Creado por",fiRO(`${esc(t.createdBy?.nombre||"—")} · ${fmtFull(t.createdAt)}`))}
+    ${t.updatedBy?fiFila("Actualizado por",fiRO(`${esc(t.updatedBy.nombre||"—")} · ${timeAgo(t.updatedAt)}`)):""}
+  </div>
+  <div class="fi-notas"><div class="fi-sec-title">Descripción</div><textarea class="fi fi-area" rows="3" placeholder="Describe la tarea: qué hay que hacer, para cuándo, con qué..." onchange="tareaCampo('notas',this.value)">${esc(t.notas)}</textarea></div>`;
+  if(!t.padre){
+    const filas=hijas.map(([hid,h])=>{
+      const he=tareaEstados[h.estado];
+      const asig=Object.keys(h.asignados||{}).map(pid=>{ const q=EQUIPO.find(x=>x.id===pid); return q?`<div class="avatar ${q.avClass}" title="${esc(q.nombre)}">${q.id}</div>`:""; }).join("");
+      return `<div class="ft-sub${tareaPendiente(h)?"":" hecha"}" onclick="abrirTarea('${hid}')" title="Abrir la subtarea"><span title="Cambiar estado" onclick="ttEditar(event,'${hid}','estado')" style="display:inline-flex">${ttDot(he,h.estado,estadosParaTarea(h))}</span><span class="ft-sub-nombre">${esc(h.nombre)}</span><span class="avatars">${asig}</span><span class="fi-tarea-fecha${overdueTarea(h)&&tareaPendiente(h)?" overdue":""}">${h.fechaLimite?fmtDate(h.fechaLimite):""}</span></div>`;
+    }).join("");
+    html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("list-checks")} Subtareas ${hijas.length?`<span class="fi-tareas-n">${hechas}/${hijas.length}</span>`:""}</div>${filas||`<div class="fi-muted">Sin subtareas</div>`}
+      ${tareaSubNueva?`<div class="ft-sub-add"><input class="fi" id="ft-sub-input" placeholder="Nombre de la subtarea · Enter crea · Esc cancela" onkeydown="ftSubTecla(event,'${id}')"/></div>`:`<button class="btn btn-secondary fi-tarea-add" onclick="ftSubAgregar('${id}')">+ Agregar subtarea</button>`}
+    </div>`;
+  }
+  html+=`<div class="fi-actividad">
+      <div class="fi-sec-title">${ic("clipboard-list")} Actividad</div>
+      <div class="chat-messages" id="comentarios-${id}" style="max-height:300px;min-height:36px;background:var(--surface-alt);border-radius:8px;padding:10px;margin-bottom:8px"></div>
+      <div id="comentario-preview-${id}" style="display:${imagenesPendientesComentario[id]?"flex":"none"};align-items:center;gap:8px;margin-bottom:6px">${imagenesPendientesComentario[id]?`<img src="${imagenesPendientesComentario[id]}" style="height:44px;border-radius:6px"/><button class="btn btn-secondary" style="padding:2px 8px;font-size:11px" onclick="delete imagenesPendientesComentario['${id}'];renderComentarioImagenPreview('${id}')">✕ Quitar</button>`:""}</div>
+      <div style="position:relative">
+        <div class="mention-dropdown" id="mention-dd-${id}" style="display:none"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" onclick="document.getElementById('comentario-image-${id}').click()" title="Adjuntar imagen"><svg class="ic" aria-hidden="true"><use href="#i-paperclip"/></svg></button>
+          <input type="file" id="comentario-image-${id}" accept="image/*" style="display:none" onchange="onComentarioImageSelected(event,'${id}')"/>
+          <input type="text" id="comentario-input-${id}" placeholder="Escribe un comentario o nota... usa @ para etiquetar a alguien" value="${esc(borradoresComentario[id]||"")}" oninput="onComentarioInput('${id}')" onkeydown="onComentarioKeydown(event,'${id}')" style="flex:1"/>
+          <button class="btn btn-teal" onclick="enviarComentario('${id}')">Enviar</button>
+        </div>
+      </div>
+    </div>`;
+  el.innerHTML=html;
+  renderActividad(id);
+  if(tareaSubNueva) setTimeout(()=>document.getElementById("ft-sub-input")?.focus(),30);
 }
 
 // La sesión se restaura sola vía Firebase Auth (onAuthStateChanged más arriba).

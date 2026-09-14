@@ -146,6 +146,37 @@ Firestore).
   reordenan arrastrando el título: un admin dentro de una lista lo guarda en
   `tago_listas/<id>/campos/columnas` (para todos); si no, en `localStorage`
   `tago_tareas_orden`.
+- Subtareas, ficha de tarea y actividad (14-sep-2026, referencia ClickUp).
+  Una subtarea es una tarea con `padre:<tareaId>` en `tago_tareas`: hereda
+  la lista de la madre (así la ven los que ven la lista), nace en el primer
+  estado y no copia `campos` (la Ruta y el Tablero identifican las tareas de
+  clientes por `campos.rut`, una subtarea no debe parecer un cliente). En la
+  tabla las hijas van anidadas bajo la madre, en el grupo de la madre aunque
+  tengan otro estado (`ttArbolGrupo`/`ttAplanar`, caret en
+  `localStorage` `tago_tareas_sub_plegadas`, contador hechas/total, «+» al
+  pasar por la fila → `ttSubAgregar`/`ttCrear(estId,nombre,padreId)`); una
+  hija cuya madre no se ve en la vista se pinta arriba con «↳ madre». Un
+  solo nivel (las hijas no tienen «+»). Borrar una madre (admins) borra
+  hijas, historial y comentarios en el mismo update. Las tareas existentes
+  se abren en la ficha lateral `#ficha-tarea` (`abrirTarea`/`renderTarea`;
+  `openTareaModal(id)` redirige ahí; el modal queda solo para crear, con
+  `padreId` como cuarto parámetro cuando la lista exige campos): todo se
+  guarda al cambiar cada campo (`tareaCampo` nombre/notas,
+  `tareaGuardarCampo`, `tareaGuardarAsignados`, `cpGuardarValor`,
+  `tareaCambiarLista` que mueve también a las hijas). La «Descripción» es la
+  clave `notas` de siempre. Actividad: `tago_tareas_historial/<id>/<push>`
+  ({autor, ts, campo, valorAnterior, valorNuevo} | {tipo:"creacion"} |
+  {tipo:"texto", texto}) y `tago_tareas_comentarios/<id>/<push>` (igual que
+  los de pedidos, con @menciones e imagen). Las funciones de actividad de
+  pedidos son las mismas: `actNodo(id,tipo)` decide el nodo por el id
+  (`esTareaId`), y `tareaLogDesdeUpdates(id, anterior, updates)` reconstruye
+  la tarea tras cada `update()` y anota las diferencias (`TAREA_TRACK`,
+  asignados y campos personalizados) — hay que llamarla en todo camino
+  nuevo de escritura. Reglas: leer y crear entradas solo quien puede ver la
+  tarea (admin, creador, asignado o miembro/espacio abierto de su lista);
+  nadie edita ni borra entradas salvo admins. Las menciones y asignaciones
+  de tareas llegan a `tago_notificaciones` con `tareaId` + `nombre` y la
+  Bandeja abre la tarea (`irATarea`).
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o
