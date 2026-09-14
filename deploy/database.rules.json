@@ -54,14 +54,14 @@
       ".read": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()",
       "$tareaId": {
         ".read": "auth != null && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || (data.exists() && data.child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists()) || (data.exists() && data.child('creadoPorEmail').val() == auth.token.email))",
-        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (!data.exists() || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || data.child('creadoPorEmail').val() == auth.token.email || data.child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists())"
+        ".write": "auth != null && $tareaId.matches(/^[A-Za-z0-9_-]+$/) && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (!data.exists() || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || data.child('creadoPorEmail').val() == auth.token.email || data.child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists())"
       }
     },
     "tago_tareas_visibilidad": {
       "$emailKey": {
         ".read": "auth != null && (auth.token.email.replace('.', '_') == $emailKey || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists())",
         "$tareaId": {
-          ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || !root.child('tago_tareas').child($tareaId).exists() || root.child('tago_tareas').child($tareaId).child('creadoPorEmail').val() == auth.token.email || root.child('tago_tareas').child($tareaId).child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists())"
+          ".write": "auth != null && $tareaId.matches(/^[A-Za-z0-9_-]+$/) && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || !root.child('tago_tareas').child($tareaId).exists() || root.child('tago_tareas').child($tareaId).child('creadoPorEmail').val() == auth.token.email || root.child('tago_tareas').child($tareaId).child('asignadosEmails').child(auth.token.email.replace('.', '_')).exists())"
         }
       }
     },

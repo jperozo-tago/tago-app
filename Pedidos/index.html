@@ -431,6 +431,76 @@
     .tarea-row-fecha{font-size:11px;color:var(--text-muted);min-width:60px;text-align:right}
     .tarea-row-fecha.overdue{color:var(--danger-c);font-weight:600}
     .tarea-row-prio{font-size:12px}
+
+    /* ══ CAMPOS POR LISTA (referencia: panel «Campos» de ClickUp) ══ */
+    .cp-panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100vw;background:var(--surface);border-left:1px solid var(--border);z-index:125;transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column;overscroll-behavior:contain}
+    .cp-panel.open{transform:translateX(0)}
+    .cp-head{display:flex;align-items:center;gap:8px;padding:14px 18px 8px}
+    .cp-head h3{font-family:'DM Sans',sans-serif;font-weight:600;font-size:18px;margin:0;flex:1;color:var(--azul-oscuro)}
+    .cp-lista-nombre{font-size:12px;color:var(--text-muted);padding:0 18px 10px;display:flex;align-items:center;gap:5px}
+    .cp-buscar{margin:0 18px 10px;display:flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text-muted)}
+    .cp-buscar:focus-within{border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-glow)}
+    .cp-buscar input{border:none;outline:none;flex:1;font-family:'Open Sans',sans-serif;font-size:13.5px;min-width:0;background:transparent;color:var(--text)}
+    .cp-tabs{display:flex;margin:0 18px;border-bottom:1px solid var(--border)}
+    .cp-tabs button{background:none;border:none;border-bottom:2px solid transparent;padding:8px 2px;margin:0 18px -1px 0;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;color:var(--text-muted);cursor:pointer}
+    .cp-tabs button.active{color:var(--text);border-bottom-color:var(--azul-oscuro)}
+    .cp-body{flex:1;min-height:0;overflow-y:auto;padding:6px 0 24px}
+    .cp-sec{padding:10px 18px 4px;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;user-select:none}
+    .cp-sec .ic{font-size:13px}
+    .cp-sec .cp-n{margin-left:auto;font-variant-numeric:tabular-nums}
+    .cp-sep{height:1px;background:var(--border-soft);margin:6px 18px}
+    .cp-fila{display:flex;align-items:center;gap:10px;padding:7px 18px;font-size:14px;color:var(--text);min-height:38px}
+    .cp-fila:hover{background:var(--surface-alt)}
+    .cp-fila .cp-ic{width:20px;color:var(--text-muted);display:inline-flex;justify-content:center;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;flex-shrink:0}
+    .cp-fila .cp-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+    .cp-fila .cp-sub{font-size:11px;color:var(--text-muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cp-fila.fijo .cp-nombre{color:var(--text-muted)}
+    .cp-fila .cp-acc{display:none}
+    .cp-fila:hover .cp-acc,.cp-fila.abierta .cp-acc{display:inline-flex}
+    @media(hover:none){.cp-fila .cp-acc{display:inline-flex}}
+    .cp-sw{position:relative;width:34px;height:20px;border-radius:999px;background:#C9CBD6;border:none;cursor:pointer;flex-shrink:0;transition:background .15s;padding:0}
+    .cp-sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+    .cp-sw.on{background:var(--teal-dark)}
+    .cp-sw.on::after{transform:translateX(14px)}
+    .cp-sw:disabled{opacity:.45;cursor:default}
+    .cp-acc{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:3px 4px;font-family:inherit;border-radius:6px;font-size:13px;line-height:1;align-items:center}
+    .cp-acc:hover{background:var(--border);color:var(--text)}
+    .cp-vacio{padding:8px 18px 10px;font-size:12.5px;color:var(--text-muted)}
+    .cp-ayuda{padding:10px 18px 2px;font-size:12.5px;color:var(--text-sec)}
+    .cp-tipos{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 18px}
+    .cp-tipo{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--text-sec);background:var(--surface)}
+    .cp-tipo .ic{color:var(--text-muted);font-size:15px}
+    .cp-tipo:hover{border-color:var(--claro-2)}
+    .cp-tipo.active{border-color:var(--azul-oscuro);color:var(--azul-oscuro);background:var(--azul-glow)}
+    .cp-tipo.active .ic{color:var(--azul-oscuro)}
+    .cp-form{padding:6px 18px 10px;display:flex;flex-direction:column;gap:12px}
+    .cp-form label{display:block;font-size:12px;margin-bottom:4px}
+    .cp-form input[type=text],.cp-form select{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Open Sans',sans-serif;font-size:14px}
+    .cp-form label.fm-req,.cp-edit label.fm-req,#tarea-campos-extra label.fm-req{display:inline-flex;align-items:center;gap:6px;white-space:normal;font-size:13px;margin:0}
+    .cp-form input[type=checkbox],.cp-edit input[type=checkbox],#tarea-campos-extra input[type=checkbox]{width:auto;margin:0;padding:0;accent-color:var(--azul)}
+    .cp-pie{display:flex;gap:8px;justify-content:flex-end}
+    .cp-edit{margin:0 18px 6px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--surface-alt);border:1px solid var(--border-soft);border-radius:10px}
+    .cp-edit input[type=text]{border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-family:'Open Sans',sans-serif;font-size:13.5px;width:100%;background:var(--surface)}
+    .cp-edit .cp-sub{font-size:11px;color:var(--text-muted)}
+    .cp-confirm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--text-sec);margin:0 18px 6px;padding:8px 12px;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:10px}
+    .cp-confirm button{font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;border-radius:6px;padding:3px 9px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+    .cp-confirm button.si{background:var(--danger-c);color:#fff;border-color:var(--danger-c)}
+    .cp-nota{padding:10px 18px 0;font-size:12px;color:var(--teal-dark);display:flex;gap:6px;align-items:flex-start}
+    .cp-nota .ic{margin-top:3px;flex-shrink:0}
+    /* pastillas de campos en la fila de la tarea */
+    .tarea-row-campos{display:flex;flex-wrap:wrap;gap:4px 5px;margin-top:5px}
+    .tc-pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);color:var(--text-sec);cursor:pointer;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;font-family:'DM Sans',sans-serif;font-weight:600;line-height:1.5}
+    .tc-pill b{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+    .tc-pill.vacio{color:var(--text-muted);border-style:dashed;background:transparent}
+    .tc-pill:hover{border-color:var(--text-muted)}
+    .tc-pill.retirada b{color:var(--text-muted);text-decoration:line-through}
+    .tc-pill .ic{font-size:12px}
+    .tarea-row-meta{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text-muted);white-space:nowrap;padding:2px 0}
+    .tarea-row-meta .ic{font-size:11px}
+    .tarea-row-id{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text-muted);padding:2px 0}
+    .tarea-row-nombre{min-width:0}
+    #tarea-campos-extra{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:700px){.cp-panel{width:100vw;border-left:none}.tarea-toolbar .btn-txt{display:none}#tarea-campos-extra{grid-template-columns:1fr}.tarea-row{flex-wrap:wrap;row-gap:6px}.tarea-row-nombre{flex-basis:100%}.tarea-row-fecha{min-width:0;text-align:left}.tarea-row .btn-danger{margin-left:auto}body.cp-abierta #btn-nuevo{display:none}}
     .tarea-add-row{padding:8px 16px;font-size:12px;color:var(--text-muted);cursor:pointer}
     .tarea-add-row:hover{color:var(--teal-dark)}
     .tarea-color-swatch{width:20px;height:20px;border-radius:6px;cursor:pointer;flex-shrink:0}
@@ -1391,7 +1461,8 @@
   <div id="view-tareas" style="display:none">
     <div class="tarea-toolbar">
       <button class="btn btn-primary" onclick="openTareaModal()">+ Nueva tarea</button>
-      <button class="btn btn-secondary tareas-admin-only" style="display:none" onclick="openEstadosModal()"><svg class="ic" aria-hidden="true"><use href="#i-settings-2"/></svg>Estados</button>
+      <button class="btn btn-secondary tareas-admin-only" style="display:none" onclick="openEstadosModal()"><svg class="ic" aria-hidden="true"><use href="#i-settings-2"/></svg><span class="btn-txt">Estados</span></button>
+      <button class="btn btn-secondary" id="btn-campos-lista" style="display:none" onclick="abrirCampos()" title="Campos de esta lista"><svg class="ic" aria-hidden="true"><use href="#i-columns-3"/></svg><span class="btn-txt">Campos</span></button>
     </div>
     <div id="tareas-list"></div>
   </div>
@@ -1418,6 +1489,9 @@
 
 <!-- FICHA DE PEDIDO (propuesta, copia local): reemplaza al panel expandible y al formulario de edición -->
 <aside class="ficha" id="ficha"></aside>
+
+<!-- PANEL «CAMPOS» DE UNA LISTA (referencia: ClickUp) -->
+<aside class="cp-panel" id="cp-panel" aria-label="Campos de la lista"></aside>
 
 <!-- MODAL GRUPO -->
 <div class="modal-overlay" id="modal-grupo" onclick="ovc(event,'modal-grupo')">
@@ -1446,16 +1520,18 @@
     </div>
     <div class="form-grid">
       <div><label>Nombre *</label><input id="f-tarea-nombre" placeholder="ej: Crear 5 diseños de recuerditos"/></div>
-      <div><label>Descripción</label><textarea id="f-tarea-notas" rows="2" placeholder="Detalles de la tarea..."></textarea></div>
+      <div data-campo="notas"><label>Descripción</label><textarea id="f-tarea-notas" rows="2" placeholder="Detalles de la tarea..."></textarea></div>
       <div class="form-row f-3">
         <div><label>Estado</label><select id="f-tarea-estado"></select></div>
-        <div><label>Prioridad</label><select id="f-tarea-prioridad"><option value="normal">Normal</option><option value="baja">Baja</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
-        <div><label>Fecha límite</label><input id="f-tarea-fecha" type="date"/></div>
+        <div data-campo="prioridad"><label>Prioridad</label><select id="f-tarea-prioridad"><option value="normal">Normal</option><option value="baja">Baja</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
+        <div data-campo="fechaLimite"><label>Fecha límite</label><input id="f-tarea-fecha" type="date"/></div>
       </div>
       <div class="form-row f-2">
-        <div><label>Lista</label><select id="f-tarea-lista"></select></div>
-        <div><label>Pedido</label><input id="f-tarea-pedido" list="pedidos-list" placeholder="# pedido o cliente (opcional)" autocomplete="off"/><datalist id="pedidos-list"></datalist></div>
+        <div><label>Lista</label><select id="f-tarea-lista" onchange="tareaListaCambio()"></select></div>
+        <div data-campo="pedido"><label>Pedido</label><input id="f-tarea-pedido" list="pedidos-list" placeholder="# pedido o cliente (opcional)" autocomplete="off"/><datalist id="pedidos-list"></datalist></div>
       </div>
+      <div class="form-row f-2" data-campo="fechaInicio" style="display:none"><div><label>Fecha de inicio</label><input id="f-tarea-inicio" type="date"/></div></div>
+      <div id="tarea-campos-extra" style="display:none"></div>
       <div><div class="chip-label">Asignados</div><div class="persona-grid" id="tarea-asignados-grid"></div></div>
       <div class="form-actions">
         <button class="btn btn-secondary" onclick="closeTareaModal()">Cancelar</button>
@@ -2385,15 +2461,20 @@ function renderTareas(){
   const cont=document.getElementById("tareas-list");
   if(!cont)return;
   if(estadosOrdenados.length===0){ cont.innerHTML=`<div class="empty">Cargando estados...</div>`; return; }
+  actualizarBotonCampos();
+  // Una configuración por lista, no por fila. En «Todas las tareas» / «Todo el espacio» conviven listas
+  // distintas: ahí las columnas integradas son las de siempre y solo cambian las pastillas de cada lista.
+  const cfgs=Object.create(null), enLista=tareaFiltro.tipo==="lista", base=cpConfig(null);
+  const cfgDe=lid=>{ const k=lid||""; if(!cfgs[k]){ const c=cpConfig(listas[k]?k:null); cfgs[k]=enLista?c:{integrados:base.integrados,personalizados:c.personalizados}; } return cfgs[k]; };
   cont.innerHTML=estadosOrdenados.map(([estId,est])=>{
-    const tareasDelEstado=Object.entries(tareas).filter(([,t])=>t.estado===estId&&puedeVerTarea(t)&&tareaEnFiltro(t));
+    const tareasDelEstado=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&t.estado===estId&&puedeVerTarea(t)&&tareaEnFiltro(t));
     return`<div class="tarea-grupo">
       <div class="tarea-grupo-header">
         <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${esc(est.nombre)}</span>
         <span class="tarea-grupo-count">${tareasDelEstado.length}</span>
       </div>
       <div class="tarea-rows">
-        ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t)).join("")}
+        ${tareasDelEstado.map(([id,t])=>renderTareaRow(id,t,cfgDe(t.lista))).join("")}
         <div class="tarea-add-row" onclick="openTareaModal(null,'${estId}')">+ Añadir tarea</div>
       </div>
     </div>`;
@@ -2402,18 +2483,26 @@ function renderTareas(){
   if(currentTab==="elemento"&&["panel","formulario"].includes(elementos[elementoActual]?.tipo)) renderElemento();
   if(typeof renderSidebar==="function") renderSidebar();
 }
-function renderTareaRow(id,t){
+function renderTareaRow(id,t,cfg){
+  cfg=cfg||cpConfig(t.lista||null); const I=cfg.integrados;
   const asignadosHtml=Object.keys(t.asignados||{}).map(pid=>{
     const p=EQUIPO.find(x=>x.id===pid); if(!p)return"";
     return`<div class="avatar ${p.avClass}" title="${esc(p.nombre)}">${p.id}</div>`;
   }).join("");
   const prioColor={baja:"var(--grey-c)",normal:"var(--text-muted)",alta:"var(--amber-c)",urgente:"var(--danger-c)"}[t.prioridad]||"var(--text-muted)";
   const prioLabel={baja:"Baja",normal:"Normal",alta:"Alta",urgente:"Urgente"}[t.prioridad]||"";
+  // Campos de la lista (pastillas editables) y propiedades integradas que la lista pide mostrar
+  const extras=cfg.personalizados.map(c=>cpPill(id,t,c));
+  if(I.fechaInicio&&t.fechaInicio) extras.push(`<span class="tarea-row-meta" title="Fecha de inicio">${ic("calendar")} inicio ${fmtDate(t.fechaInicio)}</span>`);
+  if(I.creado&&t.createdAt) extras.push(`<span class="tarea-row-meta" title="Fecha de creación">${ic("clock")} creada ${fmtDate(String(t.createdAt).slice(0,10))}</span>`);
+  if(I.creador&&t.createdBy) extras.push(`<span class="tarea-row-meta" title="Creador">${ic("user-round")} ${esc(t.createdBy.nombre||t.createdBy.id)}</span>`);
+  if(I.actualizado&&t.updatedAt) extras.push(`<span class="tarea-row-meta" title="Fecha de actualización">${ic("refresh-cw")} ${fmtDate(String(t.updatedAt).slice(0,10))}</span>`);
+  if(I.id) extras.push(`<span class="tarea-row-id" title="ID de tarea">#${esc(String(id).slice(-6))}</span>`);
   return`<div class="tarea-row" onclick="openTareaModal('${id}')">
-    <div class="tarea-row-nombre">${esc(t.nombre)}${t.pedidoId&&jobs[t.pedidoId]?`<span class="tarea-pedido-chip" title="Abrir pedido" onclick="event.stopPropagation();abrirFicha('${t.pedidoId}')">${ic("clipboard-list")} ${esc(jobs[t.pedidoId].pedido||t.pedidoId)} · ${esc(jobs[t.pedidoId].cliente)}</span>`:""}</div>
-    <div class="tarea-row-asignados">${asignadosHtml}</div>
-    <div class="tarea-row-fecha ${overdueTarea(t)?"overdue":""}">${t.fechaLimite?fmtDate(t.fechaLimite):"—"}</div>
-    <div class="tarea-row-prio" style="color:${prioColor}" title="${prioLabel}">${ic("flag")}</div>
+    <div class="tarea-row-nombre">${esc(t.nombre)}${I.pedido&&t.pedidoId&&jobs[t.pedidoId]?`<span class="tarea-pedido-chip" title="Abrir pedido" onclick="event.stopPropagation();abrirFicha('${t.pedidoId}')">${ic("clipboard-list")} ${esc(jobs[t.pedidoId].pedido||t.pedidoId)} · ${esc(jobs[t.pedidoId].cliente)}</span>`:""}${extras.length?`<div class="tarea-row-campos">${extras.join("")}</div>`:""}</div>
+    ${I.asignados?`<div class="tarea-row-asignados">${asignadosHtml}</div>`:""}
+    ${I.fechaLimite?`<div class="tarea-row-fecha ${overdueTarea(t)?"overdue":""}">${t.fechaLimite?fmtDate(t.fechaLimite):"—"}</div>`:""}
+    ${I.prioridad?`<div class="tarea-row-prio" style="color:${prioColor}" title="${prioLabel}">${ic("flag")}</div>`:""}
     <button class="btn btn-danger" style="padding:2px 7px;font-size:11px" onclick="event.stopPropagation();delTarea('${id}')">✕</button>
   </div>`;
 }
@@ -2428,6 +2517,8 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
   document.getElementById("f-tarea-fecha").value=t?.fechaLimite||"";
   buildEstadoSelect(t?.estado||estadoPreseleccionado);
   buildListaSelect(t?.lista||(tareaFiltro.tipo==="lista"?tareaFiltro.id:""));
+  document.getElementById("f-tarea-inicio").value=t?.fechaInicio||"";
+  aplicarCamposModal(gv("f-tarea-lista")||null,t?.campos||{},true);
   buildPedidosDatalist();
   document.getElementById("f-tarea-pedido").value=etiquetaPedidoTarea(t?.pedidoId||pedidoPreseleccionado);
   selectedTareaAsignados=t?.asignados?Object.keys(t.asignados):[];
@@ -2462,17 +2553,25 @@ function saveTarea(){
     const email=idToEmail(id);
     if(email) asignadosEmails[sanitizeEmailKey(email)]=true;
   });
+  // Campos de la lista: los obligatorios se exigen y los valores se escriben uno por uno (nunca se pisa lo que no está a la vista)
+  const cfgLista=cpConfig(gv("f-tarea-lista")||null), camposVals={};
+  for(const c of cfgLista.personalizados){
+    const el=document.getElementById("f-tc-"+c.cid), v=cpNormalizar(c,cpLeerControl(el,c));
+    if(c.requerido&&v===null){ toast(`Falta completar «${c.etiqueta}»`,"error"); el?.focus(); return; }
+    camposVals[c.cid]=v;
+  }
   const now=new Date().toISOString();
   const data={
     nombre, notas:gv("f-tarea-notas").trim(),
     estado:gv("f-tarea-estado"), prioridad:gv("f-tarea-prioridad"),
     lista:gv("f-tarea-lista")||null,
     pedidoId:pedidoDesdeInputTarea()||null,
-    fechaLimite:gv("f-tarea-fecha"), asignados, asignadosEmails,
+    fechaLimite:gv("f-tarea-fecha"), fechaInicio:gv("f-tarea-inicio")||null, asignados, asignadosEmails,
     updatedAt:now, updatedBy:{id:currentUser.id,nombre:currentUser.nombre},
   };
   const updates={};
   if(editTareaId){
+    Object.keys(camposVals).forEach(cid=>{ updates["tago_tareas/"+editTareaId+"/campos/"+cid]=camposVals[cid]; });
     const old=tareas[editTareaId]||{};
     const creadorKey=old.creadoPorEmail?sanitizeEmailKey(old.creadoPorEmail):sanitizeEmailKey(currentUser.email);
     const oldVis=new Set([creadorKey,...Object.keys(old.asignadosEmails||{})]);
@@ -2486,6 +2585,8 @@ function saveTarea(){
   }else{
     data.createdAt=now; data.createdBy={id:currentUser.id,nombre:currentUser.nombre};
     data.creadoPorEmail=currentUser.email;
+    const camposNuevos={}; Object.keys(camposVals).forEach(cid=>{ if(camposVals[cid]!==null) camposNuevos[cid]=camposVals[cid]; });
+    if(Object.keys(camposNuevos).length) data.campos=camposNuevos;
     const newId=tareasRef.push().key;
     const vis=new Set([sanitizeEmailKey(currentUser.email),...Object.keys(asignadosEmails)]);
     updates["tago_tareas/"+newId]=data;
@@ -2562,7 +2663,8 @@ function initFirebaseData(){
     initChat();
     initTareas();
     firebase.database().ref("tago_espacios").on("value",snap=>{ espacios=snap.val()||{}; renderSidebar(); actualizarTituloTareas(); },err=>console.error(err));
-    firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); },err=>console.error(err));
+    firebase.database().ref("tago_listas").on("value",snap=>{ listas=snap.val()||{}; renderSidebar(); if(currentTab==="tareas")renderTareas(); if(currentTab==="elemento")renderElemento(); cpRefrescar(); },err=>console.error(err));
+    firebase.database().ref("tago_campos").on("value",snap=>{ camposCat=snap.val()||{}; if(currentTab==="tareas")renderTareas(); cpRefrescar(); if(document.getElementById("modal-tarea")?.classList.contains("open")) aplicarCamposModal(gv("f-tarea-lista")||null); },err=>{ console.error(err); if(currentUser?.isAdmin) toast("No se pudieron cargar los campos personalizados de las listas: "+err.message,"error"); });
     firebase.database().ref("tago_carpetas").on("value",snap=>{ carpetas=snap.val()||{}; renderSidebar(); },err=>console.error(err));
     firebase.database().ref("tago_elementos").on("value",snap=>{ elementos=snap.val()||{}; renderSidebar(); if(currentTab==="elemento")renderElemento(); if(formularioPendiente&&elementos[formularioPendiente]){ const id=formularioPendiente; formularioPendiente=null; abrirElemento(id,"rellenar"); } },err=>console.error(err));
     dbRef=firebase.database().ref("tago_pedidos");
@@ -2610,7 +2712,7 @@ function nextIdTransaction(cb){
 
 // ── Helpers ───────────────────────────────────────────────
 function genId(){ const ns=Object.keys(jobs).map(k=>parseInt(k.replace("TG-",""),10)).filter(n=>!isNaN(n)); return"TG-"+String((ns.length?Math.max(...ns):0)+1).padStart(4,"0"); }
-function fmtDate(iso){ if(!iso)return"—"; const[,m,d]=iso.split("-"); return parseInt(d)+" "+MESES_CORTO[parseInt(m)-1]; }
+function fmtDate(iso){ if(!iso||typeof iso!=="string")return"—"; const[,m,d]=iso.split("-"); return parseInt(d)+" "+MESES_CORTO[parseInt(m)-1]; }
 function fmtFull(iso){ if(!iso)return"—"; const d=new Date(iso); return d.toLocaleDateString("es-CL",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
 function overdue(d,s,entrega){ if(!d||s==="entregado")return false; if(s==="listo"&&entrega==="Retiro")return false; return new Date(d+"T23:59:59")<new Date(); }
 function timeAgo(iso){ if(!iso)return"—"; const s=Math.floor((Date.now()-new Date(iso))/1000); if(s<60)return"ahora mismo"; if(s<3600)return`hace ${Math.floor(s/60)} min`; if(s<86400)return`hace ${Math.floor(s/3600)} h`; return`hace ${Math.floor(s/86400)} d`; }
@@ -3602,7 +3704,7 @@ const CELDA_LABEL={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto
 function cerrarCeldaPop(){ if(celdaPop){ celdaPop.remove(); celdaPop=null; } }
 document.addEventListener("pointerdown",e=>{
   if(!celdaPop||celdaPop.contains(e.target))return;
-  const inp=celdaPop.querySelector("input"); if(inp&&inp.dataset.dirty==="1"&&celdaPop._guardar) celdaPop._guardar(inp.value);
+  const inp=celdaPop.querySelector("input,textarea"); if(inp&&inp.dataset.dirty==="1"&&celdaPop._guardar) celdaPop._guardar(inp.value);
   cerrarCeldaPop();
 });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&celdaPop) cerrarCeldaPop(); });
@@ -3922,6 +4024,270 @@ function fmEnviar(){
   firebase.database().ref().update(updates).then(()=>{ toast(`Respuesta enviada: se creó la tarea en «${listas[e.lista].nombre}»`,"ok"); elementoRenderizado=null; renderElemento(); }).catch(err=>toast("No se pudo enviar: "+err.message,"error"));
 }
 
+
+// ══ CAMPOS POR LISTA (referencia: panel «Campos» de ClickUp) ══
+// Catálogo del espacio de trabajo en tago_campos/<cid> = {espacio, etiqueta, tipo, opciones, archivado, creadoPor, createdAt}.
+// Cada lista guarda en tago_listas/<id>/campos = {integrados:{prioridad:true,...}, personalizados:{<cid>:{orden,requerido}}}.
+// Cada tarea guarda sus valores en tago_tareas/<id>/campos/<cid>. Nada de esto es obligatorio: sin configuración, la lista se ve como siempre.
+var camposCat={}, cpListaId=null, cpTab="existente", cpBuscar="", cpAbiertas=new Set(["muestran","propiedades","entorno"]), cpNuevoTipo=null, cpEditando=null, cpConfirmar=null;
+const CP_TIPOS={texto:{n:"Texto corto",ic:"pencil",ej:"Proveedor"},parrafo:{n:"Párrafo",ic:"file-text",ej:"Observaciones"},numero:{n:"Número",ic:"hash",ej:"Cantidad de piezas"},dinero:{n:"Dinero (CLP)",ic:"banknote",ej:"Presupuesto"},fecha:{n:"Fecha",ic:"calendar",ej:"Fecha de publicación"},opcion:{n:"Opción (lista)",ic:"list",ej:"Canal"},sino:{n:"Sí / No",ic:"check",ej:"Aprobado por cliente"},casilla:{n:"Casilla",ic:"square-check-big",ej:"Revisado"},url:{n:"Enlace",ic:"link",ej:"Carpeta de Drive"},persona:{n:"Persona",ic:"user",ej:"Revisor"}};
+// Propiedades integradas de la tarea. fila: se ve en la lista; modal: es un bloque del formulario; def: valor cuando la lista no dice nada.
+const CP_PROPIEDADES=[
+  {k:"prioridad",n:"Prioridad",ic:"flag",fila:true,modal:true,def:true},
+  {k:"fechaLimite",n:"Fecha límite",ic:"calendar",fila:true,modal:true,def:true},
+  {k:"fechaInicio",n:"Fecha de inicio",ic:"calendar",fila:true,modal:true,def:false},
+  {k:"asignados",n:"Persona asignada",ic:"user",fila:true,modal:false,def:true,sub:"Siempre se puede asignar desde la tarea"},
+  {k:"pedido",n:"Pedido vinculado",ic:"clipboard-list",fila:true,modal:true,def:true},
+  {k:"notas",n:"Descripción",ic:"file-text",fila:false,modal:true,def:true},
+  {k:"creado",n:"Fecha de creación",ic:"clock",fila:true,modal:false,def:false},
+  {k:"creador",n:"Creador",ic:"user-round",fila:true,modal:false,def:false},
+  {k:"actualizado",n:"Fecha de actualización",ic:"refresh-cw",fila:true,modal:false,def:false},
+  {k:"id",n:"ID de tarea",ic:"hash",fila:true,modal:false,def:false},
+];
+function idSeguro(id){ return /^[A-Za-z0-9_-]+$/.test(String(id||"")); } // las claves reales son push keys; nada más entra en un onclick
+function cpConfig(listaId){ // configuración efectiva de una lista; sin lista o sin configuración, la de siempre
+  const l=listaId&&listas[listaId], c=(l&&l.campos)||{};
+  const integrados={}; CP_PROPIEDADES.forEach(p=>{ const v=c.integrados?c.integrados[p.k]:undefined; integrados[p.k]=(v===undefined||v===null)?p.def:!!v; });
+  const personalizados=Object.entries(c.personalizados||{}).filter(([cid,v])=>v&&idSeguro(cid)&&camposCat[cid]&&!camposCat[cid].archivado).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([cid,v])=>({cid,...camposCat[cid],requerido:!!v.requerido}));
+  return {integrados,personalizados};
+}
+function cpOpciones(c){ return (Array.isArray(c.opciones)?c.opciones:String(c.opciones||"").split(",")).map(o=>String(o).trim()).filter(Boolean); }
+function cpNormalizar(c,v){ // valor listo para guardar según el tipo; null = vacío
+  if(v===undefined||v===null||v===false)return null;
+  switch(c.tipo){
+    case "numero": case "dinero": { if(v==="")return null; let n=Number(v); if(isNaN(n)) n=Number(String(v).replace(/[^0-9.,-]/g,"").replace(",",".")); if(isNaN(n))return null; return c.tipo==="dinero"?Math.abs(n):n; }
+    case "casilla": return (v===true||v==="true"||v==="1")?true:null;
+    case "url": { v=String(v).trim(); if(!v)return null; return /^https?:\/\//i.test(v)?v:"https://"+v; }
+    default: { v=String(v).trim(); return v===""?null:v; }
+  }
+}
+function cpValorTexto(c,v){ // cómo se lee un valor guardado
+  if(v===undefined||v===null||v==="")return "";
+  switch(c.tipo){
+    case "fecha": return fmtDate(String(v));
+    case "dinero": return fmtCLP(Number(v)||0);
+    case "casilla": return v?"Sí":"";
+    case "persona": { const p=EQUIPO.find(x=>x.id===v); return p?p.nombre:String(v); }
+    case "url": return String(v).replace(/^https?:\/\//i,"").replace(/\/$/,"").slice(0,40);
+    default: return String(v);
+  }
+}
+function cpControl(id,c,v,o){ // control de edición para un campo según su tipo
+  o=o||{}; const cls=o.clase?` class="${o.clase}"`:""; v=(v===undefined||v===null)?"":String(v);
+  switch(c.tipo){
+    case "parrafo": return `<textarea id="${id}"${cls} rows="2">${esc(v)}</textarea>`;
+    case "numero": return `<input id="${id}"${cls} type="number" step="any" value="${esc(v)}"/>`;
+    case "dinero": return `<input id="${id}"${cls} type="number" step="1" min="0" value="${esc(v)}" placeholder="$ sin IVA"/>`;
+    case "fecha": return `<input id="${id}"${cls} type="date" value="${esc(v)}"/>`;
+    case "opcion": { const ops=cpOpciones(c); const extra=v&&!ops.includes(String(v))?`<option value="${esc(v)}" selected>${esc(v)} (opción retirada)</option>`:""; return `<select id="${id}"${cls}><option value="">— Elige —</option>${ops.map(x=>`<option${String(v)===x?" selected":""}>${esc(x)}</option>`).join("")}${extra}</select>`; }
+    case "sino": return `<select id="${id}"${cls}><option value="">— Elige —</option><option${v==="Sí"?" selected":""}>Sí</option><option${v==="No"?" selected":""}>No</option></select>`;
+    case "casilla": return `<label class="fm-req"><input id="${id}" type="checkbox"${v&&v!=="false"?" checked":""}/> ${esc(c.etiqueta)}</label>`;
+    case "url": return `<input id="${id}"${cls} type="url" value="${esc(v)}" placeholder="https://…"/>`;
+    case "persona": return `<select id="${id}"${cls}><option value="">— Elige —</option>${EQUIPO.map(p=>`<option value="${p.id}"${v===p.id?" selected":""}>${esc(p.nombre)}</option>`).join("")}</select>`;
+    default: return `<input id="${id}"${cls} type="text" value="${esc(v)}"/>`;
+  }
+}
+function cpLeerControl(el,c){ if(!el)return null; if(c.tipo==="casilla") return el.checked?true:null; return el.value; }
+function cpGuardarValor(id,cid,v){ // un valor de una tarea, escrito solo en su clave
+  const c=camposCat[cid], t=tareas[id]; if(!c||!t)return;
+  const val=cpNormalizar(c,v);
+  const def=cpConfig(t.lista||null).personalizados.find(x=>x.cid===cid);
+  if(def&&def.requerido&&val===null){ toast(`«${c.etiqueta}» es obligatorio en esta lista`,"error"); return; }
+  const updates={}; updates["tago_tareas/"+id+"/campos/"+cid]=val; updates["tago_tareas/"+id+"/updatedAt"]=new Date().toISOString(); updates["tago_tareas/"+id+"/updatedBy"]={id:currentUser.id,nombre:currentUser.nombre};
+  firebase.database().ref().update(updates).then(()=>toast("Guardado","ok")).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function cpPill(id,t,c){ // pastilla del campo en la fila: un clic la edita ahí mismo
+  const v=t.campos?t.campos[c.cid]:undefined, txt=cpValorTexto(c,v);
+  if(c.tipo==="casilla") return `<span class="tc-pill${v?"":" vacio"}" title="${esc(c.etiqueta)}: clic para ${v?"desmarcar":"marcar"}" onclick="event.stopPropagation();cpGuardarValor('${id}','${c.cid}',${v?"null":"true"})">${ic(v?"square-check-big":"square")} ${esc(c.etiqueta)}</span>`;
+  const retirada=c.tipo==="opcion"&&txt&&!cpOpciones(c).includes(String(v));
+  return `<span class="tc-pill${txt?"":" vacio"}${retirada?" retirada":""}" title="${esc(c.etiqueta)}${retirada?" · opción retirada de la lista":""}${c.tipo==="url"&&v?" · "+esc(v):""}" onclick="cpEditarEnFila(event,'${id}','${c.cid}')">${esc(c.etiqueta)}${txt?`: <b>${esc(txt)}</b>`:""}</span>`;
+}
+function cpEditarEnFila(ev,id,cid){ // reutiliza el popover de edición en la celda de Pedidos
+  ev.stopPropagation(); ev.preventDefault();
+  const t=tareas[id], c=camposCat[cid]; if(!t||!c)return;
+  if(celdaPop&&celdaPop._id===id&&celdaPop._campo===cid){ cerrarCeldaPop(); return; }
+  cerrarCeldaPop();
+  const cel=ev.currentTarget, r=cel.getBoundingClientRect();
+  const pop=document.createElement("div"); pop.className="celda-popover"; pop._id=id; pop._campo=cid;
+  const guardar=v=>{ cpGuardarValor(id,cid,v); cerrarCeldaPop(); };
+  pop._guardar=guardar;
+  const actual=t.campos?t.campos[cid]:"";
+  let hint="Enter guarda · Esc cancela";
+  if(["opcion","sino","persona"].includes(c.tipo)) hint="Se guarda al elegir · Esc cancela";
+  if(c.tipo==="fecha") hint="Se guarda al elegir · vacío quita la fecha";
+  if(c.tipo==="parrafo") hint="Enter guarda · Shift+Enter salto de línea · Esc cancela";
+  pop.innerHTML=`<div class="celda-pop-label">${esc(c.etiqueta)}</div>${cpControl("cpf-"+cid,c,actual,{clase:"celda-input"})}<div class="celda-pop-hint">${hint}</div>`;
+  document.body.appendChild(pop);
+  const ancho=pop.offsetWidth;
+  pop.style.top=(r.bottom+window.scrollY+6)+"px";
+  pop.style.left=Math.max(8,Math.min(r.left+window.scrollX,window.scrollX+document.documentElement.clientWidth-ancho-12))+"px";
+  celdaPop=pop;
+  const el=pop.querySelector("input,select,textarea"); if(!el)return;
+  if(el.tagName==="SELECT") el.addEventListener("change",()=>guardar(cpLeerControl(el,c)));
+  else{
+    el.addEventListener("input",()=>{ el.dataset.dirty="1"; if(el.type==="date") guardar(cpLeerControl(el,c)); });
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!(c.tipo==="parrafo"&&e.shiftKey)){ e.preventDefault(); guardar(cpLeerControl(el,c)); } });
+  }
+  el.focus(); if(el.select) try{ el.select(); }catch(e){}
+}
+// ── Modal de tarea: bloques integrados que la lista oculta + campos personalizados ──
+function tareaListaCambio(){ aplicarCamposModal(gv("f-tarea-lista")||null); }
+function aplicarCamposModal(listaId,valores,reiniciar){
+  const cfg=cpConfig(listaId), I=cfg.integrados;
+  document.querySelectorAll("#modal-tarea [data-campo]").forEach(el=>{ const p=CP_PROPIEDADES.find(x=>x.k===el.dataset.campo); el.style.display=(p&&p.modal&&!I[p.k])?"none":""; });
+  const cont=document.getElementById("tarea-campos-extra"); if(!cont)return;
+  if(reiniciar){ cont.innerHTML=""; cont._valores=valores||{}; }
+  valores=valores||cont._valores||{}; cont._valores=valores;
+  // Si la configuración no cambió (llegó otra actualización del catálogo), no se toca lo que la persona está escribiendo
+  const huella=JSON.stringify(cfg.personalizados.map(c=>[c.cid,c.etiqueta,c.tipo,c.opciones,c.requerido]));
+  if(!reiniciar&&cont._huella===huella)return;
+  cont._huella=huella;
+  const activo=cont.contains(document.activeElement)?document.activeElement:null, activoId=activo&&activo.id, sel=activo&&activo.selectionStart!==undefined?[activo.selectionStart,activo.selectionEnd]:null;
+  // Lo ya tecleado se conserva aunque cambie la lista o llegue una actualización del catálogo
+  const escritos={}; cont.querySelectorAll("[data-cid]").forEach(w=>{ const c=camposCat[w.dataset.cid], el=w.querySelector("input,select,textarea"); if(c&&el) escritos[w.dataset.cid]=cpLeerControl(el,c); });
+  cont.innerHTML=cfg.personalizados.map(c=>{
+    const v=escritos[c.cid]!==undefined?escritos[c.cid]:valores[c.cid];
+    if(c.tipo==="casilla") return `<div data-cid="${c.cid}" style="align-self:end">${cpControl("f-tc-"+c.cid,c,v)}</div>`;
+    return `<div data-cid="${c.cid}"><label>${esc(c.etiqueta)}${c.requerido?" *":""}</label>${cpControl("f-tc-"+c.cid,c,v)}</div>`;
+  }).join("");
+  cont.style.display=cfg.personalizados.length?"":"none";
+  if(activoId){ const el=document.getElementById(activoId); if(el){ el.focus(); if(sel&&el.setSelectionRange) try{ el.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
+}
+// ── Panel «Campos» ──
+function actualizarBotonCampos(){ const b=document.getElementById("btn-campos-lista"); if(b) b.style.display=(tareaFiltro.tipo==="lista"&&currentUser&&currentUser.isAdmin)?"":"none"; }
+function abrirCampos(listaId,recienCreada){
+  listaId=listaId||(tareaFiltro.tipo==="lista"?tareaFiltro.id:null); if(!listaId)return;
+  if(!currentUser||!currentUser.isAdmin){ toast("Solo los administradores configuran los campos de una lista","error"); return; }
+  cpListaId=listaId; cpTab=recienCreada?"crear":"existente"; cpBuscar=""; cpNuevoTipo=null; cpEditando=null; cpConfirmar=null;
+  const p=document.getElementById("cp-panel");
+  p.innerHTML=`<div class="cp-head"><h3>Campos</h3><button class="fh-ico" title="Cerrar" onclick="cerrarCampos()">${ic("x")}</button></div>
+    <div class="cp-lista-nombre" id="cp-lista-nombre"></div>
+    <div class="cp-buscar">${ic("search")}<input id="cp-buscar" placeholder="Buscar campos de tarea" oninput="cpBuscar=this.value;renderCampos()"/></div>
+    <div class="cp-tabs"><button id="cp-tab-crear" onclick="cpTab='crear';cpEditando=null;cpConfirmar=null;renderCampos()">Crear nuevo</button><button id="cp-tab-existente" onclick="cpTab='existente';renderCampos()">Agregar existente</button></div>
+    ${recienCreada?`<div class="cp-nota">${ic("sparkles")}<span>Lista creada. Elige aquí qué campos tendrán sus tareas; también puedes hacerlo después desde el botón «Campos».</span></div>`:""}
+    <div class="cp-body" id="cp-body"></div>`;
+  renderCampos();
+  p.classList.add("open"); document.body.classList.add("cp-abierta");
+  if(recienCreada) setTimeout(()=>document.getElementById("cpn-etq")?.focus(),250); else setTimeout(()=>document.getElementById("cp-buscar")?.focus(),250);
+}
+function cerrarCampos(){ document.getElementById("cp-panel").classList.remove("open"); document.body.classList.remove("cp-abierta"); cpListaId=null; cpEditando=null; cpConfirmar=null; }
+function cpRefrescar(){ // los listeners repintan el panel solo cuando no se está escribiendo en él
+  if(!cpListaId)return;
+  if(!listas[cpListaId]){ cerrarCampos(); return; }
+  if(cpTab==="crear"||cpEditando)return;
+  renderCampos();
+}
+function cpToggleSec(k){ cpAbiertas.has(k)?cpAbiertas.delete(k):cpAbiertas.add(k); renderCampos(); }
+function cpUsoEnListas(cid){ return Object.values(listas).filter(x=>x&&x.campos&&x.campos.personalizados&&x.campos.personalizados[cid]).length; }
+function renderCampos(){
+  const body=document.getElementById("cp-body"); if(!body||!cpListaId)return;
+  const l=listas[cpListaId]||{nombre:"Lista"}, cfg=cpConfig(cpListaId), I=cfg.integrados, q=cpBuscar.trim().toLowerCase();
+  const nomEsp=l.espacio==="tareas"?"Tareas":(espacios[l.espacio]?espacios[l.espacio].nombre:"");
+  document.getElementById("cp-lista-nombre").innerHTML=`${ic("list")} ${esc(l.nombre)}${nomEsp?` <span style="opacity:.6">· ${esc(nomEsp)}</span>`:""}`;
+  document.getElementById("cp-tab-crear").classList.toggle("active",cpTab==="crear");
+  document.getElementById("cp-tab-existente").classList.toggle("active",cpTab!=="crear");
+  if(cpTab==="crear"){ body.innerHTML=renderCamposCrear(); return; }
+  const coincide=n=>!q||String(n).toLowerCase().includes(q);
+  const sw=(on,fn,dis,nombre)=>`<button class="cp-sw${on?" on":""}" role="switch" aria-checked="${on}" aria-label="${esc(nombre||"")}" ${dis?"disabled":`onclick="${fn}"`}></button>`;
+  const sec=(k,titulo,n)=>`<div class="cp-sec" onclick="cpToggleSec('${k}')">${ic(cpAbiertas.has(k)?"chevron-down":"chevron-right")}<span>${titulo}</span><span class="cp-n">${n}</span></div>`;
+  const filaProp=(p,on)=>`<div class="cp-fila"><span class="cp-ic">${ic(p.ic)}</span><span class="cp-nombre">${esc(p.n)}${p.sub?`<span class="cp-sub">${esc(p.sub)}</span>`:""}</span>${sw(on,`cpTogglePropiedad('${p.k}',${!on})`,false,p.n)}</div>`;
+  const filaCampo=(cid,c,on)=>{
+    const t=CP_TIPOS[c.tipo]||CP_TIPOS.texto, n=cpUsoEnListas(cid), abierta=cpEditando===cid||cpConfirmar===cid;
+    const sub=[t.n+(c.tipo==="opcion"?": "+cpOpciones(c).join(", "):""), on&&c.requerido?"obligatorio":null, n?`en ${n} lista${n===1?"":"s"}`:"sin usar"].filter(Boolean).join(" · ");
+    return `<div class="cp-fila${abierta?" abierta":""}"><span class="cp-ic">${ic(t.ic)}</span><span class="cp-nombre" title="${esc(sub)}">${esc(c.etiqueta)}<span class="cp-sub">${esc(sub)}</span></span>
+      <button class="cp-acc" title="Editar campo" onclick="cpEditando=cpEditando==='${cid}'?null:'${cid}';cpConfirmar=null;renderCampos()">${ic("pencil")}</button>
+      <button class="cp-acc" title="Quitar del espacio de trabajo" onclick="cpConfirmar=cpConfirmar==='${cid}'?null:'${cid}';cpEditando=null;renderCampos()">${ic("trash")}</button>
+      ${sw(on,`cpVincular('${cid}',${!on})`,false,c.etiqueta)}</div>`
+      +(cpEditando===cid?renderCampoEditar(cid,c,on):"")
+      +(cpConfirmar===cid?`<div class="cp-confirm"><span>¿Quitar «${esc(c.etiqueta)}» del espacio de trabajo? Deja de verse en ${n||"ninguna"} lista${n===1?"":"s"}; los valores ya guardados se conservan.</span><button class="si" onclick="cpArchivar('${cid}')">Quitar</button><button onclick="cpConfirmar=null;renderCampos()">No</button></div>`:"");
+  };
+  const vinculados=new Set(cfg.personalizados.map(c=>c.cid));
+  const catalogo=Object.entries(camposCat).filter(([cid,c])=>c&&!c.archivado&&(c.espacio||null)===(l.espacio||null)).sort((a,b)=>String(a[1].etiqueta).localeCompare(String(b[1].etiqueta),"es"));
+  const muestran=[];
+  if(coincide("Nombre de la tarea")) muestran.push(`<div class="cp-fila fijo"><span class="cp-ic">Aa</span><span class="cp-nombre">Nombre de la tarea</span>${sw(true,"",true,"Nombre de la tarea")}</div>`);
+  CP_PROPIEDADES.filter(p=>I[p.k]&&coincide(p.n)).forEach(p=>muestran.push(filaProp(p,true)));
+  cfg.personalizados.filter(c=>coincide(c.etiqueta)).forEach(c=>muestran.push(filaCampo(c.cid,c,true)));
+  const props=CP_PROPIEDADES.filter(p=>!I[p.k]&&coincide(p.n));
+  const entorno=catalogo.filter(([cid,c])=>!vinculados.has(cid)&&coincide(c.etiqueta));
+  body.innerHTML=sec("muestran","Se muestran",muestran.length)+(cpAbiertas.has("muestran")?(muestran.join("")||`<div class="cp-vacio">Nada coincide con «${esc(cpBuscar)}»</div>`):"")
+    +`<div class="cp-sep"></div>`+sec("propiedades","Propiedades",props.length)+(cpAbiertas.has("propiedades")?(props.map(p=>filaProp(p,false)).join("")||`<div class="cp-vacio">${q?"Ninguna propiedad coincide":"Todas las propiedades están a la vista"}</div>`):"")
+    +`<div class="cp-sep"></div>`+sec("entorno","Campos personalizados en el entorno de trabajo",entorno.length)+(cpAbiertas.has("entorno")?(entorno.map(([cid,c])=>filaCampo(cid,c,false)).join("")||`<div class="cp-vacio">${q?"Ningún campo coincide":`No hay más campos en ${nomEsp?"el espacio "+esc(nomEsp):"este espacio"}. Créalos en «Crear nuevo».`}</div>`):"");
+}
+function renderCamposCrear(){
+  const tipos=Object.entries(CP_TIPOS).map(([k,t])=>`<div class="cp-tipo${cpNuevoTipo===k?" active":""}" onclick="cpElegirTipo('${k}')">${ic(t.ic)} ${t.n}</div>`).join("");
+  if(!cpNuevoTipo) return `<div class="cp-ayuda">Elige el tipo de campo. Quedará disponible para todas las listas del espacio y se agregará a esta.</div><div class="cp-tipos">${tipos}</div>`;
+  const t=CP_TIPOS[cpNuevoTipo];
+  return `<div class="cp-tipos">${tipos}</div><div class="cp-form">
+    <div><label>Nombre del campo</label><input type="text" id="cpn-etq" placeholder="ej: ${esc(t.ej)}" onkeydown="if(event.key==='Enter'){event.preventDefault();cpCrearCampo()}"/></div>
+    ${cpNuevoTipo==="opcion"?`<div><label>Opciones (separadas por coma)</label><input type="text" id="cpn-ops" placeholder="ej: Instagram, TikTok, Email" onkeydown="if(event.key==='Enter'){event.preventDefault();cpCrearCampo()}"/></div>`:""}
+    <label class="fm-req"><input type="checkbox" id="cpn-req"/> Obligatorio en esta lista</label>
+    <div class="cp-pie"><button class="btn btn-secondary" onclick="cpNuevoTipo=null;renderCampos()">Cancelar</button><button class="btn btn-primary" onclick="cpCrearCampo()">Crear campo</button></div>
+  </div>`;
+}
+function cpElegirTipo(k){
+  const etq=document.getElementById("cpn-etq")?.value||"", ops=document.getElementById("cpn-ops")?.value||"", req=!!document.getElementById("cpn-req")?.checked;
+  cpNuevoTipo=k; renderCampos();
+  const e=document.getElementById("cpn-etq"); if(e){ e.value=etq; e.focus(); }
+  const o=document.getElementById("cpn-ops"); if(o) o.value=ops;
+  const r=document.getElementById("cpn-req"); if(r) r.checked=req;
+}
+function renderCampoEditar(cid,c,on){
+  return `<div class="cp-edit">
+    <input type="text" id="cpe-etq" value="${esc(c.etiqueta)}" placeholder="Nombre del campo" onkeydown="if(event.key==='Enter'){event.preventDefault();cpGuardarEdicion('${cid}')}"/>
+    ${c.tipo==="opcion"?`<input type="text" id="cpe-ops" value="${esc(cpOpciones(c).join(", "))}" placeholder="Opciones separadas por coma" onkeydown="if(event.key==='Enter'){event.preventDefault();cpGuardarEdicion('${cid}')}"/>`:""}
+    ${on?`<label class="fm-req"><input type="checkbox" id="cpe-req"${c.requerido?" checked":""}/> Obligatorio en esta lista</label>`:""}
+    <span class="cp-sub">Tipo: ${(CP_TIPOS[c.tipo]||CP_TIPOS.texto).n} (no se cambia). El nombre y las opciones cambian en todas las listas que lo usan.</span>
+    <div class="cp-pie"><button class="btn btn-secondary" onclick="cpEditando=null;renderCampos()">Cancelar</button><button class="btn btn-primary" onclick="cpGuardarEdicion('${cid}')">Guardar</button></div>
+  </div>`;
+}
+function cpCrearCampo(){
+  const l=listas[cpListaId]; if(!l||!cpNuevoTipo)return;
+  const etq=(gv("cpn-etq")||"").trim(); if(!etq){ toast("Ponle un nombre al campo","error"); document.getElementById("cpn-etq")?.focus(); return; }
+  const ops=cpNuevoTipo==="opcion"?(gv("cpn-ops")||"").split(",").map(s=>s.trim()).filter(Boolean):[];
+  if(cpNuevoTipo==="opcion"&&!ops.length){ toast("Escribe al menos una opción","error"); document.getElementById("cpn-ops")?.focus(); return; }
+  const dup=Object.entries(camposCat).find(([,c])=>c&&!c.archivado&&(c.espacio||null)===(l.espacio||null)&&String(c.etiqueta).trim().toLowerCase()===etq.toLowerCase());
+  if(dup){ toast(`Ya existe «${dup[1].etiqueta}» en este espacio: agrégalo desde «Agregar existente»`,"error"); cpTab="existente"; cpBuscar=etq; renderCampos(); const b=document.getElementById("cp-buscar"); if(b){ b.value=etq; } return; }
+  const req=!!document.getElementById("cpn-req")?.checked;
+  const cid=firebase.database().ref("tago_campos").push().key;
+  const updates={};
+  updates["tago_campos/"+cid]={espacio:l.espacio||null,etiqueta:etq,tipo:cpNuevoTipo,opciones:ops.join(", "),archivado:false,creadoPor:{id:currentUser.id,nombre:currentUser.nombre},createdAt:new Date().toISOString()};
+  updates["tago_listas/"+cpListaId+"/campos/personalizados/"+cid]={orden:Date.now(),requerido:req};
+  firebase.database().ref().update(updates)
+    .then(()=>{ toast(`Campo «${etq}» creado y agregado a «${l.nombre}»`,"ok"); cpTab="existente"; cpNuevoTipo=null; cpBuscar=""; const b=document.getElementById("cp-buscar"); if(b) b.value=""; renderCampos(); })
+    .catch(err=>toast("No se pudo crear el campo: "+err.message,"error"));
+}
+function cpVincular(cid,on){
+  const l=listas[cpListaId], c=camposCat[cid]; if(!l||!c)return;
+  firebase.database().ref("tago_listas/"+cpListaId+"/campos/personalizados/"+cid).set(on?{orden:Date.now(),requerido:false}:null)
+    .then(()=>{ if(!on) toast(`«${c.etiqueta}» quitado de esta lista. Los valores guardados se conservan.`); })
+    .catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function cpTogglePropiedad(k,on){
+  if(!listas[cpListaId])return;
+  firebase.database().ref("tago_listas/"+cpListaId+"/campos/integrados/"+k).set(!!on).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function cpGuardarEdicion(cid){
+  const c=camposCat[cid]; if(!c)return;
+  const etq=(gv("cpe-etq")||"").trim(); if(!etq){ toast("El campo necesita un nombre","error"); return; }
+  const dup=Object.entries(camposCat).find(([k,x])=>k!==cid&&x&&!x.archivado&&(x.espacio||null)===(c.espacio||null)&&String(x.etiqueta).trim().toLowerCase()===etq.toLowerCase());
+  if(dup){ toast(`Ya existe otro campo «${dup[1].etiqueta}» en este espacio`,"error"); return; }
+  const updates={}; updates["tago_campos/"+cid+"/etiqueta"]=etq; updates["tago_campos/"+cid+"/updatedAt"]=new Date().toISOString();
+  if(c.tipo==="opcion"){ const ops=(gv("cpe-ops")||"").split(",").map(s=>s.trim()).filter(Boolean); if(!ops.length){ toast("Escribe al menos una opción","error"); return; } updates["tago_campos/"+cid+"/opciones"]=ops.join(", "); }
+  const req=document.getElementById("cpe-req"); if(req&&listas[cpListaId]) updates["tago_listas/"+cpListaId+"/campos/personalizados/"+cid+"/requerido"]=!!req.checked;
+  firebase.database().ref().update(updates).then(()=>{ cpEditando=null; toast("Campo guardado","ok"); renderCampos(); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function cpArchivar(cid){
+  const c=camposCat[cid]; if(!c)return;
+  firebase.database().ref("tago_campos/"+cid+"/archivado").set(true).then(()=>{ cpConfirmar=null; toast(`«${c.etiqueta}» quitado del espacio de trabajo`); renderCampos(); }).catch(err=>toast("No se pudo quitar: "+err.message,"error"));
+}
+// Escape cierra el panel (en fase de captura, para que la misma tecla no cierre también la ficha o el popover que está debajo)
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape"||!cpListaId||celdaPop||document.querySelector(".modal-overlay.open")||document.getElementById("sb-menu-crear"))return;
+  const panel=document.getElementById("cp-panel"), t=e.target;
+  if(t&&!panel.contains(t)&&t.matches&&t.matches("input,textarea,select,[contenteditable]"))return; // ese control ya usa Escape (input de la barra, buscador del chat…)
+  cerrarCampos(); e.stopPropagation();
+},true);
+
 // ══ BARRA LATERAL (propuesta, copia local): jerarquía de espacios, recogible, chat fuera ══
 var sbColapsada=false; try{ sbColapsada=localStorage.getItem("tago_sb_colapsada")==="1"; }catch(e){}
 var sbAbiertos=new Set(["pedidos","tareas","chat"]); try{ const v=JSON.parse(localStorage.getItem("tago_sb_abiertos_v2")||"null"); if(Array.isArray(v)) sbAbiertos=new Set(v); }catch(e){}
@@ -3970,7 +4336,13 @@ function sbCrearEspacio(v){
   if(ref&&ref.key) sbAbiertos.add(ref.key);
   renderSidebar();
 }
-function sbCrearLista(espacio,v,carpeta){ v=(v||"").trim(); if(!v)return; sbEditando=null; firebase.database().ref("tago_listas").push({espacio,carpeta:carpeta||null,nombre:v,orden:Date.now(),creadoPor:currentUser.id}); }
+function sbCrearLista(espacio,v,carpeta){
+  v=(v||"").trim(); if(!v)return; sbEditando=null;
+  const ref=firebase.database().ref("tago_listas").push({espacio,carpeta:carpeta||null,nombre:v,orden:Date.now(),creadoPor:currentUser.id});
+  // Recién creada la lista, se entra a ella y se abre el panel para definir sus campos
+  const abrir=()=>{ if(!ref||!ref.key)return; irATareas({tipo:"lista",id:ref.key}); abrirCampos(ref.key,true); };
+  if(ref&&typeof ref.then==="function") ref.then(abrir).catch(err=>toast("No se pudo crear la lista: "+(err&&err.message||err),"error")); else abrir();
+}
 function sbCrearCarpeta(espacio,v){ v=(v||"").trim(); if(!v)return; sbEditando=null; const ref=firebase.database().ref("tago_carpetas").push({espacio,nombre:v,orden:Date.now(),creadoPor:currentUser.id}); if(ref&&ref.key) sbAbiertos.add("c_"+ref.key); renderSidebar(); }
 function sbCrearElemento(espacio,tipo,v,carpeta){
   v=(v||"").trim(); if(!v)return; sbEditando=null;
@@ -4002,6 +4374,7 @@ function sbEliminar(tipo,id){
     Object.entries(listas).forEach(([lid,l])=>{ if(l.espacio===id) updates["tago_listas/"+lid]=null; });
     Object.entries(carpetas).forEach(([cid,c])=>{ if(c.espacio===id) updates["tago_carpetas/"+cid]=null; });
     Object.entries(elementos).forEach(([eid,e])=>{ if(e.espacio===id){ updates["tago_elementos/"+eid]=null; if(currentTab==="elemento"&&elementoActual===eid) irATareas({tipo:"todas"}); } });
+    Object.entries(camposCat).forEach(([cid,c])=>{ if(c&&c.espacio===id&&!c.archivado) updates["tago_campos/"+cid+"/archivado"]=true; }); // su catálogo de campos queda archivado, no borrado
     firebase.database().ref().update(updates);
     if((tareaFiltro.tipo==="espacio"&&tareaFiltro.id===id)||(tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]?.espacio===id)) irATareas({tipo:"todas"});
   }
@@ -4054,7 +4427,7 @@ function renderSidebar(){
     const misCarpetas=Object.entries(carpetas).filter(([,c])=>c.espacio===sp.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
     const elemActivoSp=currentTab==="elemento"&&elementos[elementoActual]?.espacio===sp.id;
     const plusBtn=(carpeta)=>puedeEsp&&!col?`<button class="sb-add sb-plus" title="Crear aquí" onclick="event.stopPropagation();sbAbrirMenuCrear(event,'${sp.id}',${carpeta?`'${carpeta}'`:"null"})">+</button>`:"";
-    const filaLista=([id,l],sub)=>{ const activo=currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&tareaFiltro.id===id; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="irATareas({tipo:'lista',id:'${id}'})"><span class="sb-ic sb-ic-sm">${ic("list")}</span><span class="sb-label">${esc(l.nombre)}</span><span class="sb-count">${nLista(id)}</span>${puedeEsp?delBtn("lista",id):""}${confirmar("lista",id)}</div>`; };
+    const filaLista=([id,l],sub)=>{ const activo=currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&tareaFiltro.id===id; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="irATareas({tipo:'lista',id:'${id}'})"><span class="sb-ic sb-ic-sm">${ic("list")}</span><span class="sb-label">${esc(l.nombre)}</span><span class="sb-count">${nLista(id)}</span>${puedeEsp?`<button class="sb-del" title="Campos de la lista" onclick="event.stopPropagation();abrirCampos('${id}')">${ic("columns-3")}</button>`:""}${puedeEsp?delBtn("lista",id):""}${confirmar("lista",id)}</div>`; };
     const filaElem=([id,e],sub)=>{ const activo=currentTab==="elemento"&&elementoActual===id; const n=e.tipo==="formulario"?Object.values(tareas).filter(t=>t.origenFormulario===id).length:""; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="abrirElemento('${id}')"><span class="sb-ic sb-ic-sm">${ic(ELEM_TIPOS[e.tipo]?.icono||"file-text")}</span><span class="sb-label">${esc(e.nombre)}</span><span class="sb-count">${n||""}</span>${puedeEsp?delBtn("elemento",id):""}${confirmar("elemento",id)}</div>`; };
     const filaEditando=(carpeta)=>{ const ed=sbEditando; if(!ed||ed.espacio!==sp.id||(ed.carpeta||null)!==(carpeta||null)||!["lista","carpeta","elemento"].includes(ed.tipo)) return ""; const c=carpeta?`'${carpeta}'`:"null"; const ph=ed.tipo==="lista"?"Nombre de la lista":ed.tipo==="carpeta"?"Nombre de la carpeta":"Nombre del "+(ELEM_TIPOS[ed.etipo]?.nombre||"elemento").toLowerCase(); const fn=ed.tipo==="lista"?`sbCrearLista('${sp.id}',this.value,${c})`:ed.tipo==="carpeta"?`sbCrearCarpeta('${sp.id}',this.value)`:`sbCrearElemento('${sp.id}','${ed.etipo}',this.value,${c})`; return inputInline(ph,fn,"sbEditando=null;renderSidebar()",true); };
     h+=`<div class="sb-space${activoSp||elemActivoSp?" active":""}"><div class="sb-node sb-space-head" onclick="${col?irSp:`sbToggleEspacio('${sp.id}')`}" title="${esc(sp.nombre)}"><span class="sb-caret">${abierto?"▾":"▸"}</span><span class="sb-ic">${sp.fijo?ic("square-check-big"):sbAvatarEspacio(sp)}</span><span class="sb-label">${esc(sp.nombre)}</span><span class="sb-count">${nSp}</span>${plusBtn(null)}${!sp.fijo&&puedeEsp?delBtn("espacio",sp.id):""}${confirmar("espacio",sp.id)}</div>`;

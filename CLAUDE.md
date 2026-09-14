@@ -87,6 +87,19 @@ Firestore).
   `audioSeg`; en `tago_tareas` `lista`, `pedidoId`, `origenFormulario`; en
   `tago_listas` `carpeta`. Los audios e imágenes del chat van en base64
   dentro de la base — conviene pasarlos a Storage.
+- `tago_campos` — campos personalizados de las listas de tareas (septiembre
+  2026, referencia: panel «Campos» de ClickUp). Cada campo es
+  `{espacio, etiqueta, tipo, opciones, archivado, creadoPor, createdAt}` y
+  vale para todas las listas de su espacio; nunca se borra, se marca
+  `archivado`. Cada lista dice qué muestra en `tago_listas/<id>/campos =
+  {integrados:{prioridad,fechaLimite,fechaInicio,asignados,pedido,notas,
+  creado,creador,actualizado,id}, personalizados:{<cid>:{orden,requerido}}}`
+  (sin ese nodo la lista se ve como siempre) y cada tarea guarda sus valores
+  en `tago_tareas/<id>/campos/<cid>` (más `fechaInicio` opcional); los
+  valores se escriben clave por clave, nunca se reemplaza el objeto entero.
+  Solo admins configuran (regla de `tago_campos` y de `tago_listas`); el
+  equipo rellena los valores de sus tareas. En el JS: `CP_TIPOS`,
+  `CP_PROPIEDADES`, `cpConfig(listaId)`, panel `abrirCampos`.
 
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de
