@@ -220,7 +220,7 @@ Firestore).
   Los packs facturados en relBase con el producto «Pack DTF …» (código
   TAG-P20/P50/P100) los crea solo el robot del tablero
   (`tago-tablero/pipeline/packs_relbase.py`, después de lineas.py en cada
-  corrida completa, documentos desde el 15-sep-2026): id `rb_<docId>_<línea>`,
+  corrida completa, documentos desde el 14-sep-2026): id `rb_<docId>_<línea>`,
   `origen:"relbase"`, `relbase{docId, folio…}`, cliente = razón social de
   relBase, `documento` = «Factura 14031»; la tabla los marca «Nuevo» 3 días.
   Solo el producto pack: Andreina aclaró que facturar 20/50/100 metros
