@@ -325,6 +325,8 @@ img,svg{max-width:100%}
 .volver{display:inline-flex;align-items:center;gap:7px;border-radius:var(--pill);border:1.5px solid var(--linea2);background:transparent;color:var(--tinta2);text-decoration:none;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.03em;padding:6px 13px;transition:border-color .2s,color .2s;margin-left:6px}
 .volver:hover{border-color:var(--azul);color:var(--azul)}
 .pill .enlacito{background:none;border:0;padding:0 0 0 6px;color:var(--azul);font-family:"DM Sans",sans-serif;font-weight:600;font-size:12.5px;cursor:pointer}
+.avisoLectura{margin:0 0 12px;padding:10px 14px;border:1px solid var(--linea2);border-radius:12px;background:var(--papel);color:var(--tinta2);font-size:13.5px}
+input:disabled,select:disabled{cursor:default;opacity:.7}
 </style>
 </head>
 <body>
@@ -362,6 +364,7 @@ img,svg{max-width:100%}
     </div>
   </header>
 
+  <p class="avisoLectura" id="avisoLectura" hidden>Estás viendo la Ruta en modo solo lectura: puedes recorrerla y abrir cada tarea, pero los ticks, estados y notas solo los cambia Andreina.</p>
   <nav class="tabs" role="tablist" aria-label="Vistas">
     <button role="tab" data-view="semana" aria-selected="true">Esta semana</button>
     <button role="tab" data-view="equipo" aria-selected="false">Matriz y equipo</button>
@@ -638,11 +641,12 @@ const FIN = new Set(['rec','no','ya','sin']);
 
 // ---------- state ----------
 const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R'};
+let soloLectura=false; const RO=()=>soloLectura?' disabled':'';   // quien solo puede mirar no ve controles activos
 let db=null, tareasListo=false, guardando=false;
 const LS='rutaTago';
 function localLoad(){ try{ const s=JSON.parse(localStorage.getItem(LS)||'{}'); state.hecho=s.hecho||{}; state.delegado=s.delegado||{}; state.cli=s.cli||{}; }catch(e){} }
 function localSave(){ try{ localStorage.setItem(LS,JSON.stringify({hecho:state.hecho,delegado:state.delegado,cli:state.cli})); }catch(e){} }
-function setGuardado(modo){ const dot=document.getElementById('dotGuardado'), t=document.getElementById('txtGuardado'); dot.className='dot'+(modo==='nube'?' on':modo==='local'?' local':''); t.textContent = modo==='nube'?'Guardado en la nube':modo==='local'?'Solo en este dispositivo':'Conectando'; }
+function setGuardado(modo){ const dot=document.getElementById('dotGuardado'), t=document.getElementById('txtGuardado'); dot.className='dot'+(modo==='nube'?' on':modo==='local'?' local':''); t.textContent = modo==='nube'?'Guardado en la nube':modo==='local'?'Solo en este dispositivo':modo==='lectura'?'Solo lectura':'Conectando'; }
 
 // week index
 (function(){ let i=0; WEEKS.forEach((w,k)=>{ if(d(w.ini)<=HOY) i=k; }); state.week=i; })();
@@ -655,7 +659,7 @@ function renderHeader(){
   const del=ALL.filter(t=>t.o!=='A'&&state.delegado[t.id]).length, delT=ALL.filter(t=>t.o!=='A').length; $('#pillHechas').textContent=`${hechas(ALL)} de ${ALL.length} tareas · ${del} de ${delT} delegadas`;
 }
 function ownChip(t){ const o=OWNERS[t.o]; return `<span class="own${t.o==='A'?' me':''}" style="--c:${o.c}"><i></i>${o.n}${t.con?` <span class="faint">con ${OWNERS[t.con].n}</span>`:''}</span>`; }
-function delChip(t,pref){ if(t.o==='A') return ''; const on=!!state.delegado[t.id]; return `<label class="del${on?' on':''}"><input type="checkbox" id="${pref}-${t.id}" data-del="${t.id}" ${on?'checked':''}> ${on?'Delegado':'Delegar'}</label>`; }
+function delChip(t,pref){ if(t.o==='A'||soloLectura) return ''; const on=!!state.delegado[t.id]; return `<label class="del${on?' on':''}"><input type="checkbox" id="${pref}-${t.id}" data-del="${t.id}" ${on?'checked':''}> ${on?'Delegado':'Delegar'}</label>`; }
 function qChip(t){ return `<span class="qchip">${t.rut?'Cada semana':QUAD[t.q].n}</span>`; }
 function hitosHtml(w){ return w.hitos.map(h=>`<span class="hito ${h.c}">${esc(h.t)}</span>`).join(''); }
 function rangoTxt(w){ const a=d(w.ini), b=d(w.fin); return a.getMonth()===b.getMonth()? `${a.getDate()} al ${b.getDate()} de ${MESL[a.getMonth()]}` : `${a.getDate()} de ${MESL[a.getMonth()]} al ${b.getDate()} de ${MESL[b.getMonth()]}`; }
@@ -665,7 +669,7 @@ function renderSemana(){
   $('#wkHitos').innerHTML=hitosHtml(w);
   $('#wkPrev').disabled=state.week===0; $('#wkNext').disabled=state.week===WEEKS.length-1;
   $('#wkTasks').innerHTML=w.tareas.map(t=>`<li class="task${state.hecho[t.id]?' done':''}">
-    <input type="checkbox" id="t-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''} aria-label="${esc(t.t)}">
+    <input type="checkbox" id="t-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()} aria-label="${esc(t.t)}">
     <div><button class="tt" data-open="${t.id}">${esc(t.t)}</button>${t.por?`<div class="why clamp">${esc(t.por)}</div>`:''}
     <div class="chips">${qChip(t)}${ownChip(t)}${delChip(t,'d')}${(t.det&&t.det.length)?`<button class="go mas" data-open="${t.id}">Ver el detalle</button>`:''}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}</div></div></li>`).join('');
   const h=hechas(w.tareas); $('#wkBar').style.width=(w.tareas.length?100*h/w.tareas.length:0)+'%';
@@ -680,20 +684,20 @@ function renderCalendario(){
   $('#weeks').innerHTML=WEEKS.map((w,i)=>{ const fin=d(w.fin); const cls= i===state.week?'now':(fin<HOY?'past':''); return `<div class="week ${cls}">
     <div><div class="wn dm num">${i+1}</div><div class="wd">${esc(rangoTxt(w))}</div></div>
     <div>${w.hitos.length?`<div class="hitos">${hitosHtml(w)}</div>`:''}
-    <ul class="wtasks">${w.tareas.map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
+    <ul class="wtasks">${w.tareas.map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
 }
 function renderEquipo(){
   const w=WEEKS[state.week];
   $('#eqTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
   $('#eqPrev').disabled=state.week===0; $('#eqNext').disabled=state.week===WEEKS.length-1;
-  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=w.tareas.filter(t=>t.q===q); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
-  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=w.tareas.filter(t=>t.o===k||t.con===k); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${state.hecho[t.id]?'ok':''}"><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
+  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=w.tareas.filter(t=>t.q===q); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
+  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=w.tareas.filter(t=>t.o===k||t.con===k); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${state.hecho[t.id]?'ok':''}"><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}${RO()}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
 }
 function keyOf(x){ return x.rut || x.ghlId; }
 function estadoDe(x){ return (state.cli[keyOf(x)]||{}).estado||'por'; }
 function notaDe(x){ return (state.cli[keyOf(x)]||{}).nota||''; }
-function selHtml(x){ const e=estadoDe(x); return `<select class="st s-${e}" id="est-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}">${ESTADOS.map(([v,l])=>`<option value="${v}"${v===e?' selected':''}>${l}</option>`).join('')}</select>`; }
-function notaHtml(x){ return `<input class="nota" id="nota-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}" value="${esc(notaDe(x))}" placeholder="Qué dijo, cuándo volver a llamar">`; }
+function selHtml(x){ const e=estadoDe(x); return `<select class="st s-${e}" id="est-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}"${RO()}>${ESTADOS.map(([v,l])=>`<option value="${v}"${v===e?' selected':''}>${l}</option>`).join('')}</select>`; }
+function notaHtml(x){ return `<input class="nota" id="nota-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}" value="${esc(notaDe(x))}" placeholder="${soloLectura?'':'Qué dijo, cuándo volver a llamar'}"${RO()}>`; }
 const WA='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 12 12 0 0 0 4.6 4.1c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>';
 function contactoHtml(x){
   const tel = x.tel ? `<a class="wa" href="https://wa.me/56${x.telRaw}" target="_blank" rel="noopener" title="Abrir WhatsApp">${WA}${esc(x.tel)}</a>` : `<span class="chip notel">Sin teléfono</span>`;
@@ -762,7 +766,7 @@ const BYID=Object.fromEntries(ALL.map(t=>[t.id,t])); const WEEKOF=Object.fromEnt
 let detId=null;
 function fillDet(id){ const t=BYID[id]; if(!t) return; const wi=WEEKOF[id]; const dlg=$('#det');
   $('#detIn').innerHTML=`<div class="eyebrow">Semana ${wi+1} · ${t.rut?'Cada semana':QUAD[t.q].n}</div><h3>${esc(t.t)}</h3>${t.por?`<p>${esc(t.por)}</p>`:''}${(t.det&&t.det.length)?`<ul>${t.det.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
-    <div class="det-foot"><label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}> Hecho</label>${delChip(t,'dgd')}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
+    <div class="det-foot">${soloLectura?'':`<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}> Hecho</label>`}${delChip(t,'dgd')}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
 function openDet(id){ detId=id; fillDet(id); const dlg=$('#det'); if(!dlg.open) dlg.showModal(); }
 function renderAll(){ renderHeader(); renderSemana(); renderCalendario(); renderEquipo(); if(state.view==='clientes') renderClientes(); if(detId && $('#det').open) fillDet(detId); }
 function showView(v){ state.view=v; document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.view===v))); document.querySelectorAll('.view').forEach(s=>s.hidden = s.id!=='view-'+v); if(v==='clientes') renderClientes(); window.scrollTo({top:0}); }
@@ -798,11 +802,13 @@ function cierraEscuchas(){ for(const [r,cb] of escuchas){ try{ r.off('value',cb)
    original viaja dentro del valor (k) para volver a armar el estado al leer. */
 const claveDb = k => String(k).replace(/[.#$\[\]\/]/g, '_');
 function marcar(campo,id,val){
+  if(soloLectura) return;
   state[campo][id]= val? new Date().toISOString() : false; renderAll();
   refDe('estado/'+campo+'/'+id).set(state[campo][id]).then(()=>setGuardado('nube')).catch(e=>{ console.warn('tarea',e); localSave(); setGuardado('local'); });
 }
 const timers={};
 function guardarCli(k, patch){
+  if(soloLectura) return;
   state.cli[k]=Object.assign({}, state.cli[k]||{}, patch, {cuando:new Date().toISOString(), k});
   refDe('clientes/'+claveDb(k)).set(state.cli[k]).then(()=>setGuardado('nube')).catch(e=>{ console.warn('cliente',e); localSave(); setGuardado('local'); });
 }
@@ -814,16 +820,23 @@ function entra(){
     if(!v){ muestraEntrada('abriendo', 'La base todavía no tiene las listas de clientes de la Ruta. Hay que subirlas con segmentos.py.'); return; }
     SEG = v; for(const k of Object.keys(SEGS)) if(!Array.isArray(SEG[k])) SEG[k]=[];
     SEG.D.forEach(x=>x.gastoTot=Math.max(x.gasto12||0,x.gasto25||0));
-    $('#entrada').hidden = true; $('#app').hidden = false; renderAll(); setGuardado('nube');
+    /* Quién puede editar está en tago_ruta/editores (hoy, solo Andreina). Los demás miran. */
+    return refDe('editores/'+claveDb(sesion.email)).once('value').then(ed => { soloLectura = ed.val()!==true; })
+      .catch(() => { soloLectura = true; })
+      .then(() => {
+    $('#entrada').hidden = true; $('#app').hidden = false; renderAll(); setGuardado(soloLectura?'lectura':'nube');
+    if(soloLectura) $('#avisoLectura').hidden = false;
     escucha('estado', s2 => { const d0=s2.val()||{}; state.hecho=d0.hecho||{}; state.delegado=d0.delegado||{}; renderAll(); }, e => { console.warn(e); setGuardado('local'); });
-    escucha('clientes', q => { const m={}; Object.values(q.val()||{}).forEach(x => { if(x && x.k) m[x.k]=x; }); state.cli=m; if(state.view==='clientes') renderClientes(); else renderSegs(); }, e => { console.warn(e); setGuardado('local'); });
+    escucha('clientes', q => { const m={}; Object.values(q.val()||{}).forEach(x => { if(x && x.k) m[x.k]=x; }); state.cli=m; if(state.view==='clientes') renderClientes(); else renderSegs(); }, e => { console.warn(e); setGuardado(soloLectura?'lectura':'local'); });
+      });
   }).catch(e => { if(esPermisoDenegado(e)) noAutorizado(); else muestraEntrada('abriendo', 'No se pudo abrir la Ruta: ' + (e && e.message || e)); });
 }
-function sale(){ cierraEscuchas(); sesion=null; SEG=null; state.hecho={}; state.delegado={}; state.cli={}; $('#app').hidden=true; if($('#det').open) $('#det').close(); muestraEntrada('tarjeta'); }
+function sale(){ cierraEscuchas(); sesion=null; SEG=null; soloLectura=false; $('#avisoLectura').hidden=true; state.hecho={}; state.delegado={}; state.cli={}; $('#app').hidden=true; if($('#det').open) $('#det').close(); muestraEntrada('tarjeta'); }
 
 // ---------- events ----------
 document.addEventListener('change', e=>{
   const t=e.target;
+  if(soloLectura && (t.matches('[data-del],[data-id],select.st'))) { renderAll(); return; }
   if(t.matches('input[type=checkbox][data-del]')) marcar('delegado', t.dataset.del, t.checked);
   else if(t.matches('input[type=checkbox][data-id]')) marcar('hecho', t.dataset.id, t.checked);
   else if(t.matches('select.st')){ guardarCli(t.dataset.k,{estado:t.value}); t.className='st s-'+t.value; renderSegs(); const tr=t.closest('tr'); if(tr) tr.classList.toggle('fin',FIN.has(t.value)); }
@@ -831,7 +844,7 @@ document.addEventListener('change', e=>{
 });
 document.addEventListener('input', e=>{
   const t=e.target;
-  if(t.matches('input.nota')){ const k=t.dataset.k; clearTimeout(timers[k]); timers[k]=setTimeout(()=>guardarCli(k,{nota:t.value}),600); }
+  if(t.matches('input.nota')){ if(soloLectura) return; const k=t.dataset.k; clearTimeout(timers[k]); timers[k]=setTimeout(()=>guardarCli(k,{nota:t.value}),600); }
   else if(t.id==='q') renderClientes();
 });
 document.addEventListener('click', e=>{
