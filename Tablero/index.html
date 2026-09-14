@@ -786,7 +786,7 @@ const RUTA = { seg: "R", q: "", soloTel: false, ocultar: true, cli: {}, C: null,
 /* El seguimiento de clientes (estado y nota) vive en Control de producción (app Pedidos, espacio
    Clientes, una tarea por cliente en su lista de prioridad). Aquí se lee de esas tareas y se escribe
    en ellas; lo que las vendedoras marquen allá se ve aquí. Los ids los deja informe/ruta/cargar_pedidos.py. */
-const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"contacto": "-P1Sj9za67Zlcp5aWv9B", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {"MR": "m.perez@tago.cl", "AQ": "a.querales@tago.cl", "CO": "c.oviedo@tago.cl"}};
+const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"contacto": "-P1Sj9za67Zlcp5aWv9B", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {}};
 PEDC.codigo = Object.fromEntries(Object.entries(PEDC.est).map(([c,id]) => [id, c]));
 PEDC.listaSeg = Object.fromEntries(Object.entries(PEDC.listas).map(([k,id]) => [id, k]));
 const QUIEN_P = { "a.rodriguez@tago.cl": { id: "AR", nombre: "Andreina Rodriguez" }, "a.rodriguez.alizo1492@gmail.com": { id: "AR", nombre: "Andreina Rodriguez" }, "j.perozo@tago.cl": { id: "JP", nombre: "José Perozo" } };
@@ -3437,7 +3437,7 @@ function filaRutaDe(k) {
   return null;
 }
 /* Estado y nota se escriben en la tarea del cliente en Pedidos. Si el cliente aún no tiene tarea (entró a la
-   lista con el paquete de hoy), se crea como las demás: en su lista de prioridad, asignada a Mari, Andrea y Carol. */
+   lista con el paquete de hoy), se crea como las demás: en su lista de prioridad, sin persona asignada (Carol reparte). */
 function guardaCliRuta(k, patch) {
   if (!RUTA.edita) return;
   const now = new Date().toISOString(), yo = QUIEN_P[(sesion && sesion.email) || ""] || { id: "AR", nombre: "Andreina Rodriguez" };
@@ -3457,11 +3457,10 @@ function guardaCliRuta(k, patch) {
     if (sg === "C") { compra = x.pista ? ("Pidió: " + String(x.pista).trim()).slice(0, 300) : "Escribió por WhatsApp y no compró"; ultima = x.ultimo || null; ritmo = `${x.msjs || 0} mensajes` + (x.origen ? ` · llegó por ${x.origen}` : ""); gasto = null; }
     else { compra = (x.familia || "") + (x.familia2 ? ` · ${x.familia2}` : ""); ultima = x.ultima >= 0 ? deDias(x.ultima) : null; ritmo = (x.cada ? `cada ${x.cada} días · ` : "") + `${x.compras12 || 0} compras en 12 m · lleva ${x.dias} días sin comprar`; gasto = sg === "D" ? Math.max(x.gasto12 || 0, x.gasto25 || 0) : (x.gasto12 || 0); }
     const nom = sg === "C" ? ((x.nombre || k) + (x.empresa ? ` (${x.empresa})` : "")) : nombreBonito(x.nombre || k);
-    const asignados = {}, asigEmails = {}; Object.entries(PEDC.asignados).forEach(([id, e]) => { asignados[id] = true; asigEmails[claveRuta(e)] = true; });
+    const asignados = {}, asigEmails = {};   // sin persona: Carol los reparte a mano en Pedidos
     const campos = {}; campos[PEDC.cid.contacto] = contacto; campos[PEDC.cid.compra] = compra; campos[PEDC.cid.ultima] = ultima; campos[PEDC.cid.ritmo] = ritmo; campos[PEDC.cid.gasto] = gasto; campos[PEDC.cid.nota] = patch.nota || null; campos[PEDC.cid.rut] = k;
     up["tago_tareas/" + tid] = { nombre: String(nom).slice(0, 120), notas: "", estado: PEDC.est[patch.estado || "por"], prioridad: "normal", lista: PEDC.listas[sg], pedidoId: null, fechaLimite: "", asignados, asignadosEmails: asigEmails, createdAt: now, createdBy: yo, creadoPorEmail: sesion.email, updatedAt: now, updatedBy: yo, campos };
     up["tago_tareas_visibilidad/" + claveRuta(sesion.email) + "/" + tid] = true;
-    Object.values(PEDC.asignados).forEach(e => { up["tago_tareas_visibilidad/" + claveRuta(e) + "/" + tid] = true; });
     RUTA.cli[k].tareaId = tid;
   }
   firebase.database().ref().update(up).catch(e => { console.warn("ruta", e); alert("No se pudo guardar en Control de producción: " + (e && e.message || e)); });
