@@ -553,8 +553,9 @@ tfoot td{border-top:1px solid var(--linea2);background:var(--papel2);font-weight
 .filtrosR label{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;color:var(--tinta2)}
 .lnk{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--azul);cursor:pointer;text-align:left}
 .lnk:hover{text-decoration:underline}
-.quienes{margin:10px 0 0;padding-left:18px;line-height:1.55}
-.quienes li{margin:6px 0}
+.encargos .caja{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.encargos .medNum .de{font-size:.95rem;color:var(--gris);font-weight:600}
+.encargos .mas{margin-top:auto;align-self:flex-start}
 select.stR{padding:5px 8px;border:1px solid var(--linea2);border-radius:8px;background:var(--papel);color:var(--tinta);font:inherit;font-size:.82rem;min-width:140px}
 select.stR.s-cont,select.stR.s-cot{border-color:var(--azul);background:var(--azul-suave)}
 select.stR.s-rec{border-color:var(--verde-fill);background:var(--verde-suave)}
@@ -3290,6 +3291,15 @@ function segRuta() {
   _segRuta = { R: Rr, A, B, D: Dd.slice(0, 80), E };
   return _segRuta;
 }
+/* relBase guarda muchos nombres en mayúsculas. Para leer, se pasan a minúsculas normales
+   dejando las siglas de sociedad como van (SPA, LTDA, EIRL). El ficha usa el nombre tal cual. */
+function nombreBonito(n) {
+  n = String(n || "").replace(/\s+/g, " ").trim();
+  if (n !== n.toUpperCase() || !/[A-ZÁÉÍÓÚÑ]/.test(n)) return n;
+  return n.toLowerCase().replace(/(^|[\s(.,&-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
+    .replace(/\b(De|Del|La|Las|Los|Y|E|Al)\b(?!\.)/g, m => m.toLowerCase())
+    .replace(/\b(Spa|Ltda|Eirl|Sa|e\.i\.r\.l|E\.i\.r\.l|S\.a|Ltd)\b\.?/g, m => m.toUpperCase());
+}
 const estadoR = k => (RUTA.cli[k] || {}).estado || "por";
 const notaR = k => (RUTA.cli[k] || {}).nota || "";
 function selR(k) { const e = estadoR(k), ro = RUTA.edita ? "" : " disabled";
@@ -3336,7 +3346,7 @@ function tablaRuta() {
   } else {
     head = `<tr><th>Cliente</th><th>Contacto</th><th>Compra</th><th>Última compra</th><th>Ritmo</th><th class="num">${k === "E" ? "Gasto 2026" : k === "D" ? "Esa compra" : "Gasto 12 m"}</th><th>Estado</th><th>Nota</th></tr>`;
     filas = l.map(x => { const fin = FINR.has(estadoR(x.k));
-      return `<tr class="${fin ? "finR" : ""}"><td class="nom"><button class="lnk" data-ficha="${x.ci}">${esc(x.nombre)}</button><span class="smR">${esc(x.k)}</span></td>
+      return `<tr class="${fin ? "finR" : ""}"><td class="nom"><button class="lnk" data-ficha="${x.ci}">${esc(nombreBonito(x.nombre))}</button><span class="smR">${esc(x.k)}</span></td>
         <td>${tel(x)}</td>
         <td>${esc(x.familia)}${x.familia2 ? `<span class="smR">${esc(x.familia2)}</span>` : ""}</td>
         <td class="f">${etCorta(deDias(x.ultima))}<span class="smR">hace ${num(x.dias)} días</span></td>
@@ -3376,16 +3386,28 @@ function sLlamar() {
       <span class="bajo">${clp(plata(S.E, "gasto26"))} en 2026</span></div>
   </div>
 
-  <div class="panel" style="margin-top:14px">
-    <h3 style="font-size:1.08rem">Quién llama a quién esta semana.</h3>
-    <ul class="quienes">
-      <li><b>Las vendedoras con Carol</b>, los ${num(S.R.length)} en riesgo: ${nombres(S.R, 12) || "nadie por ahora"}.</li>
-      <li><b>Carol con las vendedoras</b>, los 10 primeros que compraban mucho y ya no: ${nombres(S.A, 10) || "nadie por ahora"}. Una sola pregunta: por qué dejaron de comprar.</li>
-      <li><b>Las vendedoras</b>, después: los ${num(S.B.length)} dormidos de mayor a menor gasto, y los ${num(S.D.length)} que compraron una vez.</li>
-      <li><b>Carol</b> les ofrece el plan mensual de DTF a 10 clientes clave: ${nombres(S.E, 10) || "nadie por ahora"}.</li>
-      ${nC !== null ? `<li><b>Las vendedoras</b> hacen seguimiento a los ${num(nC)} potenciales que escribieron y no compraron: a los 30, 60 y 90 días.</li>` : ""}
-      <li>Andreina no llama: decide qué ofrecerles. El plan completo está en la <a href="/ruta">Ruta TAGO</a>.</li>
-    </ul>
+  <div class="sec"><h2>Quién llama a quién esta semana.</h2>
+    <span class="tocable der">Andreina no llama: decide qué ofrecerles</span></div>
+  <div class="rej4 encargos">
+    <div class="caja"><span class="rot">Las vendedoras, con Carol</span>
+      <span class="medNum" style="color:var(--rojo)">${num(S.R.length)}</span>
+      <span class="bajo">en riesgo: llamarlos esta semana, antes de que se vayan</span>
+      <button class="mas" data-verseg="R">Ver la lista</button></div>
+    <div class="caja"><span class="rot">Carol, con las vendedoras</span>
+      <span class="medNum">${num(Math.min(10, S.A.length))}<span class="de"> de ${num(S.A.length)}</span></span>
+      <span class="bajo">los primeros que compraban mucho y ya no. Una sola pregunta: por qué dejaron de comprar</span>
+      <button class="mas" data-verseg="A">Ver la lista</button></div>
+    <div class="caja"><span class="rot">Las vendedoras, después</span>
+      <span class="medNum">${num(S.B.length)}<span class="de"> + ${num(S.D.length)}</span></span>
+      <span class="bajo">dormidos de mayor a menor gasto, y los que compraron una vez: se les pregunta qué faltó</span>
+      <button class="mas" data-verseg="B">Ver la lista</button></div>
+    <div class="caja"><span class="rot">Carol</span>
+      <span class="medNum" style="color:var(--verde)">10<span class="de"> de ${num(S.E.length)}</span></span>
+      <span class="bajo">clientes clave: ofrecerles el plan mensual de DTF. Si tres aceptan, ya hay producto</span>
+      <button class="mas" data-verseg="E">Ver la lista</button></div>
+  </div>
+  <div class="panel" style="margin-top:12px">
+    <p>${nC !== null ? `Las vendedoras hacen seguimiento a los <b>${num(nC)} potenciales</b> que escribieron por WhatsApp y no compraron: a los 30, 60 y 90 días. ` : ""}El plan completo, semana a semana, está en la <a href="/ruta">Ruta TAGO</a>.</p>
     ${explicable("ruta", `Las listas se arman con las mismas reglas de la Ruta TAGO, sobre los documentos de relBase que
       ya tiene el tablero (montos netos, sin las dos máquinas, un cliente por RUT). <b>En riesgo</b>: compraban
       seguido, llevan más del doble de su ritmo sin comprar, menos de 45 días, y más de $500 mil en el año.
@@ -3417,8 +3439,10 @@ function guardaCliRuta(k, patch) {
 }
 const timersR = {};
 document.addEventListener("click", e => {
-  const sg = e.target.closest("[data-segr]");
-  if (sg) { RUTA.seg = sg.dataset.segr; fichaAbierta = null; const y = window.scrollY; pinta(); window.scrollTo({ top: y }); }
+  const sg = e.target.closest("[data-segr],[data-verseg]");
+  if (sg) { RUTA.seg = sg.dataset.segr || sg.dataset.verseg; fichaAbierta = null; const y = window.scrollY; pinta();
+    window.scrollTo({ top: y });
+    if (sg.dataset.verseg) { const z = document.querySelector(".segsR"); if (z) z.scrollIntoView({ behavior: "smooth", block: "start" }); } }
 }, SENAL);
 document.addEventListener("change", e => {
   const t = e.target;
