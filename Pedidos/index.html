@@ -6075,7 +6075,7 @@ function renderPacks(){
     const venceCls=r.estado==="vencido"?"pasado":r.estado==="por_vencer"?"pronto":"";
     const venceSub=p.vence?(r.dias<0?`hace ${-r.dias} día${r.dias===-1?"":"s"}`:r.dias===0?"hoy":`en ${r.dias} día${r.dias===1?"":"s"}`):"";
     return `<div class="pk-row" onclick="abrirPack('${esc(id)}')">
-      <div><div class="pk-cli">${esc(p.cliente)}</div><div class="pk-sub">${p.codigo?esc(p.codigo)+" · ":""}compra ${packFecha(p.fechaCompra)}</div></div>
+      <div><div class="pk-cli">${esc(p.cliente)}${p.origen==="relbase"&&p.createdAt&&(Date.now()-new Date(p.createdAt))<3*86400000?`<span class="bj-nuevo" title="Creado solo desde la factura en relBase">Nuevo</span>`:""}</div><div class="pk-sub">${p.codigo?esc(p.codigo)+" · ":""}compra ${packFecha(p.fechaCompra)}${p.origen==="relbase"?" · desde relBase":""}</div></div>
       <div><span class="pk-tipo" style="background:color-mix(in srgb, ${t.color} 18%, white);color:${t.color}">${esc(t.l)}</span></div>
       <div class="pk-num">${fmtM(p.metros)}</div>
       <div class="pk-barra"><div class="bar-track"><div class="bar-fill" style="width:${r.pct}%;background:${fill}"></div></div><span class="bar-val${r.disponible<0?" neg":""}">${fmtM(r.disponible)}</span></div>
