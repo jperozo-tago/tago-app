@@ -81,6 +81,12 @@
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
       ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
     },
+    "tago_ruta": {
+      "permitidos": { ".read": false, ".write": false },
+      "segmentos": { ".read": "auth != null && root.child('tago_ruta/permitidos').child(auth.token.email.replace('.', '_')).exists()", ".write": false },
+      "estado": { ".read": "auth != null && root.child('tago_ruta/permitidos').child(auth.token.email.replace('.', '_')).exists()", ".write": "auth != null && root.child('tago_ruta/permitidos').child(auth.token.email.replace('.', '_')).exists()" },
+      "clientes": { ".read": "auth != null && root.child('tago_ruta/permitidos').child(auth.token.email.replace('.', '_')).exists()", ".write": "auth != null && root.child('tago_ruta/permitidos').child(auth.token.email.replace('.', '_')).exists()" }
+    },
     "tago_tablero": {
       "paquete": {
         ".read": "auth != null && root.child('tago_tablero/permitidos').child(auth.token.email.replace('.', '_')).exists()",

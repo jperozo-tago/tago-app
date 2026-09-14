@@ -6,6 +6,7 @@
 #   /inventario  -> Control de Inventario
 #   /pedidos     -> Seguimiento de Pedidos (en desarrollo, no visible como activa aún)
 #   /tablero     -> Tablero de negocio (lee sus datos de tago_tablero en Realtime Database)
+#   /ruta        -> Ruta TAGO, plan de 12 semanas (privada; datos en tago_ruta)
 #
 # Uso (desde la carpeta deploy/):
 #   ./deploy.sh                     arma public/ y publica Hosting en producción
@@ -77,6 +78,12 @@ if [ -d "../Tablero" ]; then
 else
   echo "  (sin Tablero/ en este checkout: se publica sin /tablero)"
 fi
+# Ruta TAGO bajo /ruta. Igual que el tablero: SOLO index.html; las listas de clientes y el
+# estado viven en la base (tago_ruta), nunca en un archivo publicado.
+if [ -d "../Ruta" ]; then
+  mkdir -p public/ruta
+  cp "../Ruta/index.html" "public/ruta/index.html"
+fi
 
 # ── vista previa: canal temporal, el sitio en vivo no cambia ──────────────
 if [ "$MODO" = "preview" ]; then
@@ -101,4 +108,7 @@ echo "  Inventario:  https://tago-app-489c1.web.app/inventario"
 echo "  Pedidos:     https://tago-app-489c1.web.app/pedidos (en desarrollo, no visible como activa aún)"
 if [ "$CON_TABLERO" = "si" ]; then
   echo "  Tablero:     https://tago-app-489c1.web.app/tablero"
+fi
+if [ -d "../Ruta" ]; then
+  echo "  Ruta:        https://tago-app-489c1.web.app/ruta"
 fi

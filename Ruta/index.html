@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0B1447">
+<title>Ruta TAGO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&family=Open+Sans:wght@400;700&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<style>
+/* Sistema de diseño TAGO (brandbook 2026), con los mismos tokens que usa el tablero.
+   Cinco colores: Azul Oscuro, Verde Tago, Azul Brillante, Lavanda (solo halos) y Gris Claro.
+   Un solo peso: DM Sans 600; la jerarquía la da el tamaño. Cuerpo en Open Sans, lh 1.6.
+   Ninguna sombra negra: la tarjeta es superficie más borde.
+   Licencias ya aprobadas en el tablero: rojo #C0261C para "esto va mal" y cuerpo a 15px. */
+:root{
+  --film:#F6F6F6; --papel:#FFFFFF; --papel2:#F6F6F6; --papel3:#EDEDED;
+  --linea:#E7E8ED; --linea2:#B6B9C8;
+  --tinta:#0B1447; --tinta2:#545B7E; --gris:#858AA3;
+  --azul:#4063F9; --azul-suave:rgba(64,99,249,.10); --azul-fill:#4063F9;
+  --verde:#1C7A63; --verde-fill:#49CEAB; --verde-suave:rgba(73,206,171,.16);
+  --rojo:#C0261C; --rojo-suave:rgba(192,38,28,.09);
+  --lavanda:#8F9BFF; --lavanda-halo:rgba(143,155,255,.35);
+  --r:18px; --pill:100px;
+  --btn-fondo:#0B1447; --btn-texto:#FFFFFF; --btn-borde:transparent; --btn-hover:#16246B;
+  --check:#0B1447;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --film:#0B1447; --papel:rgba(255,255,255,.06); --papel2:rgba(255,255,255,.03); --papel3:rgba(255,255,255,.10);
+  --linea:rgba(255,255,255,.16); --linea2:rgba(255,255,255,.30);
+  --tinta:#FFFFFF; --tinta2:#DDE1FF; --gris:#9499BF;
+  --azul:#49CEAB; --azul-suave:rgba(73,206,171,.16); --azul-fill:#49CEAB;
+  --verde:#49CEAB; --verde-fill:#49CEAB; --verde-suave:rgba(73,206,171,.18);
+  --rojo:#FF8B82; --rojo-suave:rgba(255,139,130,.14);
+  --lavanda-halo:rgba(143,155,255,.45);
+  --btn-fondo:transparent; --btn-texto:#FFFFFF; --btn-borde:rgba(255,255,255,.4); --btn-hover:rgba(255,255,255,.1);
+}}
+:root[data-theme="dark"]{
+  --film:#0B1447; --papel:rgba(255,255,255,.06); --papel2:rgba(255,255,255,.03); --papel3:rgba(255,255,255,.10);
+  --linea:rgba(255,255,255,.16); --linea2:rgba(255,255,255,.30);
+  --tinta:#FFFFFF; --tinta2:#DDE1FF; --gris:#9499BF;
+  --azul:#49CEAB; --azul-suave:rgba(73,206,171,.16); --azul-fill:#49CEAB;
+  --verde:#49CEAB; --verde-fill:#49CEAB; --verde-suave:rgba(73,206,171,.18);
+  --rojo:#FF8B82; --rojo-suave:rgba(255,139,130,.14);
+  --lavanda-halo:rgba(143,155,255,.45);
+  --btn-fondo:transparent; --btn-texto:#FFFFFF; --btn-borde:rgba(255,255,255,.4); --btn-hover:rgba(255,255,255,.1);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--film);color:var(--tinta);font-family:"Open Sans","Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.6;font-weight:400;-webkit-font-smoothing:antialiased;padding-inline:clamp(16px,3vw,32px);padding-block:0 64px}
+h1,h2,h3,.dm{font-family:"DM Sans","Helvetica Neue",Arial,sans-serif;font-weight:600;letter-spacing:0;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:2rem} h2{font-size:1.5rem} h3{font-size:1.05rem}
+p{margin:0}
+a{color:var(--azul)}
+b,strong{font-weight:600}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+.wrap{max-width:1120px;margin:0 auto}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--tinta2)}
+.faint{color:var(--gris)}
+.small{font-size:13px}
+.eyebrow{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris)}
+.ante{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--azul)}
+
+/* cabecera */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:26px 14px}
+.marca{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.marca .logo{width:118px;height:auto;display:block;color:var(--tinta)}
+.marca span{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--azul);padding-left:12px;border-left:1px solid var(--linea2);line-height:1.4}
+.top .sub{margin-top:8px;color:var(--tinta2);max-width:60ch}
+.pillrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:var(--pill);background:var(--papel);border:1px solid var(--linea);font-size:13px;white-space:nowrap;color:var(--tinta2)}
+.pill b{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--linea2);flex:none}
+.dot.on{background:var(--verde-fill)}
+.dot.local{background:var(--azul-fill)}
+
+/* pestañas */
+nav.tabs{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--film) 94%,transparent);backdrop-filter:blur(10px);padding-block:8px 14px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{border:1.5px solid transparent;background:transparent;padding:8px 15px;border-radius:var(--pill);color:var(--tinta2);white-space:nowrap;font-family:"DM Sans",sans-serif;font-weight:600;font-size:14px;letter-spacing:.02em}
+nav.tabs button[aria-selected="true"]{background:var(--tinta);color:var(--film)}
+nav.tabs button:hover:not([aria-selected="true"]){background:var(--papel);border-color:var(--linea)}
+.view[hidden]{display:none}
+
+/* bloques */
+.card{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r)}
+.card.pad{padding:20px 22px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+
+/* semana */
+.weekhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-block:6px 16px}
+.weekhead h2{font-size:1.7rem}
+.weekhead h2 em{font-style:normal;color:var(--azul)}
+.navbtns{display:flex;gap:6px}
+.navbtns button{background:transparent;border:1.5px solid var(--linea2);border-radius:var(--pill);padding:6px 13px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.03em;color:var(--tinta2);transition:border-color .2s,color .2s}
+.navbtns button:hover:not(:disabled){border-color:var(--azul);color:var(--azul)}
+.navbtns button:disabled{opacity:.4;cursor:default}
+.hitos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hito{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12.5px;padding:3px 10px;border-radius:var(--pill);background:var(--azul-suave);color:var(--azul)}
+.hito.feriado{background:var(--papel3);color:var(--tinta2)}
+.hito.cierre{background:var(--tinta);color:var(--film)}
+.hito.fecha{background:var(--verde-fill);color:#0B1447}
+
+/* tareas */
+.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.task{display:grid;grid-template-columns:24px 1fr;gap:12px;padding:14px 18px;border-top:1px solid var(--linea)}
+.task:first-child{border-top:0}
+.task input[type=checkbox],.week .wtasks input[type=checkbox],.mini{appearance:none;margin:2px 0 0;border:1.5px solid var(--linea2);border-radius:7px;background:var(--papel);display:grid;place-content:center;cursor:pointer;transition:background .15s,border-color .15s}
+.task input[type=checkbox]{width:22px;height:22px}
+.week .wtasks input[type=checkbox],.mini{width:16px;height:16px;border-radius:5px;margin-top:3px}
+.task input[type=checkbox]::after,.week .wtasks input[type=checkbox]::after,.mini::after{content:"";border:2px solid var(--check);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.task input[type=checkbox]::after{width:10px;height:6px}
+.week .wtasks input[type=checkbox]::after,.mini::after{width:7px;height:4px}
+.task input[type=checkbox]:checked,.week .wtasks input[type=checkbox]:checked,.mini:checked{background:var(--verde-fill);border-color:var(--verde-fill)}
+.task input[type=checkbox]:checked::after,.week .wtasks input[type=checkbox]:checked::after,.mini:checked::after{opacity:1}
+.task label{cursor:pointer;display:block}
+.task .t{font-size:15.5px;line-height:1.45;color:var(--tinta)}
+.task.done .t{color:var(--gris);text-decoration:line-through;text-decoration-color:var(--linea2)}
+.task .why{color:var(--tinta2);font-size:13.5px;margin-top:3px}
+.task.done .why{color:var(--gris)}
+.task .go{display:inline-flex;align-items:center;gap:4px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:12.5px;padding:3px 11px;border-radius:var(--pill);background:var(--azul-suave);color:var(--azul);border:0}
+.task .go:hover{background:var(--azul);color:#FFFFFF}
+.progress{height:6px;background:var(--papel3);border-radius:var(--pill);overflow:hidden;margin:2px 0 0}
+.progress i{display:block;height:100%;background:var(--verde-fill);border-radius:var(--pill);transition:width .3s}
+
+/* rutina */
+.routine h3{font-size:1rem;margin-bottom:10px}
+.routine dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px}
+.routine dt{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta);white-space:nowrap}
+.routine dd{margin:0;color:var(--tinta2)}
+.routine ul{margin:4px 0 0;padding-left:18px;color:var(--tinta2)}
+.routine li{margin:2px 0}
+.kv{display:grid;grid-template-columns:1fr auto;gap:8px 16px;font-size:14px}
+.kv div:nth-child(odd){color:var(--tinta2)}
+.kv div:nth-child(even){text-align:right;font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta)}
+.sep{height:1px;background:var(--linea);margin-block:16px}
+
+/* calendario */
+.weeks{display:flex;flex-direction:column;gap:10px}
+.week{display:grid;grid-template-columns:120px 1fr;gap:20px;padding:18px 22px;background:var(--papel);border:1px solid var(--linea);border-radius:var(--r)}
+.week.now{border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-suave)}
+.week.past{opacity:.72}
+.week .wn{font-size:44px;line-height:.9;color:var(--tinta)}
+.week.now .wn{color:var(--azul)}
+.week .wd{color:var(--tinta2);font-size:13px;margin-top:6px}
+.week .wtasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.week .wtasks li{display:grid;grid-template-columns:18px 1fr;gap:10px;font-size:14.5px}
+.week .wtasks .done{color:var(--gris);text-decoration:line-through;text-decoration-color:var(--linea2)}
+.week .hitos{margin:0 0 10px}
+@media (max-width:640px){.week{grid-template-columns:1fr;gap:10px}.week .wn{font-size:30px;display:inline}.week .wd{display:inline;margin-left:10px}}
+
+/* prioridades */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:16px 18px}
+.tile .v{font-family:"DM Sans",sans-serif;font-weight:600;font-size:30px;line-height:1;margin-top:8px;color:var(--tinta)}
+.tile .v.bad{color:var(--rojo)}
+.tile .l{font-size:12.5px;color:var(--tinta2);margin-top:6px}
+.prios{list-style:none;margin:0;padding:0;counter-reset:p;display:flex;flex-direction:column;gap:10px}
+.prio{display:grid;grid-template-columns:52px 1fr;gap:16px;padding:20px 22px;background:var(--papel);border:1px solid var(--linea);border-radius:var(--r)}
+.prio::before{counter-increment:p;content:counter(p);font-family:"DM Sans",sans-serif;font-weight:600;font-size:40px;line-height:.9;color:var(--azul)}
+.prio h3{font-size:1.15rem;margin-bottom:6px}
+.prio p{margin:0;color:var(--tinta2)}
+.prio .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:12px;font-size:13.5px}
+.prio .meta b{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--gris);text-transform:uppercase;font-size:12px;letter-spacing:.1em;padding-top:2px}
+.prio .meta span{color:var(--tinta)}
+table.rit{width:100%;border-collapse:collapse;font-size:14px}
+table.rit th{text-align:left;font-family:"DM Sans",sans-serif;font-weight:600;color:var(--gris);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid var(--linea)}
+table.rit td{padding:12px 14px;border-bottom:1px solid var(--linea);vertical-align:top}
+table.rit tr:last-child td{border-bottom:0}
+table.rit td:first-child{font-family:"DM Sans",sans-serif;font-weight:600;white-space:nowrap}
+table.rit td:last-child{color:var(--tinta2)}
+.tablewrap{overflow-x:auto}
+.h2{font-size:1.5rem;margin-block:28px 12px}
+
+/* clientes */
+.segs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.seg{border:1.5px solid var(--linea);background:var(--papel);border-radius:var(--pill);padding:7px 13px;display:inline-flex;align-items:center;gap:8px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:13.5px;color:var(--tinta2)}
+.seg:hover:not([aria-selected="true"]){border-color:var(--azul);color:var(--azul)}
+.seg[aria-selected="true"]{border-color:var(--tinta);background:var(--tinta);color:var(--film)}
+.seg .n{font-variant-numeric:tabular-nums;opacity:.75}
+.segdesc{color:var(--tinta2);margin:0 0 14px;max-width:70ch}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input[type=search]{flex:1 1 220px;min-width:0;padding:8px 13px;border:1px solid var(--linea2);border-radius:9px;background:var(--papel);color:var(--tinta)}
+.toolbar input[type=search]:hover{border-color:var(--azul)}
+.toolbar label{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--tinta2)}
+.summary{font-size:13.5px;color:var(--tinta2);margin-bottom:8px}
+table.cl{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cl th{text-align:left;font-family:"DM Sans",sans-serif;font-weight:600;color:var(--gris);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid var(--linea);white-space:nowrap}
+table.cl td{padding:10px 12px;border-bottom:1px solid var(--linea);vertical-align:top}
+table.cl tr:last-child td{border-bottom:0}
+table.cl tr.fin td{opacity:.55}
+table.cl tr.fin td.stcell{opacity:1}
+table.cl .nm{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta)}
+table.cl .sm{font-size:12px;color:var(--gris)}
+table.cl .r{text-align:right;white-space:nowrap}
+table.cl td.rit{white-space:nowrap}
+table.cl td.nt{min-width:200px}
+.wa{display:inline-flex;align-items:center;gap:5px;text-decoration:none;color:var(--tinta);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wa:hover{color:var(--azul)}
+.wa svg{width:14px;height:14px;fill:var(--verde)}
+.chip{display:inline-block;font-family:"DM Sans",sans-serif;font-weight:600;font-size:11.5px;padding:2px 9px;border-radius:var(--pill);background:var(--papel3);color:var(--tinta2);white-space:nowrap}
+.chip.notel{background:var(--rojo-suave);color:var(--rojo)}
+.chip.ad{background:var(--verde-suave);color:var(--verde)}
+.chip.etapa{background:var(--azul-suave);color:var(--azul)}
+.ghl{font-family:"DM Sans",sans-serif;font-weight:600;font-size:11.5px;color:var(--azul);text-decoration:none;border:1px solid var(--linea);border-radius:var(--pill);padding:1px 8px;white-space:nowrap}
+.ghl:hover{background:var(--azul-suave)}
+select.st{padding:6px 9px;border:1px solid var(--linea2);border-radius:9px;background:var(--papel);min-width:150px;color:var(--tinta)}
+select.st.s-cont,select.st.s-cot{border-color:var(--azul);background:var(--azul-suave)}
+select.st.s-rec{border-color:var(--verde-fill);background:var(--verde-suave)}
+select.st.s-no,select.st.s-sin,select.st.s-ya{background:var(--papel3);color:var(--tinta2)}
+input.nota{width:100%;min-width:140px;padding:6px 9px;border:1px solid var(--linea2);border-radius:9px;background:var(--papel);color:var(--tinta)}
+input.nota::placeholder{color:var(--gris)}
+.stcell{min-width:160px}
+.empty{padding:28px;text-align:center;color:var(--gris)}
+@media (max-width:720px){
+  table.cl thead{display:none}
+  table.cl,table.cl tbody,table.cl tr,table.cl td{display:block}
+  table.cl tr{border:1px solid var(--linea);border-radius:var(--r);background:var(--papel);margin-bottom:10px;padding:6px 4px}
+  table.cl td{border:0;padding:6px 10px;display:grid;grid-template-columns:96px 1fr;gap:8px}
+  table.cl td::before{content:attr(data-l);font-family:"DM Sans",sans-serif;font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris);padding-top:3px}
+  table.cl td.r{text-align:left}
+  table.cl td.nocol{grid-template-columns:1fr}
+  table.cl td.nocol::before{display:none}
+}
+
+/* rutina y línea de tiempo de las fechas */
+.cardhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:16px 18px 4px}
+table.arr{width:100%;border-collapse:collapse;font-size:14px}
+table.arr th{text-align:left;font-family:"DM Sans",sans-serif;font-weight:600;color:var(--gris);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid var(--linea);white-space:nowrap}
+table.arr td{padding:11px 14px;border-bottom:1px solid var(--linea);vertical-align:top}
+table.arr tr:last-child td{border-bottom:0}
+table.arr .nm{font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta);white-space:nowrap}
+table.arr td b{font-family:"DM Sans",sans-serif;font-weight:600;white-space:nowrap}
+table.arr .sm{font-size:12px;color:var(--gris)}
+table.arr tr.ahora td{background:var(--azul-suave)}
+table.arr tr.ahora td b{color:var(--azul)}
+table.arr tr.fue td{opacity:.6}
+
+/* título cliqueable y diálogo de detalle */
+.tt{background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:var(--tinta);cursor:pointer;line-height:1.45;display:inline}
+.tt:hover{color:var(--azul)}
+.task .tt{font-size:15.5px;display:block}
+.task.done .tt,.tt.done{color:var(--gris);text-decoration:line-through;text-decoration-color:var(--linea2)}
+.tt.done:hover{color:var(--azul)}
+.why.clamp{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.go.mas{background:transparent;border:1px solid var(--linea2);color:var(--tinta2)}
+.go.mas:hover{border-color:var(--azul);color:var(--azul);background:transparent}
+dialog.det{border:1px solid var(--linea2);border-radius:var(--r);background:var(--film);color:var(--tinta);padding:0;max-width:560px;width:calc(100% - 32px);margin:auto}
+dialog.det::backdrop{background:rgba(11,20,71,.45)}
+.det-in{padding:22px 24px;background:var(--papel);border-radius:var(--r)}
+.det-in h3{font-size:1.15rem;margin:8px 0 10px}
+.det-in p{color:var(--tinta2)}
+.det-in ul{margin:10px 0 0;padding-left:20px;color:var(--tinta2)}
+.det-in li{margin:5px 0}
+.det-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--linea)}
+.det-foot .cerrar{margin-left:auto;background:var(--btn-fondo);color:var(--btn-texto);border:1.5px solid var(--btn-borde);border-radius:var(--pill);font-family:"DM Sans",sans-serif;font-weight:600;font-size:.8rem;letter-spacing:.05em;padding:7px 15px}
+.det-foot .cerrar:hover{background:var(--btn-hover)}
+
+/* dueños y delegación */
+.own{display:inline-flex;align-items:center;gap:5px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:11.5px;padding:2px 9px;border-radius:var(--pill);background:var(--papel3);color:var(--tinta2);white-space:nowrap}
+.own i{width:7px;height:7px;border-radius:50%;background:var(--c,var(--gris));display:inline-block}
+.own.me{background:var(--azul-suave);color:var(--azul)}
+.own .faint{font-weight:400}
+.qchip{font-family:"DM Sans",sans-serif;font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris);white-space:nowrap}
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.del{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 10px 2px 6px;border-radius:var(--pill);border:1px solid var(--linea2);background:var(--papel);color:var(--tinta2);cursor:pointer;user-select:none}
+.del input{appearance:none;width:13px;height:13px;margin:0;border:1.5px solid var(--linea2);border-radius:4px;display:grid;place-content:center;background:var(--papel)}
+.del input::after{content:"";width:6px;height:3px;border:2px solid #FFFFFF;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.del input:checked{background:var(--azul-fill);border-color:var(--azul-fill)}
+.del input:checked::after{opacity:1}
+.del.on{background:var(--azul-suave);border-color:transparent;color:var(--azul)}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.matrix{grid-template-columns:1fr}}
+.quad{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:18px 20px;min-height:120px;border-top-width:3px}
+.quad h3{font-size:1rem;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.quad h3 small{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris)}
+.quad.q1{border-top-color:var(--tinta)}
+.quad.q2{border-top-color:var(--azul-fill)}
+.quad.q3{border-top-color:var(--verde-fill)}
+.quad.q4{border-top-color:var(--linea2)}
+.quad ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.quad li{display:grid;grid-template-columns:18px 1fr;gap:10px;font-size:14px;align-items:start}
+.quad .vacio{color:var(--gris);font-size:13.5px;margin-top:10px}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.person{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:18px 20px}
+.person h3{font-size:1.05rem;display:flex;align-items:center;gap:8px}
+.person h3 i{width:10px;height:10px;border-radius:50%;background:var(--c);display:inline-block}
+.person .rol{font-size:12.5px;color:var(--gris);margin:2px 0 10px}
+.person ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.person li{font-size:14px}
+.person li .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.person li.ok{color:var(--gris);text-decoration:line-through;text-decoration-color:var(--linea2)}
+.person .libre{color:var(--gris);font-size:13.5px}
+.foot{margin-top:40px;color:var(--gris);font-size:12.5px;max-width:80ch}
+
+/* ═════ TAGO App: entrada con Google (misma pantalla que el tablero) ═════ */
+[hidden]{display:none!important}
+img,svg{max-width:100%}
+.entrada{position:fixed;inset:0;z-index:1000;background:#0B1447;color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:24px;text-align:center;overflow:auto}
+.entrada .logo{width:220px;height:auto;display:block;color:#FFFFFF;margin:0 auto}
+.entrada .sub{display:block;margin-top:12px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.95rem;color:#DDE1FF}
+.tarjetaEntrada{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:var(--r);padding:30px 28px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:9px}
+.tarjetaEntrada h2{font-size:1.15rem;color:#FFFFFF}
+.tarjetaEntrada p{font-size:.85rem;color:#9499BF;line-height:1.5}
+.google{display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;border:0;border-radius:var(--pill);background:#FFFFFF;color:#0B1447;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.95rem;letter-spacing:.02em;padding:13px 22px;transition:transform .2s, box-shadow .2s}
+.google:hover{transform:translateY(-3px);box-shadow:0 16px 50px rgba(73,206,171,.16)}
+.google svg{flex:none}
+.errorEntrada{min-height:1.4em;font-size:.83rem;color:#FF8B82;line-height:1.45}
+.avisoEntrada{font-size:.83rem;color:#DDE1FF;line-height:1.55;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:13px 14px;text-align:left}
+.avisoEntrada b{color:#49CEAB}
+.abriendo{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:380px;font-size:.95rem;color:#DDE1FF;line-height:1.5}
+.abriendo i{width:26px;height:26px;border-radius:99px;border:3px solid rgba(255,255,255,.18);border-top-color:#49CEAB;animation:gira 1s linear infinite;display:block}
+@keyframes gira{to{transform:rotate(360deg)}}
+.salirEntrada{background:none;border:0;padding:6px 10px;margin-top:4px;font-size:.8rem;color:#9499BF;text-decoration:underline;cursor:pointer}
+.salirEntrada:hover{color:#FFFFFF}
+.volver{display:inline-flex;align-items:center;gap:7px;border-radius:var(--pill);border:1.5px solid var(--linea2);background:transparent;color:var(--tinta2);text-decoration:none;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.03em;padding:6px 13px;transition:border-color .2s,color .2s;margin-left:6px}
+.volver:hover{border-color:var(--azul);color:var(--azul)}
+.pill .enlacito{background:none;border:0;padding:0 0 0 6px;color:var(--azul);font-family:"DM Sans",sans-serif;font-weight:600;font-size:12.5px;cursor:pointer}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="logo-tago" viewBox="0 0 585.18 116.62"><path fill="currentColor" d="m228.96.01v26.83h-37v89.77h-29.27V26.84h-36.84V.01h103.11Z"></path><path fill="currentColor" d="m300.59,99.05h-45.54l-6.18,17.56h-30.98L263.83,0h28.13l45.78,116.61h-30.9l-6.26-17.56h.01Zm-22.69-63.43l-13.25,37.32h26.43"></path><path fill="currentColor" d="m417.44,34.32c-7.81-5.77-14.47-7.72-20.65-7.72-18.3,0-30.33,13.99-30.33,31.79,0,16.75,11.79,31.55,30.33,31.55,13.58,0,25.7-8.05,30-23.17h-34.07v-26.83h60.66c1.95,6.51,2.85,12.77,2.85,18.78,0,32.77-25.29,57.9-59.44,57.9s-59.77-23.91-59.77-58.22S362.55.02,396.79.02c12.28,0,24.15,3.33,36.84,11.95l-16.18,22.36h0Z"></path><path fill="currentColor" d="m525.58.01c-34.48,0-59.6,25.45-59.6,58.3s25.13,58.3,59.6,58.3,59.6-25.45,59.6-58.3S560.05.01,525.58.01Zm0,89.85c-18.54,0-30-13.9-30-31.55s11.47-31.63,30-31.63,30.01,13.99,30.01,31.63-11.47,31.55-30.01,31.55Z"></path><path fill="#49CEAB" d="m77.42,55.32l-18.5-18.5-18.5,18.5h6.29v5.92h-6.29l18.5,18.5,18.5-18.5h-4.92v-5.92h4.92Zm-10.5,5.92h-14.63v-5.92h14.63v5.92Z"></path><path fill="#49CEAB" d="m59.6.01C25.12.01,0,25.46,0,58.31s25.13,58.3,59.6,58.3c4.83,0,9.47-.52,13.88-1.47v-1.81c0-25.98,18.91-47.13,45.23-47.29.31-2.53.49-5.1.49-7.73C119.2,25.46,94.07,0,59.6,0h0Zm41.3,61.23h-7.37l-26.55,26.56,3.64,3.64-8.06,8.06-3.64-3.64-3.64,3.64-8.06-8.06,3.64-3.64-26.56-26.55h-6.01v-5.92h6.01l26.55-26.56-3.64-3.64,8.06-8.06,3.64,3.64,3.64-3.64,8.06,8.06-3.64,3.64,26.56,26.55h7.37v5.92Z"></path><path fill="#49CEAB" d="m78.2,113.34l39.39-42.24c-21.75,0-39.39,18.91-39.39,42.24Z"></path></symbol></svg>
+<div class="entrada" id="entrada">
+  <div><svg class="logo" viewBox="0 0 585.18 116.62" role="img" aria-label="TAGO"><use href="#logo-tago"/></svg>
+    <span class="sub">Ruta TAGO</span></div>
+  <div class="tarjetaEntrada" id="tarjetaEntrada">
+    <h2>Acceso privado.</h2>
+    <p id="entradaDesc">Entra con tu cuenta Google de TAGO. Esta app solo la ve quien está autorizado.</p>
+    <button type="button" class="google" id="entrar">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Entrar con Google
+    </button>
+    <div class="errorEntrada" id="errorEntrada"></div>
+    <div class="avisoEntrada" id="avisoEntrada" hidden>Por seguridad, Apple no deja iniciar sesión con Google desde una app instalada en la pantalla de inicio.<br><br>Abre <b>tago-app-489c1.web.app/ruta</b> en Safari, inicia sesión ahí una vez y vuelve a abrir esta app.</div>
+  </div>
+  <div class="abriendo" id="abriendo" hidden><i></i><span id="abriendoTxt">Abriendo la Ruta…</span>
+    <button type="button" class="salirEntrada" id="salirEntrada">Salir</button></div>
+</div>
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div>
+      <div class="marca"><svg class="logo" viewBox="0 0 585.18 116.62" role="img" aria-label="TAGO"><use href="#logo-tago"/></svg><span>Ruta</span><a class="volver" href="/">← Volver al panel</a></div>
+      <h1>Doce semanas, una cosa a la vez.</h1>
+      <div class="sub">Del 14 de septiembre al 6 de diciembre de 2026. Cada fecha importante arranca dos meses antes; Navidad, tres.</div>
+    </div>
+    <div class="pillrow">
+      <span class="pill" id="pillSemana"><b>Semana 1 de 12</b></span>
+      <span class="pill num" id="pillHechas">0 de 47 tareas</span>
+      <span class="pill" id="pillGuardado"><span class="dot" id="dotGuardado"></span><span id="txtGuardado">Conectando</span></span>
+      <span class="pill"><span id="quien"></span><button class="enlacito" id="salir">Salir</button></span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Vistas">
+    <button role="tab" data-view="semana" aria-selected="true">Esta semana</button>
+    <button role="tab" data-view="equipo" aria-selected="false">Matriz y equipo</button>
+    <button role="tab" data-view="calendario" aria-selected="false">Calendario</button>
+    <button role="tab" data-view="prioridades" aria-selected="false">Prioridades</button>
+    <button role="tab" data-view="clientes" aria-selected="false">Clientes</button>
+  </nav>
+
+  <!-- ESTA SEMANA -->
+  <section class="view" id="view-semana">
+    <div class="weekhead">
+      <div>
+        <h2 class="dm" id="wkTitle"></h2>
+        <div class="hitos" id="wkHitos"></div>
+      </div>
+      <div class="navbtns"><button id="wkPrev">← Anterior</button><button id="wkNext">Siguiente →</button></div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="card"><ul class="tasks" id="wkTasks"></ul></div>
+        <div class="progress" style="margin-top:12px"><i id="wkBar" style="width:0%"></i></div>
+        <div class="small faint" style="margin-top:6px" id="wkProg"></div>
+      </div>
+      <aside>
+        <div class="card pad routine">
+          <h3>Cada semana, sin excepción.</h3>
+          <p class="small faint" style="margin:0 0 10px">Cada bloque está también como tarea de la semana, marcado "Cada semana", para tacharlo.</p>
+          <dl>
+            <dt>Cada día · 5 min</dt><dd>Venta del día contra el ritmo de la meta, en el <a href="https://tago-app-489c1.web.app/tablero" target="_blank" rel="noopener">tablero</a>.</dd>
+            <dt>Lunes · 1 hora</dt><dd>Con Carol. Reparte la semana en <b>Matriz y equipo</b> y revisa cuatro cosas, siempre las mismas:
+              <ul>
+                <li>venta de la semana por familia</li>
+                <li>clientes en riesgo y dormidos nuevos</li>
+                <li>potenciales de la semana y a quién se le hizo seguimiento</li>
+                <li>gasto en Meta y compras con UTM</li>
+              </ul></dd>
+            <dt>Lunes, miércoles y viernes · 1 hora</dt><dd>Campañas de Meta con la IA: gasto, costo por comprador y compras con UTM. Preguntar, investigar y decidir: apagar, ajustar o escalar.</dd>
+            <dt>Martes · 1,5 horas</dt><dd>Google, desde cero: aprender (semanas 1 a 3), crear la primera campaña de búsqueda (4 a 6), seguimiento y testeos (7 a 12).</dd>
+            <dt>Jueves · 1,5 horas</dt><dd>Klaviyo, desde cero: aprender (1 a 3), crear los flujos y el primer correo (4 a 6), campañas de las fechas y seguimiento (7 a 12).</dd>
+            <dt>Viernes · 1 hora</dt><dd>Estrategia de seguimiento: qué pasa con cada potencial que no compró y con cada comprador nuevo.</dd>
+            <dt>Día 5 · media jornada</dt><dd>José cierra el mes con el contador y te trae el estado de resultado cuadrado con relBase: margen, fijos, equilibrio, venta y margen por línea. Con eso decides el presupuesto de publicidad del mes.</dd>
+            <dt>Cada fecha</dt><dd>Arranca dos meses antes; Navidad, tres. En el arranque defines si hay producto, precios, creativos y campaña, y agendas el resto. La lista está en <b>Calendario</b> y en tu Google Calendar.</dd>
+          </dl>
+          <div class="sep"></div>
+          <h3>Los números que mandan.</h3>
+          <div class="kv num">
+            <div>Punto de equilibrio, con depreciación e intereses</div><div>$34,2 M</div>
+            <div>Punto de equilibrio de caja, con las cuotas completas</div><div>$36,2 M</div>
+            <div>Margen jun–ago · objetivo 72%</div><div>71,0%</div>
+            <div>Fijos verificados, con depreciación e intereses</div><div>$24,3 M</div>
+            <div>Cuotas de los tres créditos al mes</div><div>$5,25 M</div>
+            <div>Meses bajo el equilibrio del estudio</div><div>5 seguidos</div>
+          </div>
+          <p class="small faint" style="margin:12px 0 0">Del estudio de Finanzas TAGO de enero a agosto, verificado con el SII (ventas y compras), las liquidaciones, las boletas de honorarios, los créditos, las cartolas y la tarjeta. El tablero usa estos mismos fijos. El equilibrio de caja es más alto porque las cuotas de los créditos salen completas cada mes. Enero a agosto: −$33,3 M antes de impuesto, $4,2 M al mes; solo marzo ganó.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- MATRIZ Y EQUIPO -->
+  <section class="view" id="view-equipo" hidden>
+    <div class="weekhead">
+      <div><h2 class="dm" id="eqTitle"></h2><p class="segdesc" style="margin:6px 0 0">Urgente e importante lo haces tú. Importante sin urgencia se agenda. Urgente sin importancia se delega. Lo que ejecuta otra persona sigue siendo tuyo: marca <b>Delegado</b> cuando lo entregaste y <b>Hecho</b> cuando te lo devolvieron listo.</p></div>
+      <div class="navbtns"><button id="eqPrev">← Anterior</button><button id="eqNext">Siguiente →</button></div>
+    </div>
+    <div class="matrix" id="matrix"></div>
+    <h2 class="dm h2">Qué le toca a cada uno esta semana.</h2>
+    <div class="people" id="people"></div>
+  </section>
+
+  <!-- CALENDARIO -->
+  <section class="view" id="view-calendario" hidden>
+    <h2 class="dm h2" style="margin-top:6px">Los arranques del año.</h2>
+    <p class="segdesc">Una sola regla: cada fecha importante arranca dos meses antes; Navidad, tres. Ese día defines si hay que crear producto, sacar precios, hacer creativos y armar la campaña, y agendas el resto. Los arranques están también en tu Google Calendar, en el calendario TAGO.</p>
+    <div class="card tablewrap" id="arranques"></div>
+    <h2 class="dm h2">Las doce semanas.</h2>
+    <p class="segdesc">Lo que ya está definido, con dueño. La rutina de cada semana va como tarea, marcada "Cada semana", para tacharla. Lo que salga de cada arranque se agenda encima.</p>
+    <div class="weeks" id="weeks"></div>
+  </section>
+
+  <!-- PRIORIDADES -->
+  <section class="view" id="view-prioridades" hidden>
+    <div class="tiles num">
+      <div class="tile"><div class="eyebrow">Punto de equilibrio</div><div class="v">$34,2 M</div><div class="l">neto al mes, con depreciación e intereses; $36,2 M para que alcance la caja</div></div>
+      <div class="tile"><div class="eyebrow">Margen</div><div class="v bad">71,0%</div><div class="l">promedio jun–ago; se movió entre 56% y 82%</div></div>
+      <div class="tile"><div class="eyebrow">Fijos</div><div class="v bad">$24,3 M</div><div class="l">al mes, verificados; incluyen intereses, Google Ads, suscripciones, seguro del taller y compras urgentes. Eran $18,3 M en enero</div></div>
+      <div class="tile"><div class="eyebrow">Cartera que se fue</div><div class="v">$109 M</div><div class="l">41 grandes y en riesgo, 106 dormidos, en 12 meses</div></div>
+    </div>
+    <ol class="prios">
+      <li class="prio"><div><h3>Recuperar a los que dejaron de comprar.</h3><p>29 grandes que ya no compran, 12 que se están callando y 106 dormidos. Los diez mayores compradores de DTF Textil pasaron de $76,5 M en 2025 a $26 M en 2026: ese es el hueco del año. Una llamada cuesta menos que cualquier anuncio. Llaman Carol y las vendedoras; tú decides qué ofrecerles.</p>
+        <div class="meta"><b>Mides</b><span>clientes que vuelven a comprar y su venta, anotados en la lista</span><b>Meta</b><span>15 de los 41 grandes o en riesgo compran de nuevo antes del 6 de diciembre</span></div></div></li>
+      <li class="prio"><div><h3>Margen estable, sobre 70%.</h3><p>El margen fue 82% en marzo y 56% en enero; eso mueve el punto de equilibrio de $28 M a $41 M. El 34% de la venta no tiene costo cargado, y es justo lo que más crece: merch, poleras, stickers, servicios.</p>
+        <div class="meta"><b>Mides</b><span>margen del mes y familias sin costo</span><b>Meta</b><span>toda la venta con costo cargado y ningún pedido de merch bajo 70%</span></div></div></li>
+      <li class="prio"><div><h3>Fijos bajo control y planilla cuadrada.</h3><p>Los fijos subieron de $18,2 M en enero a $25,1 M en junio, y con la tarjeta aparecieron $315 mil al mes de Google Ads y $536 mil de suscripciones que nadie contaba. El estado de resultado de agosto decía $24,4 M por un export del día 27; ya está corregido a $30,0 M, verificado en el SII. Con todo verificado, agosto perdió $2,6 M y quedó $3,7 M bajo el equilibrio; la cuenta corriente bajó de $19,8 M a $6,0 M entre el 31 de agosto y el 13 de septiembre. El cierre del día 5 tiene que salir con el mes completo, la cartola y la tarjeta, siempre.</p>
+        <div class="meta"><b>Mides</b><span>fijos del mes y diferencia entre planilla y relBase</span><b>Meta</b><span>fijos en $19,5 M o menos y cierre cuadrado antes del día 5</span></div></div></li>
+      <li class="prio"><div><h3>Publicidad por ocasión, con seguimiento de 90 días.</h3><p>Las campañas de leads no rinden: 471 leads, $307 mil, una compra. La de Fiestas Patrias sí: 6 compradores nuevos con $298 mil. Y el que llega por anuncio demora 82 días en comprar, así que el seguimiento vale más que el anuncio.</p>
+        <div class="meta"><b>Mides</b><span>compradores nuevos por campaña, por UTM y por WhatsApp</span><b>Meta</b><span>Día del Profesor, Halloween y Navidad lanzadas a tiempo</span></div></div></li>
+      <li class="prio"><div><h3>Web y mail, con producto detrás.</h3><p>Catorce colecciones de ocasión están creadas pero vacías: dos con producto y precio valen más que catorce escondidas. Dos flujos de correo con sentido valen más que treinta campañas: el cliente de DTF vuelve cada 16 días. Klaviyo, Shopify y Google los llevas tú.</p>
+        <div class="meta"><b>Mides</b><span>pedidos web al mes y clientes que vuelven al mes siguiente</span><b>Meta</b><span>dos colecciones con producto publicadas y dos flujos activos en Klaviyo</span></div></div></li>
+      <li class="prio"><div><h3>Productos con las máquinas que ya tienes.</h3><p>Credenciales, medallas, poleras y corte crecieron sin ficha ni campaña. Convertirlos en producto con tramos, como los pines, es más barato que inventar algo nuevo. Impresión 3D queda al final: no hay señal de demanda todavía.</p>
+        <div class="meta"><b>Mides</b><span>venta por familia en el tablero</span><b>Meta</b><span>tres fichas nuevas en la web y el plan mensual de DTF vendido a 10 clientes</span></div></div></li>
+    </ol>
+
+    <h2 class="dm h2">Dónde cae cada uno de tus 14 temas.</h2>
+    <div class="card tablewrap">
+      <table class="rit">
+        <thead><tr><th>Ritmo</th><th>Qué miras</th><th>Temas de tu lista</th></tr></thead>
+        <tbody>
+          <tr><td>Cada día · 5 min</td><td>Venta del día contra el ritmo de la meta.</td><td>Métricas de venta</td></tr>
+          <tr><td>Lunes · 1 hora</td><td>Venta de la semana por familia. Clientes en riesgo y dormidos nuevos. Potenciales y seguimiento. Gasto en Meta y compras con UTM.</td><td>Métricas de venta, adquisición, gasto y publicidad.</td></tr>
+          <tr><td>Lunes, miércoles y viernes · 1 hora</td><td>Cada campaña activa en Meta, analizada con la IA: gasto, costo por comprador, compradores por UTM. Apagar, ajustar o escalar.</td><td>Campañas en Meta, estrategia creativa.</td></tr>
+          <tr><td>Martes · 1,5 horas</td><td>Google, desde cero: aprender, crear la primera campaña de búsqueda, seguir y testear.</td><td>Campañas en Google.</td></tr>
+          <tr><td>Jueves · 1,5 horas</td><td>Klaviyo, desde cero: aprender, crear los flujos y el primer correo, campañas de las fechas y seguimiento.</td><td>Campañas de mail.</td></tr>
+          <tr><td>Viernes · 1 hora</td><td>Estrategia de seguimiento: secuencia para el potencial que no compró y para el comprador nuevo.</td><td>Adquisición, seguimiento.</td></tr>
+          <tr><td>Día 5 · media jornada</td><td>Estado de resultado cuadrado. Margen, fijos, equilibrio. Venta y margen por línea. Presupuesto de publicidad. Abrir la campaña de la próxima fecha.</td><td>Estado de resultado, punto de equilibrio, gastos fijos, métricas por línea, calendario de fechas.</td></tr>
+          <tr><td>Dos meses antes de cada fecha (tres para Navidad)</td><td>Arranque: definir si hay producto, precios, creativos y campaña, y agendar el resto. Cierre escrito a la semana de terminar.</td><td>Calendario de fechas, estrategia creativa, productos nuevos.</td></tr>
+          <tr><td>Cada trimestre</td><td>Colecciones y fichas de la web. Plan del trimestre siguiente con seis semanas de anticipación.</td><td>Ecommerce, productos nuevos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="segdesc" style="margin-top:12px">Nueve de los catorce ya viven en el tablero. Google y mail parten de cero: los martes y los jueves son para aprender y armarlos, no para medirlos todavía.</p>
+  </section>
+
+  <!-- CLIENTES -->
+  <section class="view" id="view-clientes" hidden>
+    <div class="segs" role="tablist" id="segs"></div>
+    <p class="segdesc" id="segDesc"></p>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Buscar por nombre, RUT o teléfono">
+      <label><input type="checkbox" id="fTel"> Solo con teléfono</label>
+      <label><input type="checkbox" id="fPend" checked> Ocultar terminados</label>
+    </div>
+    <div class="summary num" id="segSum"></div>
+    <div class="card tablewrap"><table class="cl" id="tbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+
+  <p class="foot">Datos de relBase, GoHighLevel, Shopify y Meta con corte al 13 de septiembre de 2026, sin las dos ventas de máquinas. Montos netos, sin IVA. Los ticks, los estados y las notas que escribas aquí se guardan en la base de TAGO App y solo los ve quien tiene acceso a esta app.</p>
+</div>
+
+<dialog class="det" id="det" aria-label="Detalle de la tarea"><div class="det-in" id="detIn"></div></dialog>
+<script>
+(function(){
+let SEG = null;   // las listas de clientes llegan de la base después de entrar
+const HOY = new Date(); HOY.setHours(0,0,0,0);
+const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const d = s => { const [y,m,dd]=s.split('-').map(Number); return new Date(y,m-1,dd); };
+const fmtD = s => { const x=d(s); return `${x.getDate()} ${MES[x.getMonth()]}`; };
+const fmtDY = s => { const x=d(s); return `${x.getDate()} ${MES[x.getMonth()]} ${String(x.getFullYear()).slice(2)}`; };
+const clp = n => { n=Math.round(n||0); if(Math.abs(n)>=1e6) return '$'+(n/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M'; if(Math.abs(n)>=1e3) return '$'+Math.round(n/1e3).toLocaleString('es-CL')+' mil'; return '$'+n.toLocaleString('es-CL'); };
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const WEEKS = [
+ {ini:'2026-09-14',fin:'2026-09-20',hitos:[{c:'feriado',t:'18 y 19 · Fiestas Patrias'},{c:'',t:'Semana corta: tres días hábiles'},{c:'fecha',t:'Arranques atrasados: Día del Profesor y Halloween'}],tareas:[
+  {id:'a-ddp-2026',q:1,o:'A',t:'Arranque de Día del Profesor (16 de octubre).',por:'Debía arrancar el 16 de agosto, dos meses antes. Quedan cuatro semanas.',det:['¿Hay que crear producto o se vende con lo que hay?','¿Qué precios?','¿Qué creativos? Fotos y video con Eva','¿Campaña en Meta, correo en Klaviyo, Google?','Agendar el resto esta misma semana']},
+  {id:'a-hal-2026',q:1,o:'A',t:'Arranque de Halloween (31 de octubre).',por:'Debía arrancar el 31 de agosto. Quedan seis semanas.',det:['¿Hay que crear producto o se vende con lo que hay?','¿Qué precios?','¿Qué creativos? Fotos y video con Eva','¿Campaña en Meta, correo en Klaviyo, Google?','Agendar el resto']},
+  {id:'s1-3',q:1,o:'A',t:'Decidir el domingo 20 si TESTEO WhatsApp sigue o se apaga.',por:'El formulario ya está apagado. WhatsApp lleva $140 mil en dos semanas y una compra de $15,9 mil.'},
+  {id:'s1-8',q:1,o:'A',t:'Cancelar LinkedIn Sales Navigator.',por:'$140.139 todos los meses en la tarjeta, $1,1 M en el año. Tú decidiste cancelarlo: hazlo esta semana y anota la fecha.'},
+  {id:'s1-7',q:1,o:'A',t:'Revisar Google Ads: $315 mil al mes que nadie medía.',por:'Apagarlo o ponerle UTM y una meta esta misma semana.',det:['$2,5 M entre enero y agosto, pagados con la tarjeta','Cinco clientes atribuidos a Google en toda la historia','Si sigue: UTM en cada anuncio y una meta de compras por mes']},
+  {id:'s1-4',q:1,o:'J',con:'CT',t:'Mandar al contador la nota de agosto, con tres preguntas más.',por:'El SII confirma $29.997.528 netos sin la máquina.',det:['La factura 13745 de Ferrostaal: fuera del giro, y su IVA','La venta de dos máquinas a Pulpográfico ($12 M), que no está en el Registro de Ventas','$3.265.562 transferidos a MCM entre enero y agosto sin documento en el SII']},
+  {id:'s1-1',q:1,o:'V',con:'CA',t:'Llamar a los 12 clientes en riesgo.',por:'Compraban cada semana y llevan de dos a seis semanas callados. Todavía no se fueron.',seg:'R'},
+  {id:'s1-2',q:1,o:'CA',con:'V',t:'Llamar a los 10 primeros grandes que ya no compran.',por:'Los 29 valen $55 M en doce meses. Una sola pregunta: por qué dejaron de comprar. Se anota en la lista.',seg:'A'}]},
+ {ini:'2026-09-21',fin:'2026-09-27',hitos:[{c:'fecha',t:'Viernes 25 · arranque de Navidad, tres meses antes'},{c:'fecha',t:'Domingo 27 · arranque de Black Friday'}],tareas:[
+  {id:'a-nav-2026',q:1,o:'A',t:'Arranque de Navidad (25 de diciembre): empresas y personas.',por:'Tres meses antes: es la fecha más importante del año.',det:['Las empresas compran en noviembre y varias cierran a principios de diciembre: lo de empresas se define primero','¿Hay que crear producto? Catálogo de regalos corporativos y prediseñados para personas','¿Qué precios y tramos?','¿Qué creativos? Fotos y video con Eva','¿Campaña en Meta, correo en Klaviyo, WhatsApp a clientes clave y grandes?','Agendar el resto']},
+  {id:'a-bf-2026',q:1,o:'A',t:'Arranque de Black Friday (27 de noviembre).',por:'Dos meses antes.',det:['¿Qué oferta? Packs y plan mensual, sin bajar el precio del metro: DTF Textil ya es la línea de menor margen','¿Qué precios?','¿Qué creativos? Fotos y video con Eva','¿Campaña en Meta y correo en Klaviyo?','Agendar el resto']},
+  {id:'s2-1',q:1,o:'V',con:'CA',t:'Terminar las llamadas a los grandes, del 11 al 29.',por:'Anota la razón de cada uno: precio, competencia, cerró, cambió de técnica.',seg:'A'},
+  {id:'s2-3',q:2,o:'A',t:'Cargar costo a las familias sin receta: merch, poleras, stickers y servicios.',por:'El 34% de la venta no tiene costo y no sabes cuánto deja. El recetario lo manejas solo tú.'},
+  {id:'s2-5',q:2,o:'CT',con:'J',t:'Revisar los fijos: qué entró entre marzo y julio.',por:'Subieron de $18,5 M a $21,6 M y mueven el equilibrio cinco millones.'},
+  {id:'s7-3',q:3,o:'A',t:'Crear o actualizar el Perfil de Empresa en Google y conectar Search Console.',por:'Gratis y media hora. Va antes de cualquier campaña en Google.'}]},
+ {ini:'2026-09-28',fin:'2026-10-04',hitos:[],tareas:[
+  {id:'s3-1',q:2,o:'V',con:'CA',t:'Llamar a los dormidos con teléfono, de mayor a menor gasto.',por:'106 clientes que compraban seguido y se callaron. Valen $21 M en doce meses.',seg:'B'},
+  {id:'s3-2',q:3,o:'V',t:'Seguimiento a los potenciales de agosto que no compraron.',por:'El que llega por anuncio demora 82 días en comprar. A los 30 recién empieza.',seg:'C'},
+  {id:'s3-5',q:2,o:'A',con:'CA',t:'Diseñar el plan mensual de DTF: metros, precio fijo, entrega programada.',por:'Los packs de la web vendieron dos en todo el año. El cliente quiere que le llegue, no pagar de golpe.'}]},
+ {ini:'2026-10-05',fin:'2026-10-11',hitos:[{c:'cierre',t:'5 oct · Cierre de septiembre'}],tareas:[
+  {id:'s4-1',q:1,o:'CT',con:'J',t:'Cierre de septiembre, el día 5.',por:'Media jornada. Siempre.',det:['El contador entrega el estado de resultado cuadrado con relBase','José te trae margen, fijos, equilibrio y venta por línea','Con eso decides el presupuesto de publicidad del mes']},
+  {id:'s4-2',q:1,o:'A',t:'Decidir el presupuesto de publicidad de octubre con el cierre en la mano.',por:'Con datos, no con intuición.'},
+  {id:'s4-3',q:2,o:'CA',con:'V',t:'Ofrecer el plan mensual de DTF a 10 clientes clave.',por:'Son la mitad de la venta. Si tres aceptan, ya tienes el producto.',seg:'E'},
+  {id:'s5-2',q:2,o:'A',con:'CO',t:'Subir credenciales y lanyards a la web como producto con tramos y precio. Eva hace las fotos.',por:'$13 M en 2026 con 17 clientes y todo nació de una cotización.'},
+  {id:'s4-5',q:3,o:'V',t:'Llamar a los que compraron una vez y no volvieron, de mayor a menor.',por:'80 clientes con $11,2 M. Se les pregunta qué faltó.',seg:'D'}]},
+ {ini:'2026-10-12',fin:'2026-10-18',hitos:[{c:'feriado',t:'12 oct · Feriado'},{c:'fecha',t:'16 oct · Día del Profesor'}],tareas:[
+  {id:'s5-1',q:1,o:'V',con:'CA',t:'Última semana de Día del Profesor: WhatsApp en minutos y pedidos con UTM cada día.',por:'La venta de una fecha se concentra en los últimos cinco días.'},
+  {id:'s5-4',q:1,o:'CA',con:'V',t:'Segunda llamada a los grandes que no contestaron.',por:'Una llamada no es un intento. Dos sí.',seg:'A'},
+  {id:'s6-2',q:2,o:'A',con:'CO',t:'Ficha "polera lista" en la web con tramos desde 12 unidades y precio. Eva hace las fotos.',por:'Poleras y estampado ya suman $7 M sin ficha propia.'},
+  {id:'s5-3',q:3,o:'V',t:'Seguimiento de 60 días a los potenciales de agosto.',por:'La mitad de los que compran lo hacen después del primer mes.',seg:'C'}]},
+ {ini:'2026-10-19',fin:'2026-10-25',hitos:[],tareas:[
+  {id:'n6-1',q:2,o:'A',t:'Cierre escrito de Día del Profesor: qué vendió, qué creativo funcionó y cuánto costó cada comprador.',por:'Dos líneas escritas hoy te ahorran la campaña del próximo año.'},
+  {id:'s6-3',q:2,o:'CA',t:'Anotar qué clientes llamados volvieron a comprar.',por:'Es la métrica de las doce semanas. Márcalos en la lista.',seg:'A'},
+  {id:'s2-4',q:3,o:'A',t:'Elegir dos de las 14 colecciones de ocasión escondidas y definir sus productos y precios.',por:'Están creadas en la web pero sin productos, y una colección vacía no se publica. Matrimonio, graduación y colegios ya llegan por cotización.'}]},
+ {ini:'2026-10-26',fin:'2026-11-01',hitos:[{c:'fecha',t:'31 oct · Halloween'}],tareas:[
+  {id:'s8-4',q:3,o:'V',t:'Segunda ronda a los dormidos que no contestaron.',por:'',seg:'B'}]},
+ {ini:'2026-11-02',fin:'2026-11-08',hitos:[{c:'cierre',t:'5 nov · Cierre de octubre'}],tareas:[
+  {id:'s8-1',q:1,o:'CT',con:'J',t:'Cierre de octubre.',por:'Media jornada, el día 5.'},
+  {id:'n8-1',q:1,o:'A',t:'Decidir el presupuesto de publicidad de noviembre con el cierre en la mano: Navidad y Black Friday.',por:''},
+  {id:'s7-1',q:2,o:'A',t:'Cierre escrito de Halloween: qué vendió y qué creativo funcionó.',por:'Dos líneas escritas hoy te ahorran la campaña del próximo año.'},
+  {id:'s8-3',q:2,o:'A',con:'CA',t:'Definir el kit "empieza a estampar" para lanzarlo en enero: metros, láminas prediseñadas y guía.',por:'Las boletas cayeron a la mitad. El cliente chico se fue y este kit lo trae de vuelta.'}]},
+ {ini:'2026-11-09',fin:'2026-11-15',hitos:[],tareas:[
+  {id:'s10-3',q:2,o:'J',con:'CT',t:'Pedir al contador el margen de octubre por línea y traerte la lista.',por:'Tu regla: ningún merch bajo 70%. Los meses con más producto comprado a terceros son los de peor margen.'},
+  {id:'s9-3',q:3,o:'V',t:'Seguimiento de 90 días a los potenciales de agosto.',por:'Último intento con los de agosto. Después, archivo.',seg:'C'}]},
+ {ini:'2026-11-16',fin:'2026-11-22',hitos:[],tareas:[
+  {id:'s11-3',q:1,o:'V',t:'Llamar a los clientes clave para asegurar los pedidos de diciembre.',por:'Diciembre 2025 fue el segundo mes más alto del año.',seg:'E'}]},
+ {ini:'2026-11-23',fin:'2026-11-29',hitos:[{c:'fecha',t:'27 nov · Black Friday'}],tareas:[
+  {id:'s11-1',q:1,o:'V',con:'A',t:'Black Friday activo: las vendedoras responden en minutos toda la semana.',por:''}]},
+ {ini:'2026-11-30',fin:'2026-12-06',hitos:[{c:'cierre',t:'Viernes 4 · Cierre de noviembre (el 5 es sábado)'},{c:'fecha',t:'14 dic · arranque de San Valentín · 4 ene · arranque de vuelta a clases'}],tareas:[
+  {id:'s12-1',q:1,o:'CT',con:'J',t:'Cierre de noviembre.',por:'Media jornada, el viernes 4.'},
+  {id:'n12-1',q:2,o:'A',t:'Cierre escrito de Black Friday: qué vendió, margen real de los packs y qué creativo funcionó.',por:''},
+  {id:'n11-3',q:3,o:'V',t:'Seguimiento a quienes cotizaron en Black Friday y no compraron.',por:''},
+  {id:'s12-2',q:2,o:'A',con:'CA',t:'Balance de las doce semanas: recuperados, nuevos, margen, fijos, meses sobre el equilibrio.',por:'Con la lista de clientes y el tablero, no de memoria.'}]}
+];
+// La rutina de cada semana: métricas con Carol, Meta tres veces (Andreina no es experta: lo analiza con la IA),
+// Google y Klaviyo como aprendizaje porque parten de cero, y una hora de estrategia de seguimiento.
+WEEKS.forEach((w,i)=>{ const n=i+1; const fase = n<=3?'aprender':(n<=6?'crear':'seguir');
+ const G={aprender:{t:'Martes, 1,5 horas: Google, aprender.',por:'Desde cero, con la IA: preguntar, investigar, anotar.',det:['Cómo funciona la campaña de búsqueda y qué es una palabra clave','Cómo se mide una conversión (compra) y para qué sirve la UTM','Cuánto cuesta un clic en tu rubro y qué presupuesto tiene sentido','Qué pasó con los $2,5 M que ya se gastaron en Google Ads']},
+          crear:{t:'Martes, 1,5 horas: Google, crear la primera campaña.',por:'Chica y con UTM, con el Perfil de Empresa ya publicado.',det:['Solo términos de compra: "impresión DTF Santiago", "pines personalizados"','Un anuncio por grupo, con UTM propia','Conversión de compra conectada a la web','Presupuesto chico y una meta de compras por mes']},
+          seguir:{t:'Martes, 1,5 horas: Google, seguimiento y testeos.',por:'Según los productos que se lancen.',det:['Qué términos traen compras y cuáles solo gastan','Qué anuncio funciona; probar uno nuevo a la vez','Ajustar presupuesto con el costo por comprador','Términos negativos: lo que no vendes (máquinas, cursos)']}}[fase];
+ const K={aprender:{t:'Jueves, 1,5 horas: Klaviyo, aprender.',por:'Desde cero: hoy solo existen el carrito abandonado y la bienvenida del pop-up.',det:['Qué es un flujo y qué es una campaña','Segmentos: quién compró DTF, quién compró personalización, quién nunca compró','Qué métricas miran: aperturas, clics, compras por correo','Cómo entra la lista de clientes de relBase y Shopify']},
+          crear:{t:'Jueves, 1,5 horas: Klaviyo, crear los flujos.',por:'Los dos flujos que faltan y el primer correo de campaña.',det:['"¿Te queda DTF?" a los 14 días de cada compra: el recurrente vuelve cada 16 días','"Próxima fecha" para quien compró personalización: le recuerdas la fecha que viene','El primer correo de campaña, con la fecha que esté arrancando','Textos tuyos; fotos de Eva']},
+          seguir:{t:'Jueves, 1,5 horas: Klaviyo, campañas y seguimiento.',por:'Correos de las fechas y lectura de resultados.',det:['Correo de cada fecha que esté al aire','Aperturas, clics y compras de cada envío','Probar asuntos y horarios, uno a la vez','Limpiar la lista: quien no abre en tres meses']}}[fase];
+ const META='Una hora, tres veces por semana, porque no eres experta: se analiza con la IA.';
+ const METAD=['Gasto de cada campaña activa y contra el presupuesto del mes','Costo por comprador, no por lead','Compradores por UTM en el tablero','Preguntar e investigar con la IA lo que no se entienda','Decidir: apagar, ajustar o escalar'];
+ const vie = n===1?'Jueves 17 (el viernes es feriado)':'Viernes';
+ w.tareas.push(
+  {id:`r${n}-dia`,q:2,o:'A',rut:true,t:'Cada día, 5 minutos: venta del día contra el ritmo de la meta, en el tablero.',por:'Se marca el viernes, si se miró todos los días.'},
+  {id:`r${n}-lun`,q:2,o:'A',con:'CA',rut:true,t:'Lunes, 1 hora con Carol: repartir la semana.',por:'Cuatro cosas, siempre las mismas, y la semana repartida en Matriz y equipo.',det:['Venta de la semana por familia, contra la meta','Clientes en riesgo y dormidos nuevos (pestaña Clientes)','Potenciales de la semana y a quién se le hizo seguimiento','Gasto en Meta y compras con UTM','Repartir las tareas de la semana en Matriz y equipo']},
+  {id:`r${n}-meta1`,q:2,o:'A',rut:true,t:'Lunes, 1 hora: campañas de Meta, con la IA.',por:META,det:METAD},
+  {id:`r${n}-google`,q:2,o:'A',rut:true,t:G.t,por:G.por,det:G.det},
+  {id:`r${n}-meta2`,q:2,o:'A',rut:true,t:'Miércoles, 1 hora: campañas de Meta, con la IA.',por:META,det:METAD},
+  {id:`r${n}-klaviyo`,q:2,o:'A',rut:true,t:K.t,por:K.por,det:K.det},
+  {id:`r${n}-meta3`,q:2,o:'A',rut:true,t:`${vie}, 1 hora: campañas de Meta, con la IA.`,por:META,det:METAD},
+  {id:`r${n}-seg`,q:2,o:'A',rut:true,t:`${vie}, 1 hora: estrategia de seguimiento.`,por:'Qué pasa con cada potencial que no compró y con cada comprador nuevo.',det:['Potencial que no compró: secuencia de WhatsApp y correo a los 7, 30, 60 y 90 días','Comprador nuevo: qué recibe y cuándo (el que llega por anuncio demora 82 días en volver)','Remarketing en Meta: a quién y con qué','Quién manda cada mensaje y con qué texto (los textos son tuyos)']}
+ ); });
+// Los arranques del año: cada fecha importante arranca dos meses antes; Navidad, tres.
+// En el arranque Andreina define si hay producto, precios, creativos y campaña, y agenda el resto.
+// Están también en el Google Calendar "TAGO" (evento de día completo en cada arranque).
+const ARRANQUES = [
+ {f:'Día del Profesor 2026',dia:'2026-10-16',arr:'2026-09-14',nota:'Debía ser el 16 de agosto. Arranca ahora.'},
+ {f:'Halloween 2026',dia:'2026-10-31',arr:'2026-09-14',nota:'Debía ser el 31 de agosto. Arranca ahora.'},
+ {f:'Navidad 2026, empresas y personas',dia:'2026-12-25',arr:'2026-09-25',meses:3,nota:'La más importante del año. Las empresas compran en noviembre.'},
+ {f:'Black Friday 2026',dia:'2026-11-27',arr:'2026-09-27'},
+ {f:'San Valentín 2027',dia:'2027-02-14',arr:'2026-12-14'},
+ {f:'Vuelta a clases 2027',dia:'2027-03-01',arr:'2027-01-04',nota:'El 1 de enero es feriado. Marzo fue el mes más fuerte de 2026.'},
+ {f:'Día de la Mujer 2027',dia:'2027-03-08',arr:'2027-01-08'},
+ {f:'Día de la Madre 2027',dia:'2027-05-09',arr:'2027-03-09'},
+ {f:'Día del Padre 2027',dia:'2027-06-20',arr:'2027-04-20'},
+ {f:'Día del Niño 2027',dia:'2027-08-08',arr:'2027-06-08'},
+ {f:'Fiestas Patrias 2027',dia:'2027-09-18',arr:'2027-07-18'},
+ {f:'Día del Profesor 2027',dia:'2027-10-16',arr:'2027-08-16'},
+ {f:'Halloween 2027',dia:'2027-10-31',arr:'2027-08-31'},
+ {f:'Navidad 2027',dia:'2027-12-25',arr:'2027-09-25',meses:3},
+ {f:'Black Friday 2027',dia:'2027-11-26',arr:'2027-09-26'}
+];
+const ALL = WEEKS.flatMap(w=>w.tareas);
+const OWNERS = {
+ A:{n:'Andreina',rol:'tú',c:'#4063F9'},
+ CA:{n:'Carol',rol:'vendedoras y producción',c:'#8F9BFF'},
+ V:{n:'Vendedoras',rol:'las dos',c:'#49CEAB'},
+ P:{n:'Producción',rol:'las dos personas',c:'#545B7E'},
+ CO:{n:'Eva',rol:'edita, fotos y videos',c:'#1C7A63'},
+ D:{n:'Preprensa',rol:'diseñadora',c:'#B6B9C8'},
+ J:{n:'José',rol:'contador y sistemas',c:'#0B1447'},
+ CT:{n:'Contador',rol:'estado de resultado y cierres',c:'#858AA3'}
+};
+const QUAD = {1:{n:'Hacer ya',s:'urgente e importante'},2:{n:'Agendar',s:'importante, no urgente'},3:{n:'Delegar',s:'urgente, no importante'},4:{n:'Después',s:'ni urgente ni importante'}};
+
+const SEGS = {
+ R:{n:'En riesgo',desc:'Compraban cada pocos días y llevan entre dos y seis semanas callados. Todavía no se fueron. Carol y las vendedoras los llaman esta semana.',money:'gasto12',ml:'en 12 meses'},
+ A:{n:'Compraban mucho y ya no',desc:'Más de $800 mil en doce meses, o más de $1,5 M en 2025, y más de 45 días sin comprar. Las vendedoras preguntan por qué y lo anotan.',money:'gasto12',ml:'en 12 meses'},
+ B:{n:'Dormidos',desc:'Compraban seguido y llevan más del doble de su ritmo sin comprar, con menos gasto que los grandes. Las vendedoras empiezan por arriba.',money:'gasto12',ml:'en 12 meses'},
+ C:{n:'Potenciales que no compran',desc:'Escribieron tres o más mensajes en los últimos 45 días y no aparecen como clientes en relBase. Son los 160 más recientes de 669. Si ya es cliente, márcalo.',money:null},
+ D:{n:'Compraron una vez',desc:'Una sola compra, hace más de 45 días, y no volvieron. Ordenados por monto. Las vendedoras preguntan qué faltó.',money:'gastoTot',ml:'esa compra'},
+ E:{n:'Clientes clave',desc:'Ocho o más compras en 2026 y siguen activos. Son la mitad de la venta: Carol les ofrece el plan mensual.',money:'gasto26',ml:'en 2026'}
+};
+const ESTADOS = [['por','Por contactar'],['cont','Contactado'],['cot','Cotizando'],['rec','Compró o volvió'],['no','Sin interés'],['ya','Ya es cliente'],['sin','Dato inválido']];
+const FIN = new Set(['rec','no','ya','sin']);
+
+// ---------- state ----------
+const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R'};
+let db=null, tareasListo=false, guardando=false;
+const LS='rutaTago';
+function localLoad(){ try{ const s=JSON.parse(localStorage.getItem(LS)||'{}'); state.hecho=s.hecho||{}; state.delegado=s.delegado||{}; state.cli=s.cli||{}; }catch(e){} }
+function localSave(){ try{ localStorage.setItem(LS,JSON.stringify({hecho:state.hecho,delegado:state.delegado,cli:state.cli})); }catch(e){} }
+function setGuardado(modo){ const dot=document.getElementById('dotGuardado'), t=document.getElementById('txtGuardado'); dot.className='dot'+(modo==='nube'?' on':modo==='local'?' local':''); t.textContent = modo==='nube'?'Guardado en la nube':modo==='local'?'Solo en este dispositivo':'Conectando'; }
+
+// week index
+(function(){ let i=0; WEEKS.forEach((w,k)=>{ if(d(w.ini)<=HOY) i=k; }); state.week=i; })();
+
+// ---------- render ----------
+const $=s=>document.querySelector(s);
+function hechas(ids){ return ids.filter(t=>state.hecho[t.id]).length; }
+function renderHeader(){
+  $('#pillSemana').innerHTML=`<b>Semana ${state.week+1} de 12</b>`;
+  const del=ALL.filter(t=>t.o!=='A'&&state.delegado[t.id]).length, delT=ALL.filter(t=>t.o!=='A').length; $('#pillHechas').textContent=`${hechas(ALL)} de ${ALL.length} tareas · ${del} de ${delT} delegadas`;
+}
+function ownChip(t){ const o=OWNERS[t.o]; return `<span class="own${t.o==='A'?' me':''}" style="--c:${o.c}"><i></i>${o.n}${t.con?` <span class="faint">con ${OWNERS[t.con].n}</span>`:''}</span>`; }
+function delChip(t,pref){ if(t.o==='A') return ''; const on=!!state.delegado[t.id]; return `<label class="del${on?' on':''}"><input type="checkbox" id="${pref}-${t.id}" data-del="${t.id}" ${on?'checked':''}> ${on?'Delegado':'Delegar'}</label>`; }
+function qChip(t){ return `<span class="qchip">${t.rut?'Cada semana':QUAD[t.q].n}</span>`; }
+function hitosHtml(w){ return w.hitos.map(h=>`<span class="hito ${h.c}">${esc(h.t)}</span>`).join(''); }
+function rangoTxt(w){ const a=d(w.ini), b=d(w.fin); return a.getMonth()===b.getMonth()? `${a.getDate()} al ${b.getDate()} de ${MESL[a.getMonth()]}` : `${a.getDate()} de ${MESL[a.getMonth()]} al ${b.getDate()} de ${MESL[b.getMonth()]}`; }
+function renderSemana(){
+  const w=WEEKS[state.week];
+  $('#wkTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
+  $('#wkHitos').innerHTML=hitosHtml(w);
+  $('#wkPrev').disabled=state.week===0; $('#wkNext').disabled=state.week===WEEKS.length-1;
+  $('#wkTasks').innerHTML=w.tareas.map(t=>`<li class="task${state.hecho[t.id]?' done':''}">
+    <input type="checkbox" id="t-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''} aria-label="${esc(t.t)}">
+    <div><button class="tt" data-open="${t.id}">${esc(t.t)}</button>${t.por?`<div class="why clamp">${esc(t.por)}</div>`:''}
+    <div class="chips">${qChip(t)}${ownChip(t)}${delChip(t,'d')}${(t.det&&t.det.length)?`<button class="go mas" data-open="${t.id}">Ver el detalle</button>`:''}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}</div></div></li>`).join('');
+  const h=hechas(w.tareas); $('#wkBar').style.width=(w.tareas.length?100*h/w.tareas.length:0)+'%';
+  $('#wkProg').textContent=`${h} de ${w.tareas.length} hechas esta semana`;
+}
+const fmtL = x => { const a=d(x); return `${a.getDate()} de ${MESL[a.getMonth()]} de ${a.getFullYear()}`; };
+function renderArranques(){
+  $('#arranques').innerHTML=`<table class="arr"><thead><tr><th>Fecha</th><th>Cuándo es</th><th>Arranque</th><th>Anticipación</th><th></th></tr></thead><tbody>${ARRANQUES.map(a=>{ const pasado=d(a.arr)<HOY, hoy=d(a.arr).getTime()===HOY.getTime(); const enRuta=WEEKS.findIndex(w=>d(w.ini)<=d(a.arr)&&d(a.arr)<=d(w.fin)); return `<tr class="${hoy||(pasado&&d(a.dia)>=HOY)?'ahora':(pasado?'fue':'')}"><td class="nm">${esc(a.f)}</td><td>${esc(fmtL(a.dia))}</td><td class="num"><b>${esc(fmtL(a.arr))}</b>${enRuta>=0?`<div class="sm">semana ${enRuta+1} de la Ruta</div>`:''}</td><td>${a.meses===3?'tres meses':'dos meses'}</td><td class="sm">${esc(a.nota||'')}</td></tr>`; }).join('')}</tbody></table>`;
+}
+function renderCalendario(){
+  renderArranques();
+  $('#weeks').innerHTML=WEEKS.map((w,i)=>{ const fin=d(w.fin); const cls= i===state.week?'now':(fin<HOY?'past':''); return `<div class="week ${cls}">
+    <div><div class="wn dm num">${i+1}</div><div class="wd">${esc(rangoTxt(w))}</div></div>
+    <div>${w.hitos.length?`<div class="hitos">${hitosHtml(w)}</div>`:''}
+    <ul class="wtasks">${w.tareas.map(t=>`<li><input type="checkbox" id="c-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button> ${t.rut?'<span class="qchip">Cada semana</span> ':''}<span class="own" style="--c:${OWNERS[t.o].c};margin-left:4px"><i></i>${OWNERS[t.o].n}</span></div></li>`).join('')}</ul></div></div>`; }).join('');
+}
+function renderEquipo(){
+  const w=WEEKS[state.week];
+  $('#eqTitle').innerHTML=`Semana <em>${state.week+1}</em> · ${esc(rangoTxt(w))}`;
+  $('#eqPrev').disabled=state.week===0; $('#eqNext').disabled=state.week===WEEKS.length-1;
+  $('#matrix').innerHTML=[1,2,3,4].map(q=>{ const L=w.tareas.filter(t=>t.q===q); return `<div class="quad q${q}"><h3>${QUAD[q].n} <small>${QUAD[q].s}</small></h3>${L.length?`<ul>${L.map(t=>`<li><input type="checkbox" class="mini" id="m-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''} aria-label="${esc(t.t)}"><div><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button><div class="chips" style="margin-top:4px">${t.rut?'<span class="qchip">Cada semana</span>':''}${ownChip(t)}${delChip(t,'md')}</div></div></li>`).join('')}</ul>`:`<div class="vacio">Nada aquí esta semana.</div>`}</div>`; }).join('');
+  $('#people').innerHTML=Object.keys(OWNERS).map(k=>{ const o=OWNERS[k]; const L=w.tareas.filter(t=>t.o===k||t.con===k); return `<div class="person"><h3><i style="--c:${o.c}"></i>${o.n}</h3><div class="rol">${o.rol}</div>${L.length?`<ul>${L.map(t=>`<li class="${state.hecho[t.id]?'ok':''}"><button class="tt${state.hecho[t.id]?' done':''}" data-open="${t.id}">${esc(t.t)}</button>${t.o!==k?` <span class="faint">(apoya a ${OWNERS[t.o].n})</span>`:''}<div class="fila">${t.o===k?delChip(t,'pd'):''}<label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="ph-${k}-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}> Hecho</label></div></li>`).join('')}</ul>`:`<div class="libre">Sin tareas del plan esta semana.</div>`}</div>`; }).join('');
+}
+function keyOf(x){ return x.rut || x.ghlId; }
+function estadoDe(x){ return (state.cli[keyOf(x)]||{}).estado||'por'; }
+function notaDe(x){ return (state.cli[keyOf(x)]||{}).nota||''; }
+function selHtml(x){ const e=estadoDe(x); return `<select class="st s-${e}" id="est-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}">${ESTADOS.map(([v,l])=>`<option value="${v}"${v===e?' selected':''}>${l}</option>`).join('')}</select>`; }
+function notaHtml(x){ return `<input class="nota" id="nota-${esc(keyOf(x))}" data-k="${esc(keyOf(x))}" value="${esc(notaDe(x))}" placeholder="Qué dijo, cuándo volver a llamar">`; }
+const WA='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 12 12 0 0 0 4.6 4.1c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>';
+function contactoHtml(x){
+  const tel = x.tel ? `<a class="wa" href="https://wa.me/56${x.telRaw}" target="_blank" rel="noopener" title="Abrir WhatsApp">${WA}${esc(x.tel)}</a>` : `<span class="chip notel">Sin teléfono</span>`;
+  const ghl = x.ghlId ? ` <a class="ghl" href="https://app.gohighlevel.com/v2/location/FNbzbjYQLhwIrPFUCbOS/contacts/detail/${esc(x.ghlId)}" target="_blank" rel="noopener" title="Abrir en GoHighLevel">GHL</a>` : '';
+  const mail = x.mail ? `<div class="sm">${esc(x.mail)}</div>` : '';
+  return `${tel}${ghl}${mail}`;
+}
+function nombreHtml(x){
+  const fant = x.fantasia ? `<div class="sm">${esc(x.fantasia)}</div>` : (x.empresa?`<div class="sm">${esc(x.empresa)}</div>`:'');
+  const rut = x.rut ? `<div class="sm num">${esc(x.rut)}</div>` : '';
+  return `<div class="nm">${esc(x.nombre)}</div>${fant}${rut}`;
+}
+function renderSegs(){
+  $('#segs').innerHTML=Object.keys(SEGS).map(k=>{ const L=SEG[k]; const fin=L.filter(x=>FIN.has(estadoDe(x))).length; return `<button class="seg" role="tab" data-seg="${k}" aria-selected="${state.seg===k}">${esc(SEGS[k].n)} <span class="n">${L.length}${fin?` · ${fin} listos`:''}</span></button>`; }).join('');
+}
+function renderClientes(){
+  renderSegs();
+  const k=state.seg, S=SEGS[k]; let L=SEG[k].slice();
+  $('#segDesc').textContent=S.desc;
+  const q=($('#q').value||'').trim().toLowerCase(), soloTel=$('#fTel').checked, ocultar=$('#fPend').checked;
+  const tot=L.length, conTel=L.filter(x=>x.tel).length, contact=L.filter(x=>estadoDe(x)!=='por').length, rec=L.filter(x=>estadoDe(x)==='rec').length;
+  const dinero = S.money ? ` · ${clp(L.reduce((a,x)=>a+(x[S.money]||0),0))} ${S.ml}` : '';
+  $('#segSum').textContent=`${tot} ${k==='C'?'potenciales':'clientes'}${dinero} · ${conTel} con teléfono · ${contact} contactados · ${rec} ${k==='C'?'compraron':'volvieron a comprar'}`;
+  if(q) L=L.filter(x=>[x.nombre,x.fantasia,x.empresa,x.rut,x.telRaw,x.mail].join(' ').toLowerCase().includes(q));
+  if(soloTel) L=L.filter(x=>x.tel);
+  if(ocultar) L=L.filter(x=>!FIN.has(estadoDe(x)));
+  let head, rows;
+  if(k==='C'){
+    head=`<tr><th>Quién</th><th>Contacto</th><th>Llegó por</th><th>Último mensaje</th><th>Qué pidió</th><th>Estado</th><th>Nota</th></tr>`;
+    rows=L.map(x=>`<tr class="${FIN.has(estadoDe(x))?'fin':''}">
+      <td data-l="Quién" class="nocol">${nombreHtml(x)}</td>
+      <td data-l="Contacto">${contactoHtml(x)}</td>
+      <td data-l="Llegó por">${x.origen==='Anuncio'?`<span class="chip ad">Anuncio</span>${x.campana?`<div class="sm">${esc(x.campana)}</div>`:''}`:`<span class="chip">${esc(x.origen)}</span>`}${x.etapa?`<div style="margin-top:4px"><span class="chip etapa">${esc(x.etapa.replace('Testeo campañas > ',''))}</span></div>`:''}</td>
+      <td data-l="Último" class="num">${fmtDY(x.ultimo)}<div class="sm">${x.msjs} mensajes suyos</div></td>
+      <td data-l="Qué pidió" class="sm" style="max-width:260px">${esc(x.pista)}</td>
+      <td data-l="Estado" class="stcell">${selHtml(x)}</td>
+      <td data-l="Nota" class="nt">${notaHtml(x)}</td></tr>`);
+  } else if(k==='D'){
+    head=`<tr><th>Cliente</th><th>Contacto</th><th>Compró</th><th>Cuándo</th><th class="r">Monto neto</th><th>Estado</th><th>Nota</th></tr>`;
+    rows=L.map(x=>`<tr class="${FIN.has(estadoDe(x))?'fin':''}">
+      <td data-l="Cliente" class="nocol">${nombreHtml(x)}</td>
+      <td data-l="Contacto">${contactoHtml(x)}</td>
+      <td data-l="Compró">${esc(x.familia)}${x.familia2?`<div class="sm">${esc(x.familia2)}</div>`:''}</td>
+      <td data-l="Cuándo" class="num">${fmtDY(x.ultima)}<div class="sm">hace ${x.dias} días</div></td>
+      <td data-l="Monto" class="r num">${clp(x.gastoTot)}</td>
+      <td data-l="Estado" class="stcell">${selHtml(x)}</td>
+      <td data-l="Nota" class="nt">${notaHtml(x)}</td></tr>`);
+  } else {
+    const gl = k==='E'?'Gasto 2026':'Gasto 12 m', gk = k==='E'?'gasto26':'gasto12';
+    head=`<tr><th>Cliente</th><th>Contacto</th><th>Compra</th><th>Última compra</th><th>Ritmo</th><th class="r">${gl}</th>${k==='A'?'<th class="r">2025</th>':''}<th>Estado</th><th>Nota</th></tr>`;
+    rows=L.map(x=>`<tr class="${FIN.has(estadoDe(x))?'fin':''}">
+      <td data-l="Cliente" class="nocol">${nombreHtml(x)}</td>
+      <td data-l="Contacto">${contactoHtml(x)}</td>
+      <td data-l="Compra">${esc(x.familia)}${x.familia2?`<div class="sm">${esc(x.familia2)}</div>`:''}</td>
+      <td data-l="Última" class="num">${fmtDY(x.ultima)}<div class="sm">hace ${x.dias} días</div></td>
+      <td data-l="Ritmo" class="num rit">${x.cada?`cada ${x.cada} d`:'<span class="faint">sin ritmo</span>'}<div class="sm">${x.compras12} compras en 12 m</div></td>
+      <td data-l="${gl}" class="r num">${clp(x[gk])}</td>
+      ${k==='A'?`<td data-l="2025" class="r num">${clp(x.gasto25)}</td>`:''}
+      <td data-l="Estado" class="stcell">${selHtml(x)}</td>
+      <td data-l="Nota" class="nt">${notaHtml(x)}</td></tr>`);
+  }
+  $('#thead').innerHTML=head;
+  $('#tbody').innerHTML=rows.length?rows.join(''):`<tr><td colspan="9" class="empty nocol">Nada que mostrar con estos filtros.</td></tr>`;
+}
+const BYID=Object.fromEntries(ALL.map(t=>[t.id,t])); const WEEKOF=Object.fromEntries(WEEKS.flatMap((w,i)=>w.tareas.map(t=>[t.id,i])));
+let detId=null;
+function fillDet(id){ const t=BYID[id]; if(!t) return; const wi=WEEKOF[id]; const dlg=$('#det');
+  $('#detIn').innerHTML=`<div class="eyebrow">Semana ${wi+1} · ${t.rut?'Cada semana':QUAD[t.q].n}</div><h3>${esc(t.t)}</h3>${t.por?`<p>${esc(t.por)}</p>`:''}${(t.det&&t.det.length)?`<ul>${t.det.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    <div class="det-foot"><label class="del"><input type="checkbox" class="mini" style="margin:0;width:13px;height:13px" id="dg-${t.id}" data-id="${t.id}" ${state.hecho[t.id]?'checked':''}> Hecho</label>${delChip(t,'dgd')}${ownChip(t)}${t.seg?`<button class="go" data-seg="${t.seg}">Ver la lista: ${esc(SEGS[t.seg].n)} · ${SEG[t.seg].length}</button>`:''}<button class="cerrar" id="detCerrar">Cerrar</button></div>`; }
+function openDet(id){ detId=id; fillDet(id); const dlg=$('#det'); if(!dlg.open) dlg.showModal(); }
+function renderAll(){ renderHeader(); renderSemana(); renderCalendario(); renderEquipo(); if(state.view==='clientes') renderClientes(); if(detId && $('#det').open) fillDet(detId); }
+function showView(v){ state.view=v; document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.view===v))); document.querySelectorAll('.view').forEach(s=>s.hidden = s.id!=='view-'+v); if(v==='clientes') renderClientes(); window.scrollTo({top:0}); }
+
+// ---------- TAGO App: entrada con Google y datos en Realtime Database (tago_ruta) ----------
+/* Misma configuración pública y mismo flujo que el tablero. La seguridad real está en las
+   reglas de la base (tago_ruta/permitidos): aquí solo se descubre, al leer, si la cuenta puede. */
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyC_9mguXUm-Oo8v8FuqhesCNQ1mCEIc0zI", authDomain:"tago-app-489c1.firebaseapp.com",
+  databaseURL:"https://tago-app-489c1-default-rtdb.firebaseio.com",
+  projectId:"tago-app-489c1", storageBucket:"tago-app-489c1.firebasestorage.app",
+  messagingSenderId:"919374961221", appId:"1:919374961221:web:d3adc54d9b9abc358ea12c"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+const NODO = "tago_ruta";
+const refDe = p => firebase.database().ref(NODO + "/" + p);
+let sesion = null, escuchas = [];
+function muestraEntrada(modo, texto){ $('#entrada').hidden=false; $('#tarjetaEntrada').hidden = modo!=='tarjeta'; $('#abriendo').hidden = modo!=='abriendo'; if(texto) $('#abriendoTxt').textContent=texto; }
+function entraConGoogle(){ $('#errorEntrada').textContent=''; firebase.auth().signInWithPopup(googleProvider).catch(()=>{ $('#errorEntrada').textContent='No se pudo iniciar sesión con Google. Inténtalo de nuevo.'; }); }
+$('#entrar').addEventListener('click', entraConGoogle);
+if (window.navigator.standalone === true) { $('#entrar').hidden=true; $('#entradaDesc').hidden=true; $('#avisoEntrada').hidden=false; }
+function salir(){ firebase.auth().signOut(); }
+$('#salirEntrada').addEventListener('click', salir);
+$('#salir').addEventListener('click', salir);
+const esPermisoDenegado = e => /permission[_ ]denied/i.test((e && (e.code + " " + e.message)) || "");
+function noAutorizado(){ $('#errorEntrada').textContent = 'La cuenta ' + (sesion ? sesion.email : '') + ' no tiene acceso a la Ruta.'; muestraEntrada('tarjeta'); salir(); }
+function escucha(p, ok, mal){ const r=refDe(p); const cb=r.on('value', ok, e=>{ if(mal) mal(e); }); escuchas.push([r,cb]); return r; }
+function cierraEscuchas(){ for(const [r,cb] of escuchas){ try{ r.off('value',cb); }catch(e){} } escuchas=[]; }
+/* Las llaves de la base no admiten . # $ [ ] /: el RUT va con guiones bajos y la llave
+   original viaja dentro del valor (k) para volver a armar el estado al leer. */
+const claveDb = k => String(k).replace(/[.#$\[\]\/]/g, '_');
+function marcar(campo,id,val){
+  state[campo][id]= val? new Date().toISOString() : false; renderAll();
+  refDe('estado/'+campo+'/'+id).set(state[campo][id]).then(()=>setGuardado('nube')).catch(e=>{ console.warn('tarea',e); localSave(); setGuardado('local'); });
+}
+const timers={};
+function guardarCli(k, patch){
+  state.cli[k]=Object.assign({}, state.cli[k]||{}, patch, {cuando:new Date().toISOString(), k});
+  refDe('clientes/'+claveDb(k)).set(state.cli[k]).then(()=>setGuardado('nube')).catch(e=>{ console.warn('cliente',e); localSave(); setGuardado('local'); });
+}
+firebase.auth().onAuthStateChanged(user => { if(!user){ sale(); return; } sesion = { email:(user.email||'').toLowerCase(), uid:user.uid }; entra(); });
+function entra(){
+  muestraEntrada('abriendo', 'Abriendo la Ruta…'); $('#quien').textContent = sesion.email; setGuardado('');
+  refDe('segmentos').once('value').then(s => {
+    const v = s.val();
+    if(!v){ muestraEntrada('abriendo', 'La base todavía no tiene las listas de clientes de la Ruta. Hay que subirlas con segmentos.py.'); return; }
+    SEG = v; for(const k of Object.keys(SEGS)) if(!Array.isArray(SEG[k])) SEG[k]=[];
+    SEG.D.forEach(x=>x.gastoTot=Math.max(x.gasto12||0,x.gasto25||0));
+    $('#entrada').hidden = true; $('#app').hidden = false; renderAll(); setGuardado('nube');
+    escucha('estado', s2 => { const d0=s2.val()||{}; state.hecho=d0.hecho||{}; state.delegado=d0.delegado||{}; renderAll(); }, e => { console.warn(e); setGuardado('local'); });
+    escucha('clientes', q => { const m={}; Object.values(q.val()||{}).forEach(x => { if(x && x.k) m[x.k]=x; }); state.cli=m; if(state.view==='clientes') renderClientes(); else renderSegs(); }, e => { console.warn(e); setGuardado('local'); });
+  }).catch(e => { if(esPermisoDenegado(e)) noAutorizado(); else muestraEntrada('abriendo', 'No se pudo abrir la Ruta: ' + (e && e.message || e)); });
+}
+function sale(){ cierraEscuchas(); sesion=null; SEG=null; state.hecho={}; state.delegado={}; state.cli={}; $('#app').hidden=true; if($('#det').open) $('#det').close(); muestraEntrada('tarjeta'); }
+
+// ---------- events ----------
+document.addEventListener('change', e=>{
+  const t=e.target;
+  if(t.matches('input[type=checkbox][data-del]')) marcar('delegado', t.dataset.del, t.checked);
+  else if(t.matches('input[type=checkbox][data-id]')) marcar('hecho', t.dataset.id, t.checked);
+  else if(t.matches('select.st')){ guardarCli(t.dataset.k,{estado:t.value}); t.className='st s-'+t.value; renderSegs(); const tr=t.closest('tr'); if(tr) tr.classList.toggle('fin',FIN.has(t.value)); }
+  else if(t.id==='fTel'||t.id==='fPend') renderClientes();
+});
+document.addEventListener('input', e=>{
+  const t=e.target;
+  if(t.matches('input.nota')){ const k=t.dataset.k; clearTimeout(timers[k]); timers[k]=setTimeout(()=>guardarCli(k,{nota:t.value}),600); }
+  else if(t.id==='q') renderClientes();
+});
+document.addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.open) openDet(b.dataset.open);
+  else if(b.id==='detCerrar') $('#det').close();
+  else if(b.dataset.view) showView(b.dataset.view);
+  else if(b.classList.contains('go')){ state.seg=b.dataset.seg; if($('#det').open) $('#det').close(); showView('clientes'); }
+  else if(b.classList.contains('seg')){ state.seg=b.dataset.seg; renderClientes(); }
+  else if(b.id==='wkPrev'||b.id==='eqPrev'){ state.week=Math.max(0,state.week-1); renderSemana(); renderEquipo(); renderHeader(); }
+  else if(b.id==='wkNext'||b.id==='eqNext'){ state.week=Math.min(WEEKS.length-1,state.week+1); renderSemana(); renderEquipo(); renderHeader(); }
+});
+
+$('#det').addEventListener('click', e=>{ if(e.target===$('#det')) $('#det').close(); });
+// ---------- boot ----------
+// Nada se dibuja hasta que la cuenta entra y la base contesta con las listas.
+})();
+</script>
+</body>
+</html>

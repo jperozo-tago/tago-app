@@ -241,7 +241,9 @@ const APPS = [
   // privada: la tarjeta solo se dibuja para quien tiene la app en su lista (es información
   // financiera; los demás ni la ven). El acceso real lo imponen las reglas de la base
   // (tago_tablero/permitidos), no esta lista.
-  { key:'tablero',     nombre:'Tablero de negocio',       desc:'Ventas, publicidad, productos y clientes al día, con la facturación de relBase.', icono:'📊', acc:'#0B1447', estado:'activo', url:'/tablero', privada:true }
+  { key:'tablero',     nombre:'Tablero de negocio',       desc:'Ventas, publicidad, productos y clientes al día, con la facturación de relBase.', icono:'📊', acc:'#0B1447', estado:'activo', url:'/tablero', privada:true },
+  // privada: el plan de 12 semanas de Andreina, con sus listas de clientes. Reglas en tago_ruta/permitidos.
+  { key:'ruta',        nombre:'Ruta TAGO',               desc:'El plan de doce semanas: tareas por persona, arranques de cada fecha y listas de clientes para recuperar.', icono:'🧭', acc:'#4063F9', estado:'activo', url:'/ruta', privada:true }
 ];
 
 // --- Identidad central (compartida con las apps por la misma clave) ---
@@ -273,7 +275,7 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<
    con el link no puede leer ni escribir nada. */
 const AUTORIZADOS = {
   'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos','tablero'], admin:true },
-  'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos','tablero'], admin:true },
+  'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos','tablero','ruta'], admin:true },
   'c.oviedo@tago.cl':               { nombre:'Carol',    apps:['inventario','calculadora','pedidos'], admin:true },
   'produccion.tago@gmail.com':      { nombre:'Miguel',   apps:['inventario','pedidos'],                admin:false },
   'producciondtf.tago@gmail.com':   { nombre:'Ignacio',  apps:['inventario','pedidos'],                admin:false },
