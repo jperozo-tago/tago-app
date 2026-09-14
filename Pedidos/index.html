@@ -2340,7 +2340,8 @@ function renderActividad(id){
   cont.innerHTML=entries.length?entries.map(m=>{
     if(m._tipo==="log"){
       const hora=new Date(m.ts).toLocaleString("es-CL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-      const desc=m.tipo==="creacion"?(esTareaId(id)?"creó esta tarea":"creó este pedido"):m.tipo==="texto"?esc(m.texto||""):`cambió <strong>${esc(m.campo)}</strong> de "${esc(m.valorAnterior)}" a "${esc(m.valorNuevo)}"`;
+      const esEstado=String(m.campo||"").toLowerCase()==="estado", vh=v=>(esEstado&&esTareaId(id)&&tareaEstados[v])?tareaEstados[v].nombre:v; // otras apps anotan el id del estado
+      const desc=m.tipo==="creacion"?(esTareaId(id)?"creó esta tarea":"creó este pedido"):m.tipo==="texto"?esc(m.texto||""):`cambió <strong>${esc(esEstado?"Estado":m.campo)}</strong> de "${esc(vh(m.valorAnterior))}" a "${esc(vh(m.valorNuevo))}"`;
       return`<div class="hist-line">${ic("clock")} <strong>${esc(m.autor?.nombre||"?")}</strong> ${desc} <span class="hist-time">${hora}</span></div>`;
     }
     const mine=m.autor?.id===currentUser.id;
