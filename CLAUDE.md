@@ -217,6 +217,14 @@ Firestore).
   `#ficha-pack` (`abrirPack`/`renderPack`, movimientos y «Registrar
   consumo»). Reglas: leen y escriben todos los permitidos; borrar un pack
   (`newData` nulo) solo admins; borrar consumos se limita en el JS a admins.
+  Los packs facturados en relBase con el producto «Pack DTF …» (código
+  TAG-P20/P50/P100) los crea solo el robot del tablero
+  (`tago-tablero/pipeline/packs_relbase.py`, después de lineas.py en cada
+  corrida completa, documentos desde el 15-sep-2026): id `rb_<docId>_<línea>`,
+  `origen:"relbase"`, `relbase{docId, folio…}`, cliente = razón social de
+  relBase, `documento` = «Factura 14031»; la tabla los marca «Nuevo» 3 días.
+  Solo el producto pack: Andreina aclaró que facturar 20/50/100 metros
+  sueltos era un error de las vendedoras.
 
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de
