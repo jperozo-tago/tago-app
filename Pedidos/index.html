@@ -2269,7 +2269,7 @@ function switchTab(tab){
   const vt=document.getElementById("vistas-tabs"); if(vt)vt.style.display=tab==="pedidos"?"":"none";
   if(tab==="stats") renderStatsView();
   if(tab==="chat"){ initChat(); renderChatSidebar(); }
-  if(tab==="tareas"){ initTareas(); renderTareas(); }
+  if(tab==="tareas"){ initTareas(); renderTareas(); actualizarTituloTareas(); }
   if(tab==="bandeja") renderBandeja();
   closeSidebar();
 }
@@ -2564,7 +2564,12 @@ function renderTareas(){
   const grupos=estadosOrdenados.slice();
   const huerfanas=visibles.filter(([,t])=>!idsEstados.has(t.estado));
   if(huerfanas.length) grupos.push(["_sin_estado",{nombre:"Sin estado",color:"#858AA3",_huerfano:true}]); // su estado no es de este espacio: se abren y se les elige uno
-  const mezcla=tareaFiltro.tipo==="todas";
+  const mezcla=tareaFiltro.tipo==="todas"||tareaFiltro.tipo==="mias";
+  if(tareaFiltro.tipo==="mias"){
+    const conTareas=grupos.filter(([estId,est])=>est._huerfano?huerfanas.length:visibles.some(([,t])=>t.estado===estId));
+    if(!conTareas.length){ cont.innerHTML=`<div class="empty">No tienes tareas asignadas. Cuando alguien te asigne una, aparece aquí; también puedes crearla con «+ Nueva tarea».</div>`; return; }
+    grupos.length=0; grupos.push(...conTareas);
+  }
   cont.innerHTML=ttDescripcionLista()+grupos.map(([estId,est])=>{
     const tareasDelEstado=est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId);
     const abierto=!ttPlegados.has(estId);
@@ -2601,6 +2606,7 @@ function ttAnchoCampo(c){ return c.tipo==="casilla"?"96px":(c.tipo==="parrafo"||
 function ttColumnas(){ // columnas de la vista: las de la lista; en «Todas» / «Todo el espacio», las de siempre + la unión de los campos de las listas presentes
   const cols=[], enLista=tareaFiltro.tipo==="lista";
   const cfg=enLista?ttCfg(tareaFiltro.id):cpConfig(null);
+  if(tareaFiltro.tipo==="mias") cols.push({k:"listaDe",tipo:"int",t:"Lista",w:"minmax(170px,1fr)"}); // de dónde es cada tarea
   TT_ORDEN.filter(k=>cfg.integrados[k]).forEach(k=>cols.push({k,tipo:"int",t:TT_INT[k].t,w:TT_INT[k].w}));
   const vistos=new Set();
   const agregar=c=>{ if(vistos.has(c.cid))return; vistos.add(c.cid); cols.push({k:"c:"+c.cid,tipo:"campo",cid:c.cid,c,t:c.etiqueta,w:ttAnchoCampo(c)}); };
@@ -2676,6 +2682,7 @@ function ttValor(id,t,col){ // cómo se ve cada celda
     case "creador": return t.createdBy?`<span class="tt-txt">${esc(t.createdBy.nombre||t.createdBy.id)}</span>`:vacio;
     case "actualizado": return t.updatedAt?`<span class="tt-fecha">${fmtDate(String(t.updatedAt).slice(0,10))}</span>`:vacio;
     case "id": return `<span class="tarea-row-id">#${esc(String(id).slice(-6))}</span>`;
+    case "listaDe": { const l=t.lista&&listas[t.lista]; if(!l) return `<span class="tt-vacio">Sin lista</span>`; const e=espacios[l.espacio]; return `<span class="tt-txt" title="${esc((e?e.nombre+" / ":"")+l.nombre)}"><span class="tt-vacio">${e?esc(e.nombre)+" / ":""}</span>${esc(l.nombre)}</span>`; }
   }
   return "";
 }
@@ -2690,7 +2697,7 @@ function renderTareaRow(id,t,cols){
 }
 // Anchos de columna ajustables: se recuerdan por lista (o por vista) en este navegador
 var ttAnchos={}, ttColsActuales=[]; try{ ttAnchos=JSON.parse(localStorage.getItem("tago_tareas_anchos")||"{}")||{}; }catch(e){}
-function ttAnchoKey(){ return tareaFiltro.tipo==="lista"?tareaFiltro.id:(tareaFiltro.tipo==="espacio"?"esp:"+tareaFiltro.id:"todas"); }
+function ttAnchoKey(){ return tareaFiltro.tipo==="lista"?tareaFiltro.id:(tareaFiltro.tipo==="espacio"?"esp:"+tareaFiltro.id:tareaFiltro.tipo); }
 function ttAnchoDe(k,def){ const a=ttAnchos[ttAnchoKey()]; return a&&a[k]?a[k]+"px":def; }
 function ttPlantilla(cols){
   const resto=cols.map(c=>ttAnchoDe(c.k,c.w)).join(" ")+" 44px";
@@ -2727,7 +2734,7 @@ function ttFilaNueva(estId){
 }
 function ttAgregar(estId){
   const enLista=tareaFiltro.tipo==="lista";
-  if(tareaFiltro.tipo==="espacio"||(enLista&&ttCfg(tareaFiltro.id).personalizados.some(c=>c.requerido))){ openTareaModal(null,estId); return; }
+  if(tareaFiltro.tipo==="espacio"||tareaFiltro.tipo==="mias"||(enLista&&ttCfg(tareaFiltro.id).personalizados.some(c=>c.requerido))){ openTareaModal(null,estId); return; }
   ttNuevo=estId; renderTareas();
   setTimeout(()=>document.getElementById("tt-add-input")?.focus(),30);
 }
@@ -2739,7 +2746,9 @@ function ttNuevaBlur(estId){ const inp=document.getElementById("tt-add-input"); 
 function ttCrear(estId,nombre){
   nombre=(nombre||"").trim(); if(!nombre)return;
   const now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre};
-  const data={nombre,notas:"",estado:estId,prioridad:"normal",lista:tareaFiltro.tipo==="lista"?tareaFiltro.id:null,pedidoId:null,fechaLimite:"",asignados:{},asignadosEmails:{},createdAt:now,createdBy:quien,creadoPorEmail:currentUser.email,updatedAt:now,updatedBy:quien};
+  const asignados={}, asignadosEmails={};
+  if(tareaFiltro.tipo==="mias"){ asignados[currentUser.id]=true; asignadosEmails[sanitizeEmailKey(currentUser.email)]=true; } // si no, no aparecería en Mis tareas
+  const data={nombre,notas:"",estado:estId,prioridad:"normal",lista:tareaFiltro.tipo==="lista"?tareaFiltro.id:null,pedidoId:null,fechaLimite:"",asignados,asignadosEmails,createdAt:now,createdBy:quien,creadoPorEmail:currentUser.email,updatedAt:now,updatedBy:quien};
   const newId=tareasRef.push().key, updates={};
   updates["tago_tareas/"+newId]=data; updates["tago_tareas_visibilidad/"+sanitizeEmailKey(currentUser.email)+"/"+newId]=true;
   firebase.database().ref().update(updates).then(()=>toast("Tarea creada ✓","ok")).catch(err=>toast("No se pudo crear: "+err.message,"error"));
@@ -2838,7 +2847,7 @@ function openTareaModal(id=null,estadoPreseleccionado=null,pedidoPreseleccionado
   aplicarCamposModal(gv("f-tarea-lista")||null,t?.campos||{},true);
   buildPedidosDatalist();
   document.getElementById("f-tarea-pedido").value=etiquetaPedidoTarea(t?.pedidoId||pedidoPreseleccionado);
-  selectedTareaAsignados=t?.asignados?Object.keys(t.asignados):[];
+  selectedTareaAsignados=t?.asignados?Object.keys(t.asignados):(tareaFiltro.tipo==="mias"?[currentUser.id]:[]);
   buildTareaAsignadosGrid();
   document.getElementById("modal-tarea").classList.add("open");
 }
@@ -4684,7 +4693,7 @@ var sbColapsada=false; try{ sbColapsada=localStorage.getItem("tago_sb_colapsada"
 var sbAbiertos=new Set(["pedidos","tareas","chat"]); try{ const v=JSON.parse(localStorage.getItem("tago_sb_abiertos_v2")||"null"); if(Array.isArray(v)) sbAbiertos=new Set(v); }catch(e){}
 var sbEditando=null, sbConfirmar=null;
 var espacios={}, listas={}, carpetas={}, elementos={};
-var tareaFiltro={tipo:"todas"};
+var tareaFiltro={tipo:"mias"};
 function toggleSidebarColapsada(){ sbColapsada=!sbColapsada; try{ localStorage.setItem("tago_sb_colapsada",sbColapsada?"1":"0"); }catch(e){} aplicarSidebar(); if(typeof aplicarAnchosCols==="function") setTimeout(aplicarAnchosCols,260); }
 function aplicarSidebar(){
   document.body.classList.toggle("sb-colapsada",sbColapsada);
@@ -4697,18 +4706,23 @@ function irATareas(filtro){ tareaFiltro=filtro; if(currentTab!=="tareas") switch
 function actualizarTituloTareas(){
   if(currentTab!=="tareas")return;
   let ctx="";
+  if(tareaFiltro.tipo==="mias"){ document.getElementById("topbar-title").innerHTML=ic("square-check-big","ic-titulo")+"Mis tareas"; return; }
   if(tareaFiltro.tipo==="espacio"){ const e=espacios[tareaFiltro.id]; ctx=e?` · ${e.nombre}`:""; }
   if(tareaFiltro.tipo==="lista"){ const l=listas[tareaFiltro.id]; const e=l&&espacios[l.espacio]; ctx=l?` · ${e?e.nombre+" / ":""}${l.nombre}`:""; }
   document.getElementById("topbar-title").innerHTML=ic("square-check-big","ic-titulo")+"Tareas"+esc(ctx);
 }
+function tareaEsMia(t){ return !!(currentUser&&t&&t.asignados&&t.asignados[currentUser.id]); }
+function tareaPendiente(t){ const set=estadosDe(espacioDeTarea(t)); const ultimo=set.length?set[set.length-1][0]:null; return t.estado!==ultimo; } // no está en el último estado de su espacio
 function tareaEnFiltro(t){
   if(tareaFiltro.tipo==="lista") return t.lista===tareaFiltro.id;
   if(tareaFiltro.tipo==="espacio") return !!t.lista&&listas[t.lista]?.espacio===tareaFiltro.id;
+  if(tareaFiltro.tipo==="mias") return tareaEsMia(t);
   return true;
 }
 function buildListaSelect(sel){
   const el=document.getElementById("f-tarea-lista"); if(!el)return;
-  const grupos=[{id:"tareas",nombre:"Tareas"},...Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,nombre:e.nombre}))];
+  const grupos=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,nombre:e.nombre}));
+  if(Object.values(listas).some(l=>l&&l.espacio==="tareas")) grupos.unshift({id:"tareas",nombre:"Tareas"}); // listas antiguas del espacio fijo, si quedara alguna
   el.innerHTML=`<option value="">— Sin lista —</option>`+grupos.map(g=>{
     const ls=Object.entries(listas).filter(([,l])=>l.espacio===g.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
     return ls.length?`<optgroup label="${esc(g.nombre)}">${ls.map(([id,l])=>`<option value="${id}"${id===sel?" selected":""}>${esc(l.nombre)}</option>`).join("")}</optgroup>`:"";
@@ -4751,8 +4765,8 @@ function sbEliminar(tipo,id){
     if(categoriaSeleccionada===id){ categoriaSeleccionada="todos"; render(); }
     return;
   }
-  if(tipo==="lista"){ firebase.database().ref("tago_listas/"+id).remove(); if(tareaFiltro.tipo==="lista"&&tareaFiltro.id===id) irATareas({tipo:"todas"}); return; }
-  if(tipo==="elemento"){ firebase.database().ref("tago_elementos/"+id).remove(); if(currentTab==="elemento"&&elementoActual===id) irATareas({tipo:"todas"}); return; }
+  if(tipo==="lista"){ firebase.database().ref("tago_listas/"+id).remove(); if(tareaFiltro.tipo==="lista"&&tareaFiltro.id===id) irATareas({tipo:"mias"}); return; }
+  if(tipo==="elemento"){ firebase.database().ref("tago_elementos/"+id).remove(); if(currentTab==="elemento"&&elementoActual===id) irATareas({tipo:"mias"}); return; }
   if(tipo==="carpeta"){
     // La carpeta se elimina; sus listas y elementos vuelven a la raíz del espacio
     const updates={}; updates["tago_carpetas/"+id]=null;
@@ -4764,10 +4778,10 @@ function sbEliminar(tipo,id){
     const updates={}; updates["tago_espacios/"+id]=null;
     Object.entries(listas).forEach(([lid,l])=>{ if(l.espacio===id) updates["tago_listas/"+lid]=null; });
     Object.entries(carpetas).forEach(([cid,c])=>{ if(c.espacio===id) updates["tago_carpetas/"+cid]=null; });
-    Object.entries(elementos).forEach(([eid,e])=>{ if(e.espacio===id){ updates["tago_elementos/"+eid]=null; if(currentTab==="elemento"&&elementoActual===eid) irATareas({tipo:"todas"}); } });
+    Object.entries(elementos).forEach(([eid,e])=>{ if(e.espacio===id){ updates["tago_elementos/"+eid]=null; if(currentTab==="elemento"&&elementoActual===eid) irATareas({tipo:"mias"}); } });
     Object.entries(camposCat).forEach(([cid,c])=>{ if(c&&c.espacio===id&&!c.archivado) updates["tago_campos/"+cid+"/archivado"]=true; }); // su catálogo de campos queda archivado, no borrado
     firebase.database().ref().update(updates);
-    if((tareaFiltro.tipo==="espacio"&&tareaFiltro.id===id)||(tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]?.espacio===id)) irATareas({tipo:"todas"});
+    if((tareaFiltro.tipo==="espacio"&&tareaFiltro.id===id)||(tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]?.espacio===id)) irATareas({tipo:"mias"});
   }
 }
 function renderChatBadge(){
@@ -4787,7 +4801,9 @@ function renderSidebar(){
   const confirmar=(tipo,id)=>sbConfirmar&&sbConfirmar.tipo===tipo&&sbConfirmar.id===id?`<span class="sb-confirm" onclick="event.stopPropagation()">¿Eliminar? <button onclick="sbEliminar('${tipo}','${id}')">Sí</button><button onclick="sbConfirmar=null;renderSidebar()">No</button></span>`:"";
   const delBtn=(tipo,id)=>`<button class="sb-del" title="Eliminar" onclick="event.stopPropagation();sbConfirmar={tipo:'${tipo}',id:'${id}'};renderSidebar()">✕</button>`;
   const nBj=bandejaNoLeidos();
-  let h=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="bandeja"?" active":""}" onclick="switchTab('bandeja')" title="Bandeja"><span class="sb-caret"></span><span class="sb-ic">${ic("inbox")}</span><span class="sb-label">Bandeja</span><span class="sb-count${nBj?" sb-unread":""}">${nBj||""}</span></div><div class="sb-sep"></div>`;
+  const nMias=Object.values(tareas).filter(t=>tareaEsMia(t)&&tareaPendiente(t)).length;
+  let h=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="bandeja"?" active":""}" onclick="switchTab('bandeja')" title="Bandeja"><span class="sb-caret"></span><span class="sb-ic">${ic("inbox")}</span><span class="sb-label">Bandeja</span><span class="sb-count${nBj?" sb-unread":""}">${nBj||""}</span></div>`;
+  h+=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="tareas"&&tareaFiltro.tipo==="mias"?" active":""}" onclick="irATareas({tipo:'mias'})" title="Mis tareas: las que tienes asignadas"><span class="sb-caret"></span><span class="sb-ic">${ic("square-check-big")}</span><span class="sb-label">Mis tareas</span><span class="sb-count">${nMias||""}</span></div><div class="sb-sep"></div>`;
   // Pedidos: sus listas son las categorías
   const pedAbierto=sbAbiertos.has("pedidos")&&!col;
   const pedActivo=currentTab==="pedidos"||currentTab==="stats";
@@ -4805,7 +4821,8 @@ function renderSidebar(){
   // Espacios: Tareas y los espacios creados por el equipo (sus listas son listas de tareas)
   h+=`<div class="sb-sep"></div><div class="sb-section-title"><span>Espacios</span>${puedeEsp&&!col?`<button class="sb-add" title="Nuevo espacio" onclick="sbEditando={tipo:'espacio'};renderSidebar()">+</button>`:""}</div>`;
 
-  const spaces=[{id:"tareas",nombre:"Tareas",icono:"✅",fijo:true},...Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,...e}))];
+  const spaces=Object.entries(espacios).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)).map(([id,e])=>({id,...e}));
+  if(Object.values(listas).some(l=>l&&l.espacio==="tareas")) spaces.unshift({id:"tareas",nombre:"Tareas",icono:"✅",fijo:true}); // solo si quedara alguna lista antigua ahí
   spaces.forEach(sp=>{
     const abierto=sbAbiertos.has(sp.id)&&!col;
     const misListas=Object.entries(listas).filter(([,l])=>l.espacio===sp.id).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));

@@ -76,7 +76,10 @@ Firestore).
   estados sin `espacio` son los generales y NO deben tocarse (la app Ruta los
   usa: menor `orden` = por hacer, mayor = listo). Cada vista agrupa por los
   estados del espacio que se mira (`estadosDe`, `estadosDelContexto`); las
-  tareas cuyo estado no es de su espacio caen en «Sin estado».
+  tareas cuyo estado no es de su espacio caen en «Sin estado». La vista personal
+  es «Mis tareas» (bajo Bandeja, `tareaFiltro.tipo==="mias"`: solo las
+  asignadas a quien mira, con columna «Lista»); ya no existe el espacio fijo
+  «Tareas» ni «Todas las tareas».
 - `tago_mail_alertas` — correos detectados como pedidos
 - `tago_permitidos` — lista de emails autorizados a entrar (control de acceso)
 - `tago_admins` — quiénes son admin (para el módulo de Tareas)
