@@ -3777,34 +3777,45 @@ function fichaShopifyHtml(j){
   if(!fichaNuevo&&j.estado==="entregado"&&n&&!(s&&(s.cerradoAt||s.pendiente))) accion=`<span class="pk-link" onclick="pedirCierreShopify('${fichaId}')">${s&&s.error?"Reintentar":"Cerrar en Shopify"}</span>`;
   return txt?fiFila(ic("shopping-cart")+" Shopify",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true):"";
 }
-// ── Aviso al cliente por Klaviyo (evento «Pedido listo»; el flujo en Klaviyo manda el correo de retiro o de envío) ──
+// ── Aviso al cliente por Klaviyo: retiro al pasar a Listo («Pedido listo para retiro»), envío al pasar a Entregado («Pedido despachado») ──
 const KLAVIYO_CLAVE_PUBLICA="SQFMGt"; // clave pública de la cuenta TAGO (la misma del sitio web): solo sirve para registrar eventos
-function correoDe(j){ return (j&&(j.correo||(j.envio&&j.envio.correo))||"").trim().toLowerCase()||null; }
-async function avisarListoCliente(id,j){
+function correoDe(j){ return (j&&j.correo||"").trim().toLowerCase()||null; } // solo lo que escribió quien creó el pedido
+async function avisarCliente(id,j,momento){ // momento: "retiro" (pedido listo para retirar) | "despacho" (entregado al courier)
   const correo=correoDe(j); if(!correo||!dbRef)return;
-  const retiro=(j.tipoEntrega||"Retiro")==="Retiro", e=j.envio||{};
-  const props={pedidoId:id,pedido:j.pedido||"",cliente:j.cliente||"",entrega:retiro?"retiro":"envio",tipoEntrega:j.tipoEntrega||"Retiro",transportista:retiro?"":(j.tipoEntrega||""),destinatario:e.nombre||"",direccion:e.dir||"",producto:j.tipoDtf||"",cantidad:j.cantidad||"",unidad:j.unidad||getUnit(j.tipoDtf),responsable:j.responsable||""};
-  const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),unique_id:`${id}-listo-${Date.now()}`,metric:{data:{type:"metric",attributes:{name:"Pedido listo"}}},profile:{data:{type:"profile",attributes:{email:correo}}}}}};
+  const e=j.envio||{}, evento=momento==="retiro"?"Pedido listo para retiro":"Pedido despachado";
+  const props={pedidoId:id,pedido:j.pedido||"",cliente:j.cliente||"",momento,tipoEntrega:j.tipoEntrega||"Retiro",transportista:momento==="despacho"?(j.tipoEntrega||""):"",destinatario:e.nombre||"",direccion:e.dir||"",producto:j.tipoDtf||"",cantidad:j.cantidad||"",unidad:j.unidad||getUnit(j.tipoDtf),responsable:j.responsable||""};
+  const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),unique_id:`${id}-${momento}-${Date.now()}`,metric:{data:{type:"metric",attributes:{name:evento}}},profile:{data:{type:"profile",attributes:{email:correo}}}}}};
+  const clave=momento==="retiro"?"retiroAt":"despachoAt";
   try{
     const r=await fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)});
     if(!r.ok) throw new Error("Klaviyo respondió "+r.status);
-    dbRef.child(id).update({aviso:{listoAt:new Date().toISOString(),correo,canal:"klaviyo",por:{id:currentUser.id,nombre:currentUser.nombre},error:null}});
-    registrarLog(id,"Aviso al cliente","—",`correo de «pedido listo${retiro?" para retiro":" · envío"}» a ${correo}`);
+    dbRef.child(id).update({["aviso/"+clave]:new Date().toISOString(),"aviso/correo":correo,"aviso/canal":"klaviyo","aviso/por":{id:currentUser.id,nombre:currentUser.nombre},"aviso/error":null});
+    registrarLog(id,"Aviso al cliente","—",`correo «${momento==="retiro"?"listo para retiro":"pedido despachado"}» a ${correo}`);
     toast("Aviso enviado al cliente ✓","ok");
   }catch(err){
     dbRef.child(id).update({"aviso/error":String(err.message||err),"aviso/intentadoAt":new Date().toISOString(),"aviso/correo":correo});
     toast("No se pudo avisar al cliente: "+(err.message||err),"error");
   }
 }
-function reenviarAvisoListo(id){ const j=jobs[id]; if(!j)return; if(!correoDe(j)){ toast("Pon el correo del cliente primero","error"); return; } avisarListoCliente(id,j); }
+function reenviarAviso(id){
+  const j=jobs[id]; if(!j)return;
+  if(!correoDe(j)){ toast("Pon el correo del cliente primero","error"); return; }
+  const retiro=(j.tipoEntrega||"Retiro")==="Retiro";
+  if(retiro&&!["listo","entregado"].includes(j.estado)){ toast("El aviso de retiro se manda cuando el pedido está Listo","error"); return; }
+  if(!retiro&&j.estado!=="entregado"){ toast("El aviso de despacho se manda cuando el pedido pasa a Entregado","error"); return; }
+  avisarCliente(id,j,retiro?"retiro":"despacho");
+}
 function fichaAvisoHtml(j){
   if(fichaNuevo)return"";
-  const correo=correoDe(j), a=j.aviso||null; let txt="", cls="", accion="";
-  if(a&&a.listoAt){ txt=`Correo de pedido listo enviado ✓ ${fmtFull(a.listoAt)} a ${esc(a.correo||correo||"")}`; cls="fi-ok"; if(correo) accion=`<span class="pk-link" onclick="reenviarAvisoListo('${fichaId}')">Reenviar</span>`; }
-  else if(a&&a.error){ txt=`No se pudo avisar: ${esc(a.error)}`; cls="fi-mal"; if(correo) accion=`<span class="pk-link" onclick="reenviarAvisoListo('${fichaId}')">Reintentar</span>`; }
-  else if(!correo) txt=(j.estado==="listo"||j.estado==="entregado")?"Sin correo del cliente: no se le avisó":"Sin correo del cliente: no se le avisará al pasar a Listo";
-  else if(j.estado==="listo"||j.estado==="entregado"){ txt=`Sin aviso enviado (${esc(correo)})`; accion=`<span class="pk-link" onclick="reenviarAvisoListo('${fichaId}')">Enviar aviso</span>`; }
-  else txt=`Se le avisará a ${esc(correo)} al pasar a Listo`;
+  const correo=correoDe(j), a=j.aviso||{}, retiro=(j.tipoEntrega||"Retiro")==="Retiro";
+  const hecho=retiro?a.retiroAt:a.despachoAt, toca=retiro?["listo","entregado"].includes(j.estado):j.estado==="entregado";
+  const cuando=retiro?"al pasar a Listo (retiro)":"al pasar a Entregado (despacho)";
+  let txt="", cls="", accion="";
+  if(hecho){ txt=`Correo «${retiro?"listo para retiro":"pedido despachado"}» enviado ✓ ${fmtFull(hecho)} a ${esc(a.correo||correo||"")}`; cls="fi-ok"; if(correo) accion=`<span class="pk-link" onclick="reenviarAviso('${fichaId}')">Reenviar</span>`; }
+  else if(a.error){ txt=`No se pudo avisar: ${esc(a.error)}`; cls="fi-mal"; if(correo&&toca) accion=`<span class="pk-link" onclick="reenviarAviso('${fichaId}')">Reintentar</span>`; }
+  else if(!correo){ txt=toca?"Sin correo del cliente: no se le avisó":`Sin correo del cliente: no se le avisará ${cuando}`; cls=toca?"fi-mal":""; }
+  else if(toca){ txt=`Sin aviso enviado (${esc(correo)})`; accion=`<span class="pk-link" onclick="reenviarAviso('${fichaId}')">Enviar aviso</span>`; }
+  else txt=`Se le avisará a ${esc(correo)} ${cuando}`;
   return fiFila(ic("mail")+" Aviso al cliente",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true);
 }
 function advance(id){
@@ -3833,7 +3844,9 @@ function moverEstado(id,nuevoEstado){
   if(dbRef){ dbRef.child(id).update(upd); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
   else{ jobs[id]={...j,...upd}; Object.keys(upd).forEach(k=>{ if(upd[k]===null) delete jobs[id][k]; }); saveLocal(); render(); }
   toast((atras?"← ":"→ ")+ST[nuevoEstado].label,"ok");
-  if(nuevoEstado==="listo"&&!(j.aviso&&j.aviso.listoAt)) avisarListoCliente(id,{...j,...upd}); // Klaviyo le avisa al cliente que ya está listo
+  { const retiro=(j.tipoEntrega||"Retiro")==="Retiro", a=j.aviso||{}; // Klaviyo avisa al cliente: retiro al estar listo, envío al entregarse al courier
+    if(nuevoEstado==="listo"&&retiro&&!a.retiroAt) avisarCliente(id,{...j,...upd},"retiro");
+    if(nuevoEstado==="entregado"&&!retiro&&!a.despachoAt) avisarCliente(id,{...j,...upd},"despacho"); }
 }
 
 function del(id){ if(!confirm("¿Eliminar este pedido?"))return; filasAbiertas.delete(id); delete borradoresComentario[id]; delete imagenesPendientesComentario[id]; if(dbRef) dbRef.child(id).remove(); else{ delete jobs[id]; saveLocal(); render(); } toast("Eliminado"); }
@@ -5870,7 +5883,7 @@ function renderFicha(forzar){
   <div class="fh-title">
     <input class="fi fi-titulo" id="fc-cliente" list="clientes-list" value="${esc(j.cliente)}" placeholder="Nombre del cliente *" onchange="fichaCampo('cliente',this.value)"/>
     <input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="# Pedido de Shopify (ej: #8584)" onchange="fichaCampo('pedido',this.value)"/>
-    <input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle cuando esté listo)" title="Correo del cliente: se le avisa por Klaviyo cuando el pedido pasa a Listo" onchange="fichaCampo('correo',this.value)"/>
+    <input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle cuando esté listo o despachado)" title="Lo escribe quien crea el pedido. Retiro: se le avisa al pasar a Listo. Envío: al pasar a Entregado" onchange="fichaCampo('correo',this.value)"/>
     <div class="fi-hint">${hint}</div>
   </div>
   <div class="fh-pills">

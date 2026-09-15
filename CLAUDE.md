@@ -188,20 +188,22 @@ Firestore).
   La ficha muestra la fila «Shopify» (`fichaShopifyHtml`) con «Reintentar» /
   «Cerrar en Shopify» (`pedirCierreShopify`); la tabla, un ícono junto al
   estado. La app nunca habla con Shopify: no hay clave en el navegador.
-- Aviso al cliente por Klaviyo (14-sep-2026): el pedido tiene `correo` (campo
-  en la ficha; si falta se usa `envio.correo`, y el robot del tablero lo
-  completa desde Shopify para los pedidos con número de Shopify:
-  `shopify_cerrar.py → completar_correos`, marca `shopify.correoBuscado`). Al
-  pasar a **Listo**, `moverEstado` llama `avisarListoCliente`, que manda a
-  Klaviyo el evento «Pedido listo» por la API pública del cliente
-  (`POST a.klaviyo.com/client/events/?company_id=SQFMGt`, clave pública,
-  sin secretos) con `entrega: retiro|envio`, transportista, dirección, etc.,
-  y guarda `aviso = {listoAt, correo, canal, por}` (o `aviso.error`) más una
-  línea en el historial. No se repite solo; la ficha (fila «Aviso al
-  cliente», `fichaAvisoHtml`) tiene «Reenviar» / «Enviar aviso». El correo lo
-  manda el flujo de Klaviyo «Pedido listo (Pedidos TAGO)» (id VSsxGB, métrica
-  RXUfmS): división por `entrega` → plantillas de retiro y de envío. Los
-  textos se editan en Klaviyo, no en la app.
+- Aviso al cliente por Klaviyo (14-sep-2026): el pedido tiene `correo`
+  (campo en la ficha). **Lo escribe siempre quien crea el pedido**: Andreina
+  no quiso que se llene solo (ni desde Shopify ni desde `envio.correo`, que
+  a veces es de otra persona). Retiro: al pasar a **Listo** se manda a
+  Klaviyo el evento «Pedido listo para retiro»; envío (OTS/Bluexpress/
+  Chilexpress): al pasar a **Entregado** (= entregado al courier) se manda
+  «Pedido despachado». `avisarCliente(id,j,momento)` usa la API pública del
+  cliente (`POST a.klaviyo.com/client/events/?company_id=SQFMGt`, clave
+  pública, sin secretos) y guarda `aviso.retiroAt` / `aviso.despachoAt` (o
+  `aviso.error`) más una línea en el historial; no se repite solo; la ficha
+  (fila «Aviso al cliente», `fichaAvisoHtml`) tiene «Reenviar» / «Enviar
+  aviso» y avisa si falta el correo. En Klaviyo: flujos «Pedido listo para
+  retiro (Pedidos TAGO)» (Ud9EGq, métrica RBfHMN, plantilla S9L272) y «Pedido
+  despachado (Pedidos TAGO)» (WQtmHb, métrica S52fHD, plantilla Wjvjy7); los
+  textos se editan allá. La métrica vieja «Pedido listo» (RXUfmS) quedó sin
+  uso.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o
