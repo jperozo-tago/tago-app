@@ -289,6 +289,27 @@ de HTML5 (`draggable`), que **no funciona con el dedo en celular** — en
 móvil solo sirve para tocar y abrir el pedido; para cambiar de estado ahí
 toca usar la Tabla.
 
+**Diseño de las fichas laterales (15-sep-2026, Andreina: «amoñoñado, chiquito
+y sin poder diferenciar datos»):** las tres fichas (`#ficha`, `#ficha-pack`,
+`#ficha-tarea`) comparten las clases `.fi-*`/`.fh-*` y el bloque CSS que va
+**al final** del `<style>` principal, todo con prefijo `.ficha` para ganar a
+los overrides globales sin `!important`. Panel de 700 px con el cuerpo en
+Gris Claro y cada grupo en una tarjeta blanca con título en verde de texto
+`#1C7A63` (`fichaSeccion(key,titulo,resumen,body,cls)`, plegable, estado en
+`fichaSecCerradas`). Filas de 42 px a una sola columna: etiqueta en columna
+fija de 180 px + valor alineado a la izquierda (el primer `.fi` lleva
+`margin-left:-8px` para que su texto caiga en la misma vertical que el texto
+de solo lectura); lo editable lleva caja suave siempre visible, lo de solo
+lectura (`.fi-ro`) es texto. En campos usar siempre `background-color`,
+nunca el atajo `background:` (borra la flecha de los `<select>`). Cabecera:
+cliente 24 px, `# pedido` y correo en `.fh-meta`, pastillas en dos filas
+(`.fh-pills` = estado + avanzar … asignados; `.fh-pills-2` = prioridad,
+fecha, boleta). Orden de la ficha del pedido: Producto → Parámetros →
+Entrega (tipo, aviso al cliente, Shopify) → Datos del courier → Tareas →
+Notas → Actividad → pie «Historial del pedido» (`fi-sec-meta`). Bajo 900 px
+el panel ocupa 100vw; bajo 560 px la etiqueta pasa encima del valor. Parche
+reproducible: `Data TAGO/.claude/sandbox/parche-ficha-rediseno.py`.
+
 **PWA (instalable en el celular):** `Pedidos/manifest.json`,
 `Pedidos/sw.js` y los `icon-*.png` permiten "Agregar a inicio" en iOS/
 Android. Limitación conocida de iOS: el login con Google **no funciona**

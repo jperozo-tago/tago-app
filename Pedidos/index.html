@@ -1443,6 +1443,156 @@
       .carga-fila{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"quien total" "centro centro";gap:6px 10px;align-items:center}
       .carga-quien{grid-area:quien}.carga-centro{grid-area:centro}.carga-total{grid-area:total;text-align:right}
     }
+    /* ══ Ficha lateral (pedido, pack y tarea): panel de propiedades — etiqueta fija a la izquierda, valor alineado a la izquierda,
+       tarjetas blancas sobre Gris Claro, escala 12/13/14/15/24 (14-sep-2026) ══
+       Va como ÚLTIMO bloque del <style> y REEMPLAZA el bloque «Ficha lateral (pedido, pack y tarea): tarjetas, campos apilados…».
+       Todo va prefijado con .ficha: gana por especificidad a la base (630-685), a 705-711, 753-773, 821-830, 914-922 y a los overrides
+       globales 944-957 sin ningún !important. En los campos se usa SIEMPRE background-color, nunca el atajo background: el atajo borra
+       la flecha (background-image) de los <select>. */
+
+    /* 1 · Panel: cuerpo gris, cabecera blanca */
+    .ficha{width:700px;background:var(--bg)}
+    .ficha .fh-top{padding:12px 20px;font-size:12px;color:var(--text-sec);background:var(--surface)}
+    .ficha .fh-sep{margin:0 6px;color:var(--text-muted)}
+    .ficha .fh-id{color:var(--text)}
+    .ficha .fh-ico{font-size:15px;padding:5px 8px;border-radius:7px}
+    .ficha .fh-title{padding:18px 20px 6px;background:var(--surface)}
+    .ficha .fh-meta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;margin-top:4px}
+    .ficha .fh-meta-item{display:inline-flex;align-items:center;gap:6px;min-width:0}
+    .ficha .fh-meta-item .ic{font-size:15px;color:var(--azul);flex-shrink:0}
+    .ficha .fi-hint{font-size:13px;line-height:1.4;color:#1C7A63;margin-top:6px;min-height:0}
+
+    /* 2 · Campos del cuerpo: valor en DM Sans 600 a 15 px, transparente en reposo, caja al pasar el mouse, azul al editar */
+    .ficha .fi,.ficha input.fi,.ficha select.fi,.ficha textarea.fi{font-family:'DM Sans',sans-serif;font-weight:600;font-size:15px;line-height:1.35;color:var(--text);padding:6px 8px;min-height:34px;border:1px solid var(--border-soft);border-radius:8px;background-color:var(--surface-alt)}
+    .ficha .fi:hover{border-color:var(--border);background-color:var(--surface)}
+    .ficha .fi:focus{border-color:var(--azul);background-color:var(--surface);box-shadow:0 0 0 3px var(--azul-glow)}
+    .ficha .fi::placeholder{font-family:'Open Sans',sans-serif;font-weight:400;color:var(--text-muted)}
+    .ficha select.fi-sel,.ficha select.fi-sel:hover,.ficha select.fi-sel:focus{padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230B1447' stroke-width='1.5' stroke-opacity='.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+    .ficha .pk-nuevo-mov .fi{font-size:14px;min-height:36px;border-color:var(--border);background-color:var(--surface)}
+    .ficha .ft-sub-add .fi{border-color:var(--azul);background-color:var(--surface);box-shadow:0 0 0 3px var(--azul-glow)}
+    .ficha .fi-pack-q select.fi{width:auto;max-width:100%;border-color:var(--border);background-color:var(--surface)}
+
+    /* 3 · Cabecera: título, # pedido y correo son texto que se vuelve campo al pasar el mouse (van DESPUÉS de .fi para ganarle) */
+    .ficha input.fi-titulo{font-family:'DM Sans',sans-serif;font-weight:600;font-size:24px;line-height:1.2;color:var(--azul-oscuro);padding:4px 8px;margin-left:-8px;width:calc(100% + 8px);min-height:0}
+    .ficha input.fi-numpedido{font-family:'DM Sans',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;font-size:14px;line-height:1.3;color:var(--text);padding:3px 6px;margin:0;width:220px;min-height:0}
+    .ficha input.fi-titulo,.ficha input.fi-numpedido{border-color:transparent;background-color:transparent}
+    .ficha input.fi-titulo:hover,.ficha input.fi-numpedido:hover{border-color:var(--border);background-color:var(--surface-alt)}
+    .ficha input.fi-correo{font-family:'Open Sans',sans-serif;font-weight:400;width:320px;color:var(--text-sec)}
+
+    /* 4 · Pastillas: dos filas de 30 px. Fila 1 = estado (la única rellena) + avanzar … asignados. Fila 2 = prioridad, fecha límite, boleta */
+    .ficha .fh-pills{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px 20px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+    .ficha .fh-pills:has(+.fh-pills-2),.ficha .fh-pills:has(+.fi-asig-grid){border-bottom:none;padding-bottom:0}
+    .ficha .fh-pills-2{padding-top:8px}
+    .ficha .fi-asig-grid:has(+.fh-pills-2){border-bottom:none;padding-bottom:4px}
+    .ficha .fi-asig-grid{gap:8px;padding:10px 20px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+    .ficha .fi-rol{font-size:12px;margin-top:6px}
+    .ficha .fh-pills .fi-estado{width:auto;max-width:100%;height:30px;font-size:13px;line-height:1;padding:0 30px 0 14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-opacity='.85'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+    .ficha .fh-pills .advance-btn{height:30px;margin:0;padding:0 13px;font-size:13px;line-height:1;border-radius:999px;border:1px solid var(--teal-border);color:#1C7A63;background:var(--surface)}
+    .ficha .fi-pill{height:30px;padding:0 12px;gap:6px;font-size:13px;line-height:1;background:var(--surface);border:1px solid var(--border);color:var(--text-sec);white-space:nowrap}
+    .ficha .fi-pill:hover{border-color:var(--text-muted);color:var(--text)}
+    .ficha .fi-pill .ic{font-size:14px}
+    .ficha .fi-pill.urg,.ficha .fi-fecha.overdue{background:var(--danger-bg);border-color:var(--danger-bd);color:var(--danger-c)}
+    .ficha .fi-fecha input[type=date]{font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;width:112px;height:28px;padding:0;border:none;background:transparent}
+    .ficha .fi-docpill{white-space:nowrap}
+    .ficha .fi-doc,.ficha select.fi-doc{font-size:13px;width:auto;max-width:120px;height:28px;padding:0;border:none;background:transparent;text-overflow:ellipsis}
+    .ficha .fi-asig{height:30px;padding:0 12px 0 3px;gap:8px;font-size:13px;background:var(--surface);color:var(--text-sec)}
+    .ficha .fi-asig:hover,.ficha .fi-asig.abierto{border-color:var(--teal);color:#1C7A63}
+    .ficha .fi-asig .avatar{width:24px;height:24px}
+    .ficha .fh-pills .pk-estado,.ficha .fh-pills .pk-tipo{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;font-size:13px}
+    .ficha .fh-pills .ft-estado{height:30px;padding:0 28px 0 14px;font-size:13px;line-height:1}
+    .ficha .ft-madre{font-size:13px}
+
+    /* 5 · Tarjetas blancas: secciones plegables, grilla suelta (pack y tarea), tareas, notas, actividad, movimientos */
+    .ficha .fi-sec,.ficha>.fi-grid,.ficha .fi-tareas,.ficha .fi-notas,.ficha .fi-actividad,.ficha .pk-movs{margin:12px 16px 0;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+    .ficha>.fi-grid{padding:6px 16px 8px}
+    .ficha .fi-tareas,.ficha .fi-notas,.ficha .fi-actividad,.ficha .pk-movs{padding:14px 16px 16px}
+    .ficha .fi-actividad,.ficha .pk-movs{margin-bottom:16px}
+    .ficha .fi-sec-head{padding:12px 16px;gap:8px;font-size:12px;letter-spacing:.1em;color:#1C7A63;background:var(--surface);border-bottom:1px solid var(--border-soft)}
+    .ficha .fi-sec.cerrada .fi-sec-head{border-bottom:none}
+    .ficha .fi-sec-head:hover{background:var(--surface-alt)}
+    .ficha .fi-sec-head .ic{font-size:14px;color:#1C7A63}
+    .ficha .fi-sec-arrow{display:inline-flex;font-size:14px;color:var(--text-muted)}
+    .ficha .fi-sec-arrow .ic{color:var(--text-muted)}
+    .ficha .fi-sec-resumen{font-family:'Open Sans',sans-serif;font-weight:400;font-size:13px;color:var(--text-sec)}
+    .ficha .fi-sec-title{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#1C7A63;margin-bottom:10px}
+    .ficha .fi-sec-title .ic{font-size:14px;color:#1C7A63}
+    .ficha .fi-grid,.ficha .fi-sec-body{display:block;padding:6px 16px 8px}
+
+    /* 6 · Fila = etiqueta en columna fija de 180 px + valor alineado a la izquierda, sobre una misma vertical */
+    .ficha .fi-row{display:grid;grid-template-columns:180px minmax(0,1fr);gap:0 16px;align-items:center;min-height:42px;padding:3px 0;border-bottom:1px solid var(--border-soft)}
+    .ficha .fi-grid>.fi-row:last-child,.ficha .fi-sec-body>.fi-row:last-child{border-bottom:none}
+    .ficha .fi-label{display:flex;align-items:center;gap:5px;font-size:13px;line-height:1.3;white-space:normal;color:var(--text-sec);padding:4px 0}
+    .ficha .fi-label .ic{font-size:14px;color:var(--text-muted);flex-shrink:0}
+    .ficha .fi-ctl{display:flex;justify-content:flex-start;align-items:center;flex-wrap:wrap;gap:4px 10px;min-width:0}
+    .ficha .fi-ctl>.fi:first-child{margin-left:-8px}
+    .ficha .fi-ctl input.fi{text-align:left;width:calc(100% + 8px);flex:none;min-width:0}
+    .ficha .fi-ctl input[type=number].fi{width:160px;max-width:calc(100% + 8px)}
+    .ficha .fi-ctl input[type=date].fi{width:176px}
+    .ficha .fi-ctl select.fi{width:auto;min-width:140px;max-width:calc(100% + 8px)}
+    .ficha .fi-ctl input.fi.fi-cm{width:72px;text-align:center}
+    .ficha .fi-ctl>textarea.fi:first-child{width:calc(100% + 8px);min-height:60px;resize:vertical}
+    .ficha .fi-ctl .ft-campo{text-align:left}
+    .ficha .fi-ctl .fi.ft-campo{margin-left:-8px;max-width:calc(100% + 8px)}
+    .ficha .fi-ctl textarea.fi.ft-campo{width:calc(100% + 8px)}
+    .ficha .fi-x{font-size:14px;color:var(--text-muted)}
+
+    /* 7 · Solo lectura y piezas sueltas */
+    .ficha .fi-ro{font-size:14px;line-height:1.45;text-align:left;white-space:normal;color:var(--text);padding:5px 0}
+    .ficha .fi-ro.fi-ok,.ficha .fi-pack-hint{color:#1C7A63}
+    .ficha .fi-ro.fi-mal,.ficha .fi-pack-hint.mal{color:var(--danger-c)}
+    .ficha .fi-neto{font-size:13px;color:var(--text-sec);white-space:nowrap}
+    .ficha .pk-link{font-size:13px}
+    .ficha .fi-check{font-size:15px;min-height:34px;gap:8px}
+    .ficha .fi-check input{width:16px;height:16px}
+    .ficha .fi-pack-sel{font-size:15px}
+    .ficha .fi-pack-hint{font-size:13px;line-height:1.4;padding:0 0 10px 196px}
+    .ficha .fi-pack-q{font-size:14px;padding:12px 16px;margin:4px 0 10px;background:var(--surface-alt);border:1px solid var(--border);border-radius:12px}
+    .ficha .fi-pack-q .btn{font-size:13px;padding:6px 14px}
+    .ficha .fi-tintas{gap:8px}
+    .ficha .fi-tintas .tinta-chip{padding:6px 14px;font-size:13px}
+
+    /* 8 · Tareas enlazadas, notas, actividad y pie de pedido nuevo */
+    .ficha .fi-tarea{min-height:40px;padding:8px 12px;gap:10px;border-radius:10px;font-size:14px;margin-bottom:6px;border-color:var(--border)}
+    .ficha .fi-tarea-fecha{font-size:13px}
+    .ficha .fi-tarea-add{margin-top:8px;font-size:13px;padding:7px 12px}
+    .ficha .fi-tareas-n{color:var(--text-muted)}
+    .ficha .fi-muted{font-size:13px;line-height:1.4}
+    .ficha .ft-sub{font-size:14px;padding:8px 0}
+    .ficha textarea.fi-area{font-family:'Open Sans',sans-serif;font-weight:400;font-size:15px;line-height:1.5;min-height:72px;padding:8px 10px;border-color:var(--border-soft);background-color:var(--surface-alt);resize:vertical}
+    .ficha .hist-line{font-size:13px;line-height:1.45;padding:3px 0}
+    .ficha .fh-actions{position:sticky;bottom:0;margin-top:12px;padding:14px 16px 20px;background:var(--bg);border-top:1px solid var(--border)}
+    .ficha .fh-actions .btn{font-size:14px;padding:10px 18px}
+
+    /* 9 · Historial del pedido: pie sin tarjeta, sobre el gris, compacto (misma columna de 180 px) */
+    .ficha .fi-sec.fi-sec-meta{background:transparent;border:none;border-radius:0;margin:6px 16px 28px;overflow:visible}
+    .ficha .fi-sec-meta .fi-sec-head,.ficha .fi-sec-meta .fi-sec-head:hover{padding:8px 0 4px;background:transparent;border-bottom:none;color:var(--text-muted)}
+    .ficha .fi-sec-meta .fi-sec-head .ic{color:var(--text-muted)}
+    .ficha .fi-sec-meta .fi-sec-body{padding:0}
+    .ficha .fi-sec-meta .fi-row{min-height:30px;padding:0;border-bottom:1px solid var(--border)}
+    .ficha .fi-sec-meta .fi-label{font-size:13px;white-space:nowrap;padding:0}
+    .ficha .fi-sec-meta .fi-ro{font-size:13px;color:var(--text-sec);padding:4px 0}
+
+    /* 10 · Ficha de pack: saldo y movimientos en blanco sobre el gris */
+    .ficha .pk-saldo{margin:12px 16px 0;gap:8px}
+    .ficha .pk-saldo-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+    .ficha .pk-saldo-num{font-size:24px}
+    .ficha .pk-saldo-lbl{font-size:13px;color:var(--text-sec)}
+    .ficha .pk-saldo-barra{margin:8px 16px 0}
+
+    /* 11 · Móvil: 100vw y márgenes de 12 px; bajo 560 px la etiqueta pasa encima del valor */
+    @media(max-width:900px){
+      .ficha{width:100vw}
+      .ficha .fi-sec,.ficha>.fi-grid,.ficha .fi-tareas,.ficha .fi-notas,.ficha .fi-actividad,.ficha .pk-movs,.ficha .pk-saldo,.ficha .pk-saldo-barra,.ficha .fi-sec.fi-sec-meta{margin-left:12px;margin-right:12px}
+      .ficha .fh-top,.ficha .fh-title,.ficha .fh-pills,.ficha .fi-asig-grid{padding-left:16px;padding-right:16px}
+      .ficha .fh-meta-item,.ficha input.fi-numpedido,.ficha input.fi-correo{width:100%}
+      .ficha .fh-actions{padding:12px 12px 16px}
+    }
+    @media(max-width:560px){
+      .ficha .fi-row{grid-template-columns:1fr;padding:4px 0 6px;min-height:0}
+      .ficha .fi-label{padding:0 0 2px}
+      .ficha .fi-sec-meta .fi-row{padding:4px 0}
+      .ficha .fi-pack-hint{padding-left:0}
+    }
   </style>
 </head>
 <body>
@@ -5844,9 +5994,9 @@ function fiNum(campo,val,step,ph){ return `<input class="fi" type="number" min="
 function fiSelect(campo,val,opciones){ return `<select class="fi fi-sel" onchange="fichaCampo('${campo}',this.value)">${opciones.map(([v,l])=>`<option value="${esc(v)}"${String(v)===fiVal(val)?" selected":""}>${esc(l)}</option>`).join("")}</select>`; }
 function fiFila(label,ctl,full){ return `<div class="fi-row${full?" fi-full":""}"><span class="fi-label">${label}</span><span class="fi-ctl">${ctl}</span></div>`; }
 function fiRO(v){ return `<span class="fi-ro">${v}</span>`; }
-function fichaSeccion(key,titulo,resumen,body){
+function fichaSeccion(key,titulo,resumen,body,cls){
   const c=fichaSecCerradas.has(key);
-  return `<div class="fi-sec${c?" cerrada":""}"><div class="fi-sec-head" onclick="fichaToggleSec('${key}')"><span class="fi-sec-arrow">${c?"▶":"▼"}</span><span>${titulo}</span><span class="fi-sec-resumen">${esc(resumen)}</span></div><div class="fi-sec-body">${body}</div></div>`;
+  return `<div class="fi-sec${c?" cerrada":""}${cls?" "+cls:""}"><div class="fi-sec-head" onclick="fichaToggleSec('${key}')"><span class="fi-sec-arrow">${c?ic("chevron-right"):ic("chevron-down")}</span><span>${titulo}</span><span class="fi-sec-resumen">${esc(resumen)}</span></div><div class="fi-sec-body">${body}</div></div>`;
 }
 function fiDisenosHtml(ns,dis){
   return dis.map((d,i)=>fiFila(`${dis.length>1?`Diseño ${i+1} · `:""}Ancho (cm) × Alto (cm)`,`<input class="fi fi-cm" type="number" step="0.1" min="0" value="${esc(fiVal(d.ancho))}" placeholder="3" onchange="fichaCampo('${ns}.disenos.${i}.ancho',this.value)"/><span class="fi-x">×</span><input class="fi fi-cm" type="number" step="0.1" min="0" value="${esc(fiVal(d.alto))}" placeholder="3" onchange="fichaCampo('${ns}.disenos.${i}.alto',this.value)"/>`)).join("");
@@ -5882,36 +6032,31 @@ function renderFicha(forzar){
   </div>
   <div class="fh-title">
     <input class="fi fi-titulo" id="fc-cliente" list="clientes-list" value="${esc(j.cliente)}" placeholder="Nombre del cliente *" onchange="fichaCampo('cliente',this.value)"/>
-    <input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="# Pedido de Shopify (ej: #8584)" onchange="fichaCampo('pedido',this.value)"/>
-    <input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle cuando esté listo o despachado)" title="Lo escribe quien crea el pedido. Retiro: se le avisa al pasar a Listo. Envío: al pasar a Entregado" onchange="fichaCampo('correo',this.value)"/>
-    <div class="fi-hint">${hint}</div>
+    <div class="fh-meta">
+      <span class="fh-meta-item" title="Número del pedido de Shopify">${ic("hash")}<input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="Pedido de Shopify (ej: 8584)" onchange="fichaCampo('pedido',this.value)"/></span>
+      <span class="fh-meta-item" title="Lo escribe quien crea el pedido. Retiro: se le avisa al pasar a Listo. Envío: al pasar a Entregado">${ic("mail")}<input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle)" onchange="fichaCampo('correo',this.value)"/></span>
+    </div>
+    ${hint?`<div class="fi-hint">${hint}</div>`:""}
   </div>
   <div class="fh-pills">
     <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}
-    <button class="fi-pill${urg?" urg":""}" title="Cambiar prioridad" onclick="fichaCampo('prioridad','${urg?"normal":"urgente"}')">Prioridad: ${urg?ic("zap")+" Urgente":"Normal"}</button>
-    <label class="fi-pill fi-fecha${ov?" overdue":""}" title="Fecha límite">${ic("calendar")} <input type="date" value="${esc(j.fechaLimite)}" onchange="fichaCampo('fechaLimite',this.value)"/>${ov?ic("triangle-alert"):""}</label>
-    <span class="fi-pill fi-docpill" title="Boleta / Factura">Boleta / Factura:<select class="fi-doc" onchange="fichaCampo('documento',this.value)">${FICHA_DOCS.map(([v,l])=>`<option value="${v}"${(j.documento||"NO")===v?" selected":""}>${l}</option>`).join("")}</select></span>
     <span class="fh-spacer"></span>
     <button class="fi-asig${fichaAsigAbierto?" abierto":""}" title="Personas asignadas" onclick="fichaToggleAsignados()"><span class="fi-asig-label">Personas asignadas</span>${avatars?`<div class="avatars">${avatars}</div>`:`<span>—</span>`}<span class="fi-asig-plus">＋</span></button>
   </div>
   ${fichaAsigAbierto?`<div class="fi-asig-grid">${grid}</div>`:""}
-  <div class="fi-grid">
-    ${fiFila("Tipo de producto",`<select class="fi fi-sel" onchange="fichaCampo('tipoDtf',this.value)">${tipoOpts}</select>`)}
-    ${fiFila(`Cantidad (${unidad}) *`,fiNum("cantidad",j.cantidad,unidad==="metros"?"0.01":"1",unidad==="metros"?"ej: 1.5":"ej: 100"))}
-    ${fichaPackHtml(j)}
-    ${fiFila("Categoría",fiSelect("categoria",categoriaDePedido(j),todasLasCategorias().map(c=>[c.key,c.label])))}
-    ${fiFila(ic("banknote")+" Precio (CLP, con IVA)",fiNum("precio",j.precio,"1","ej: 45220")+(j.precio?`<span class="fi-neto">${fmtCLPNeto(j.precio)} neto</span>`:""))}
-    ${fiFila("Tipo de entrega",fiSelect("tipoEntrega",j.tipoEntrega||"Retiro",FICHA_ENTREGAS))}
-    ${fiFila("Responsable",fiSelect("responsable",j.responsable||"",[["","— Sin asignar —"],...FICHA_RESPONSABLES.map(r=>[r,r])]))}
-    ${!(ES_STICKER(tipo)||ES_ACC(tipo))?fiFila(ic("folder")+" Link Google Drive",fiText("drive",j.drive,"https://drive.google.com/...","url"),true):""}
-    ${fichaShopifyHtml(j)}
-    ${fichaAvisoHtml(j)}
-    ${!fichaNuevo?fiFila("Creado por",fiRO(`${esc(j.createdBy?.nombre||"—")} · ${fmtFull(j.createdAt)}`)):""}
-    ${!fichaNuevo?fiFila("Actualizado por",fiRO(esc(j.updatedBy?.nombre||"—"))):""}
-    ${!fichaNuevo?fiFila("Última actualización",fiRO(timeAgo(j.updatedAt))):""}
-    ${j.impresionAt?fiFila("Fecha envío a impresión",fiRO(fmtFull(j.impresionAt))):""}
-    ${j.listaAt?fiFila("Fecha de producción",fiRO(fmtFull(j.listaAt))):""}
-  </div>`;
+  <div class="fh-pills fh-pills-2">
+    <button class="fi-pill${urg?" urg":""}" title="Cambiar prioridad" onclick="fichaCampo('prioridad','${urg?"normal":"urgente"}')">Prioridad: ${urg?ic("zap")+" Urgente":"Normal"}</button>
+    <label class="fi-pill fi-fecha${ov?" overdue":""}" title="Fecha límite">${ic("calendar")} <input type="date" value="${esc(j.fechaLimite)}" onchange="fichaCampo('fechaLimite',this.value)"/>${ov?ic("triangle-alert"):""}</label>
+    <span class="fi-pill fi-docpill" title="Boleta / Factura">Boleta / Factura:<select class="fi-doc" onchange="fichaCampo('documento',this.value)">${FICHA_DOCS.map(([v,l])=>`<option value="${v}"${(j.documento||"NO")===v?" selected":""}>${l}</option>`).join("")}</select></span>
+  </div>
+  ${fichaSeccion("producto",ic("printer")+" Producto",[tipo,j.cantidad?`${j.cantidad} ${unidad}`:"",j.precio?fmtCLP(j.precio):""].filter(Boolean).join(" · "),
+    fiFila("Tipo de producto",`<select class="fi fi-sel" onchange="fichaCampo('tipoDtf',this.value)">${tipoOpts}</select>`)+
+    fiFila("Categoría",fiSelect("categoria",categoriaDePedido(j),todasLasCategorias().map(c=>[c.key,c.label])))+
+    fiFila(`Cantidad (${unidad}) *`,fiNum("cantidad",j.cantidad,unidad==="metros"?"0.01":"1",unidad==="metros"?"ej: 1.5":"ej: 100"))+
+    fiFila(ic("banknote")+" Precio (CLP, con IVA)",fiNum("precio",j.precio,"1","ej: 45220")+(j.precio?`<span class="fi-neto">${fmtCLPNeto(j.precio)} neto</span>`:""))+
+    fichaPackHtml(j)+
+    (!(ES_STICKER(tipo)||ES_ACC(tipo))?fiFila(ic("folder")+" Link Google Drive",fiText("drive",j.drive,"https://drive.google.com/...","url"),true):"")+
+    fiFila("Responsable",fiSelect("responsable",j.responsable||"",[["","— Sin asignar —"],...FICHA_RESPONSABLES.map(r=>[r,r])])))}`;
   if(ES_STICKER(tipo)){
     const s=j.sticker||{}; const dis=(s.disenos&&s.disenos.length)?s.disenos:(s.ancho||s.alto?[{ancho:s.ancho,alto:s.alto}]:[{}]);
     const resumen=[s.vinilo,s.troquel,dis.map(d=>`${d.ancho||"?"}×${d.alto||"?"} cm`).join(", "),(s.tintas||[]).join(" + ")].filter(Boolean).join(" · ");
@@ -5941,6 +6086,10 @@ function renderFicha(forzar){
       (tipo==="Pines"?fiFila("¿Packaging?",fiSelect("accesorio.packaging",a.packaging?"si":"no",[["no","No"],["si","Sí"]])):"")+
       (tipo==="Pines"&&a.packaging?fiFila("Link packaging",fiText("accesorio.packagingLink",a.packagingLink,"https://..."),true):""));
   }
+  html+=fichaSeccion("entrega",ic("truck")+" Entrega",j.tipoEntrega||"Retiro",
+    fiFila("Tipo de entrega",fiSelect("tipoEntrega",j.tipoEntrega||"Retiro",FICHA_ENTREGAS))+
+    fichaAvisoHtml(j)+
+    fichaShopifyHtml(j));
   if((j.tipoEntrega||"Retiro")!=="Retiro"){
     const e=j.envio||{}; const tit=j.tipoEntrega==="OTS"?ic("truck")+" Datos OTS — RM":j.tipoEntrega==="Bluexpress"?ic("package")+" Datos Bluexpress — Regiones":ic("truck")+" Datos Chilexpress — Regiones";
     const resumen=[e.nombre,e.dir,e.costo?fmtCLP(e.costo):""].filter(Boolean).join(" · ");
@@ -5980,6 +6129,15 @@ function renderFicha(forzar){
         </div>
       </div>
     </div>`;
+  }
+  if(!fichaNuevo){
+    const quien=x=>x&&x.nombre?` · ${esc(x.nombre)}`:"", dia=iso=>{ const d=new Date(iso||""); return isNaN(d)?"—":d.getDate()+" "+MESES_CORTO[d.getMonth()]; }; // día en hora local (fmtDate recorta el ISO y daría el día UTC)
+    html+=fichaSeccion("historial",ic("clock")+" Historial del pedido",`creado ${dia(j.createdAt)} · actualizado ${timeAgo(j.updatedAt)}`,
+      fiFila("Creado",fiRO(`${fmtFull(j.createdAt)}${quien(j.createdBy)}`))+
+      fiFila("Última actualización",fiRO(`${timeAgo(j.updatedAt)}${quien(j.updatedBy)}`))+
+      (j.enviadoProdAt?fiFila("Enviado a producción",fiRO(`${fmtFull(j.enviadoProdAt)}${quien(j.enviadoProdBy)}`)):"")+
+      (j.impresionAt?fiFila("Enviado a impresión",fiRO(`${fmtFull(j.impresionAt)}${quien(j.impresionBy)}`)):"")+
+      (j.listaAt?fiFila("Listo",fiRO(`${fmtFull(j.listaAt)}${quien(j.listaBy)}`)):""),"fi-sec-meta");
   }
   el.innerHTML=html;
   if(!fichaNuevo) renderActividad(fichaId);
