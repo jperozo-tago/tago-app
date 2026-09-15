@@ -188,6 +188,20 @@ Firestore).
   La ficha muestra la fila «Shopify» (`fichaShopifyHtml`) con «Reintentar» /
   «Cerrar en Shopify» (`pedirCierreShopify`); la tabla, un ícono junto al
   estado. La app nunca habla con Shopify: no hay clave en el navegador.
+- Aviso al cliente por Klaviyo (14-sep-2026): el pedido tiene `correo` (campo
+  en la ficha; si falta se usa `envio.correo`, y el robot del tablero lo
+  completa desde Shopify para los pedidos con número de Shopify:
+  `shopify_cerrar.py → completar_correos`, marca `shopify.correoBuscado`). Al
+  pasar a **Listo**, `moverEstado` llama `avisarListoCliente`, que manda a
+  Klaviyo el evento «Pedido listo» por la API pública del cliente
+  (`POST a.klaviyo.com/client/events/?company_id=SQFMGt`, clave pública,
+  sin secretos) con `entrega: retiro|envio`, transportista, dirección, etc.,
+  y guarda `aviso = {listoAt, correo, canal, por}` (o `aviso.error`) más una
+  línea en el historial. No se repite solo; la ficha (fila «Aviso al
+  cliente», `fichaAvisoHtml`) tiene «Reenviar» / «Enviar aviso». El correo lo
+  manda el flujo de Klaviyo «Pedido listo (Pedidos TAGO)» (id VSsxGB, métrica
+  RXUfmS): división por `entrega` → plantillas de retiro y de envío. Los
+  textos se editan en Klaviyo, no en la app.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o

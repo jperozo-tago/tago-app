@@ -642,6 +642,7 @@
     .fi-sel{appearance:none;-webkit-appearance:none;padding-right:22px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230B1447' stroke-width='1.5' stroke-opacity='.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
     .fi-titulo{font-family:'DM Sans',sans-serif;font-size:21px;font-weight:600;color:var(--azul-oscuro);padding:2px 6px;margin-left:-6px;width:calc(100% + 6px)}
     .fi-numpedido{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:12px;color:var(--text-sec);margin-left:-6px;width:260px;max-width:100%;padding:3px 6px}
+    .fi-correo{font-family:'Open Sans',sans-serif;font-weight:400;width:320px;margin-left:2px}
     .fi-titulo::-webkit-calendar-picker-indicator{display:none}
     .fi-hint{font-size:12px;color:var(--teal-dark);font-weight:600;min-height:13px;margin-top:2px}
     .fh-pills{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 18px 10px}
@@ -2128,7 +2129,7 @@ function toggleAlerta(tipo){
 }
 let filasAbiertas=new Set(),borradoresComentario={};
 let historialListeners={},historialData={};
-const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF"};
+const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF",correo:"Correo del cliente"};
 let chatRef=null,chatsMeta={},currentChatId=null,chatMessagesRef=null,chatMessages={},chatInitialized=false,selectedGrupoMiembros=[];
 let tareasRef=null,tareas={},tareasEstadosRef=null,tareaEstados={},tareasInitialized=false,editTareaId=null,selectedTareaAsignados=[];
 let tareasVisIndexRef=null,tareaChildListeners={},tareasPersonales={},tareasPorLista={},tareasListaListeners={};
@@ -3776,6 +3777,36 @@ function fichaShopifyHtml(j){
   if(!fichaNuevo&&j.estado==="entregado"&&n&&!(s&&(s.cerradoAt||s.pendiente))) accion=`<span class="pk-link" onclick="pedirCierreShopify('${fichaId}')">${s&&s.error?"Reintentar":"Cerrar en Shopify"}</span>`;
   return txt?fiFila(ic("shopping-cart")+" Shopify",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true):"";
 }
+// ── Aviso al cliente por Klaviyo (evento «Pedido listo»; el flujo en Klaviyo manda el correo de retiro o de envío) ──
+const KLAVIYO_CLAVE_PUBLICA="SQFMGt"; // clave pública de la cuenta TAGO (la misma del sitio web): solo sirve para registrar eventos
+function correoDe(j){ return (j&&(j.correo||(j.envio&&j.envio.correo))||"").trim().toLowerCase()||null; }
+async function avisarListoCliente(id,j){
+  const correo=correoDe(j); if(!correo||!dbRef)return;
+  const retiro=(j.tipoEntrega||"Retiro")==="Retiro", e=j.envio||{};
+  const props={pedidoId:id,pedido:j.pedido||"",cliente:j.cliente||"",entrega:retiro?"retiro":"envio",tipoEntrega:j.tipoEntrega||"Retiro",transportista:retiro?"":(j.tipoEntrega||""),destinatario:e.nombre||"",direccion:e.dir||"",producto:j.tipoDtf||"",cantidad:j.cantidad||"",unidad:j.unidad||getUnit(j.tipoDtf),responsable:j.responsable||""};
+  const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),unique_id:`${id}-listo-${Date.now()}`,metric:{data:{type:"metric",attributes:{name:"Pedido listo"}}},profile:{data:{type:"profile",attributes:{email:correo}}}}}};
+  try{
+    const r=await fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("Klaviyo respondió "+r.status);
+    dbRef.child(id).update({aviso:{listoAt:new Date().toISOString(),correo,canal:"klaviyo",por:{id:currentUser.id,nombre:currentUser.nombre},error:null}});
+    registrarLog(id,"Aviso al cliente","—",`correo de «pedido listo${retiro?" para retiro":" · envío"}» a ${correo}`);
+    toast("Aviso enviado al cliente ✓","ok");
+  }catch(err){
+    dbRef.child(id).update({"aviso/error":String(err.message||err),"aviso/intentadoAt":new Date().toISOString(),"aviso/correo":correo});
+    toast("No se pudo avisar al cliente: "+(err.message||err),"error");
+  }
+}
+function reenviarAvisoListo(id){ const j=jobs[id]; if(!j)return; if(!correoDe(j)){ toast("Pon el correo del cliente primero","error"); return; } avisarListoCliente(id,j); }
+function fichaAvisoHtml(j){
+  if(fichaNuevo)return"";
+  const correo=correoDe(j), a=j.aviso||null; let txt="", cls="", accion="";
+  if(a&&a.listoAt){ txt=`Correo de pedido listo enviado ✓ ${fmtFull(a.listoAt)} a ${esc(a.correo||correo||"")}`; cls="fi-ok"; if(correo) accion=`<span class="pk-link" onclick="reenviarAvisoListo('${fichaId}')">Reenviar</span>`; }
+  else if(a&&a.error){ txt=`No se pudo avisar: ${esc(a.error)}`; cls="fi-mal"; if(correo) accion=`<span class="pk-link" onclick="reenviarAvisoListo('${fichaId}')">Reintentar</span>`; }
+  else if(!correo) txt=(j.estado==="listo"||j.estado==="entregado")?"Sin correo del cliente: no se le avisó":"Sin correo del cliente: no se le avisará al pasar a Listo";
+  else if(j.estado==="listo"||j.estado==="entregado"){ txt=`Sin aviso enviado (${esc(correo)})`; accion=`<span class="pk-link" onclick="reenviarAvisoListo('${fichaId}')">Enviar aviso</span>`; }
+  else txt=`Se le avisará a ${esc(correo)} al pasar a Listo`;
+  return fiFila(ic("mail")+" Aviso al cliente",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true);
+}
 function advance(id){
   const j=jobs[id]; if(!j||!ST[j.estado]?.next)return;
   moverEstado(id,ST[j.estado].next);
@@ -3802,6 +3833,7 @@ function moverEstado(id,nuevoEstado){
   if(dbRef){ dbRef.child(id).update(upd); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
   else{ jobs[id]={...j,...upd}; Object.keys(upd).forEach(k=>{ if(upd[k]===null) delete jobs[id][k]; }); saveLocal(); render(); }
   toast((atras?"← ":"→ ")+ST[nuevoEstado].label,"ok");
+  if(nuevoEstado==="listo"&&!(j.aviso&&j.aviso.listoAt)) avisarListoCliente(id,{...j,...upd}); // Klaviyo le avisa al cliente que ya está listo
 }
 
 function del(id){ if(!confirm("¿Eliminar este pedido?"))return; filasAbiertas.delete(id); delete borradoresComentario[id]; delete imagenesPendientesComentario[id]; if(dbRef) dbRef.child(id).remove(); else{ delete jobs[id]; saveLocal(); render(); } toast("Eliminado"); }
@@ -5684,7 +5716,7 @@ function abrirFicha(id=null){
   if(typeof cerrarTarea==="function") cerrarTarea();
   fichaNuevo=!id; fichaAsigAbierto=false; fichaPackBuscando=false; fichaPackRechazados=new Set();
   fichaId=id||"__nuevo__";
-  if(fichaNuevo) fichaDraft={pedido:"",cliente:"",tipoDtf:"DTF Textil",categoria:"impresiones",cantidad:"",precio:"",drive:"",documento:"NO",tipoEntrega:"Retiro",responsable:"",estado:"recibido",prioridad:"normal",fechaLimite:"",notas:"",personas:[]};
+  if(fichaNuevo) fichaDraft={pedido:"",correo:"",cliente:"",tipoDtf:"DTF Textil",categoria:"impresiones",cantidad:"",precio:"",drive:"",documento:"NO",tipoEntrega:"Retiro",responsable:"",estado:"recibido",prioridad:"normal",fechaLimite:"",notas:"",personas:[]};
   document.getElementById("ficha").classList.add("open");
   document.body.classList.add("ficha-abierta");
   buildClientesList();
@@ -5726,6 +5758,7 @@ function fichaCampo(campo,valor){
   if(campo==="envio.costo") valor=parseFloat(valor)||0;
   if(campo==="accesorio.packaging") valor=(valor==="si");
   if(typeof valor==="string"&&!/\.(ancho|alto)$/.test(campo)&&campo!=="notas") valor=valor.trim();
+  if(campo==="correo"&&valor&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)){ toast("Ese correo no parece válido","error"); renderFicha(true); return; }
   if((campo==="cantidad"||campo==="precio")&&valor<0){ toast(campo==="precio"?"El precio no puede ser negativo":"La cantidad no puede ser negativa","error"); renderFicha(true); return; }
   if(/\.(ancho|alto)$/.test(campo)&&parseFloat(valor)<0){ toast("Las medidas no pueden ser negativas","error"); renderFicha(true); return; }
   if(campo==="cantidad"&&!fichaNuevo&&valor===""){ toast("La cantidad es obligatoria","error"); renderFicha(true); return; }
@@ -5837,6 +5870,7 @@ function renderFicha(forzar){
   <div class="fh-title">
     <input class="fi fi-titulo" id="fc-cliente" list="clientes-list" value="${esc(j.cliente)}" placeholder="Nombre del cliente *" onchange="fichaCampo('cliente',this.value)"/>
     <input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="# Pedido de Shopify (ej: #8584)" onchange="fichaCampo('pedido',this.value)"/>
+    <input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle cuando esté listo)" title="Correo del cliente: se le avisa por Klaviyo cuando el pedido pasa a Listo" onchange="fichaCampo('correo',this.value)"/>
     <div class="fi-hint">${hint}</div>
   </div>
   <div class="fh-pills">
@@ -5858,6 +5892,7 @@ function renderFicha(forzar){
     ${fiFila("Responsable",fiSelect("responsable",j.responsable||"",[["","— Sin asignar —"],...FICHA_RESPONSABLES.map(r=>[r,r])]))}
     ${!(ES_STICKER(tipo)||ES_ACC(tipo))?fiFila(ic("folder")+" Link Google Drive",fiText("drive",j.drive,"https://drive.google.com/...","url"),true):""}
     ${fichaShopifyHtml(j)}
+    ${fichaAvisoHtml(j)}
     ${!fichaNuevo?fiFila("Creado por",fiRO(`${esc(j.createdBy?.nombre||"—")} · ${fmtFull(j.createdAt)}`)):""}
     ${!fichaNuevo?fiFila("Actualizado por",fiRO(esc(j.updatedBy?.nombre||"—"))):""}
     ${!fichaNuevo?fiFila("Última actualización",fiRO(timeAgo(j.updatedAt))):""}
