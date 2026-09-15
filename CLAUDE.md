@@ -200,7 +200,7 @@ Firestore).
   `aviso.error`) más una línea en el historial; no se repite solo; la ficha
   (fila «Aviso al cliente», `fichaAvisoHtml`) tiene «Reenviar» / «Enviar
   aviso» y avisa si falta el correo. En Klaviyo: flujos «Pedido listo para
-  retiro (Pedidos TAGO)» (Ud9EGq, métrica RBfHMN, plantilla S9L272) y «Pedido
+  retiro (Pedidos TAGO)» (QUFqSw, métrica RBfHMN, plantilla XX9snb) y «Pedido
   despachado (Pedidos TAGO)» (WQtmHb, métrica S52fHD, plantilla Wjvjy7); los
   textos se editan allá. La métrica vieja «Pedido listo» (RXUfmS) quedó sin
   uso.
