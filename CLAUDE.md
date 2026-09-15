@@ -200,10 +200,13 @@ Firestore).
   `aviso.error`) más una línea en el historial; no se repite solo; la ficha
   (fila «Aviso al cliente», `fichaAvisoHtml`) tiene «Reenviar» / «Enviar
   aviso» y avisa si falta el correo. En Klaviyo: flujos «Pedido listo para
-  retiro (Pedidos TAGO)» (QUFqSw, métrica RBfHMN, plantilla XX9snb) y «Pedido
-  despachado (Pedidos TAGO)» (WQtmHb, métrica S52fHD, plantilla Wjvjy7); los
-  textos se editan allá. La métrica vieja «Pedido listo» (RXUfmS) quedó sin
-  uso.
+  retiro (Pedidos TAGO)» (VWnhV9, plantilla XX9snb) y «Pedido despachado
+  (Pedidos TAGO)» (R5trwq, plantilla Wjvjy7); los textos se editan allá.
+  **Trampa:** Klaviyo crea una métrica distinta por origen: los eventos que
+  manda la app (API pública) son las métricas «API» Vfyv2V (retiro) y
+  SKuiyr (despacho); las que se crearon desde el conector MCP (RBfHMN,
+  S52fHD, RXUfmS) son otras y no disparan nada. Los flujos apuntan a las
+  «API».
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o
