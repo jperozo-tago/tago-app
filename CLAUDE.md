@@ -206,7 +206,9 @@ Firestore).
   manda la app (API pública) son las métricas «API» Vfyv2V (retiro) y
   SKuiyr (despacho); las que se crearon desde el conector MCP (RBfHMN,
   S52fHD, RXUfmS) son otras y no disparan nada. Los flujos apuntan a las
-  «API».
+  «API». Probado en real el 14-sep-2026: los dos correos llegaron. Klaviyo
+  tarda ~8 min en mandar después de activar un flujo; si un evento entra
+  (se ve en la métrica) y no sale correo, reactivar el flujo y esperar.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o
