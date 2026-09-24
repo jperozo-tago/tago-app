@@ -216,6 +216,13 @@
         ".validate": "newData.hasChildren(['cliente', 'tipo', 'metros']) && newData.child('cliente').isString() && newData.child('cliente').val().length > 0 && (newData.child('tipo').val() == 'textil' || newData.child('tipo').val() == 'uv' || newData.child('tipo').val() == 'fluor') && newData.child('metros').isNumber() && newData.child('metros').val() > 0"
       }
     },
+    "tago_archivos": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      "$archivoId": {
+        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+        ".validate": "newData.hasChildren(['nombre', 'datos']) && newData.child('datos').isString() && newData.child('datos').val().length < 5700000"
+      }
+    },
     "$other": {
       ".read": false,
       ".write": false

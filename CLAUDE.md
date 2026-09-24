@@ -124,6 +124,17 @@ Firestore).
   ese contenido pasa a ser la primera sin borrar `contenido`). Los audios e
   imágenes del chat van en base64 dentro de la base — conviene pasarlos a
   Storage.
+- `tago_archivos` — adjuntos del chat que no son fotos (PDF, planillas,
+  diseños…), desde el 24-09-2026: `{nombre, tipo, tam, datos (base64), chat,
+  autor, ts}`, máximo 4 MB por archivo (validado en las reglas). El mensaje
+  solo lleva `archivo: {nombre, tipo, tam, id}` y el contenido se baja al
+  abrir o descargar, así listar el chat no pesa más. Si algún día se activa
+  Firebase Storage (hoy el proyecto no tiene bucket: la config apunta a
+  `tago-app-489c1.firebasestorage.app` pero responde 404), basta con cargar
+  `firebase-storage-compat.js` en `Pedidos/index.html`: el código detecta
+  `firebase.storage`, sube a `chat/<chatId>/…` (hasta 50 MB) y guarda
+  `archivo.url`; las reglas ya están en `deploy/storage.rules` y la sección
+  `storage` de `firebase.json`.
 - `tago_campos` — campos personalizados de las listas de tareas (septiembre
   2026, referencia: panel «Campos» de ClickUp). Cada campo es
   `{espacio, etiqueta, tipo, opciones, archivado, creadoPor, createdAt}` y
