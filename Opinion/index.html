@@ -109,7 +109,7 @@ pintar();
 
 // Copia para el equipo: el mismo contenido como evento en el perfil de cada persona que recibe el aviso. Así el flujo
 // «Aviso de opinión» es un correo normal (las alertas internas creadas por API no se ven bien en Klaviyo).
-const CORREOS_AVISO=["a.rodriguez@tago.cl","c.oviedo@tago.cl","jr.perozo@tago.cl"]; // Andreina, Carol y José
+const CORREOS_AVISO=["a.rodriguez@tago.cl","c.oviedo@tago.cl","j.perozo@tago.cl"]; // Andreina, Carol y José
 function avisarEquipo(props){
   return Promise.all(CORREOS_AVISO.map(correo=>{
     const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),
