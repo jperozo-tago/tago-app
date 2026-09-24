@@ -356,6 +356,20 @@ se editan únicamente desde la consola de Firebase). `./deploy.sh --preview`
 sube el sitio a un canal de vista previa y `./deploy.sh --solo-reglas` publica
 solo las reglas.
 
+**Quién puede borrar (desde el 24-09-2026):** cada persona puede eliminar lo
+que creó (espacios, listas, carpetas, documentos/paneles/pizarras/formularios
+y tareas con sus subtareas). Lo que crearon José o Andreina (`DUENOS_EMAILS`
+/ `DUENOS_IDS` en el JS) solo lo eliminan ellos, ni siquiera otro admin; los
+admins eliminan lo del resto. La decisión vive en `puedeBorrarCreacion(item)`
+(lee `creadoPorEmail`, `creadoPor` o `createdBy`) y está reforzada en
+`database.rules.json`: en `tago_espacios/$id`, `tago_listas/$id`,
+`tago_carpetas/$id`, `tago_elementos/$id` y `tago_tareas/$tareaId` un borrado
+(newData vacío) pasa si `creadoPorEmail == auth.token.email`, o si es admin y
+el registro no es de un dueño, o si quien borra es un dueño; el historial y los
+comentarios de una tarea los borra su creador junto con ella. Por eso al crear
+espacios, carpetas y elementos ahora se guarda `creadoPorEmail`; lo creado
+antes sin ese campo solo lo eliminan los admins.
+
 ## Convenciones al trabajar en este código
 
 - No hay proceso de build. Se edita `index.html` directamente y se recarga.

@@ -3658,8 +3658,8 @@ function saveTarea(){
   closeTareaModal();
 }
 function delTarea(id){
-  if(!currentUser||!currentUser.isAdmin){ toast("Solo un administrador puede eliminar tareas","error"); return; }
   const hijas=Object.keys(tareas).filter(hid=>tareas[hid]&&tareas[hid].padre===id);
+  if(![id,...hijas].every(tid=>puedeBorrarCreacion(tareas[tid]))){ toast(MSG_NO_BORRAR,"error"); return; }
   if(!confirm(hijas.length?`¿Eliminar esta tarea y sus ${hijas.length} subtarea${hijas.length===1?"":"s"}?`:"¿Eliminar esta tarea?"))return;
   const updates={};
   [id,...hijas].forEach(tid=>{
@@ -5658,7 +5658,7 @@ function sbCrearCategoria(v){
 function sbCrearEspacio(v){
   v=(v||"").trim(); if(!v)return;
   const {icono,nombre}=sbSepararIcono(v,""); sbEditando=null;
-  const ref=firebase.database().ref("tago_espacios").push({nombre,icono:"",orden:Date.now(),creadoPor:currentUser.id});
+  const ref=firebase.database().ref("tago_espacios").push({nombre,icono:"",orden:Date.now(),creadoPor:currentUser.id,creadoPorEmail:currentUser.email});
   if(ref&&ref.key) sbAbiertos.add(ref.key);
   renderSidebar();
 }
@@ -5669,18 +5669,33 @@ function sbCrearLista(espacio,v,carpeta){
   const abrir=()=>{ if(!ref||!ref.key)return; irATareas({tipo:"lista",id:ref.key}); if(currentUser.isAdmin) abrirCampos(ref.key,true); };
   if(ref&&typeof ref.then==="function") ref.then(abrir).catch(err=>toast("No se pudo crear la lista: "+(err&&err.message||err),"error")); else abrir();
 }
-function sbCrearCarpeta(espacio,v){ v=(v||"").trim(); if(!v)return; sbEditando=null; const ref=firebase.database().ref("tago_carpetas").push({espacio,nombre:v,orden:Date.now(),creadoPor:currentUser.id}); if(ref&&ref.key) sbAbiertos.add("c_"+ref.key); renderSidebar(); }
+function sbCrearCarpeta(espacio,v){ v=(v||"").trim(); if(!v)return; sbEditando=null; const ref=firebase.database().ref("tago_carpetas").push({espacio,nombre:v,orden:Date.now(),creadoPor:currentUser.id,creadoPorEmail:currentUser.email}); if(ref&&ref.key) sbAbiertos.add("c_"+ref.key); renderSidebar(); }
 function sbCrearElemento(espacio,tipo,v,carpeta){
   v=(v||"").trim(); if(!v)return; sbEditando=null;
-  const base={espacio,carpeta:carpeta||null,tipo,nombre:v,orden:Date.now(),creadoPor:{id:currentUser.id,nombre:currentUser.nombre},createdAt:new Date().toISOString()};
+  const base={espacio,carpeta:carpeta||null,tipo,nombre:v,orden:Date.now(),creadoPor:{id:currentUser.id,nombre:currentUser.nombre},creadoPorEmail:currentUser.email,createdAt:new Date().toISOString()};
   if(tipo==="documento") base.contenido="";
   if(tipo==="formulario"){ base.descripcion=""; base.lista=Object.keys(listas).find(id=>listas[id].espacio===espacio)||null; base.campos=[{id:"c1",etiqueta:"Título de la solicitud",tipo:"texto",requerido:true},{id:"c2",etiqueta:"Detalle",tipo:"parrafo",requerido:false},{id:"c3",etiqueta:"Fecha necesaria",tipo:"fecha",requerido:false}]; }
   const ref=firebase.database().ref("tago_elementos").push(base);
   if(ref&&ref.key) abrirElemento(ref.key);
 }
+// ══ BORRAR LO PROPIO: cada quien borra lo que creó; lo de José y Andreina solo lo borran ellos ══
+const DUENOS_EMAILS=["j.perozo@tago.cl","a.rodriguez@tago.cl"], DUENOS_IDS=["JP","AR"];
+function esDueno(){ return !!currentUser&&DUENOS_EMAILS.includes(currentUser.email); }
+function creadorDe(item){ if(!item)return {id:null,email:null}; const c=item.creadoPor??item.createdBy; return {id:(c&&typeof c==="object")?c.id:(c||null),email:item.creadoPorEmail||null}; }
+function puedeBorrarCreacion(item){
+  if(!currentUser||!item)return false;
+  const {id,email}=creadorDe(item);
+  const creadorEsDueno=(!!email&&DUENOS_EMAILS.includes(email))||(!!id&&DUENOS_IDS.includes(id));
+  const esMio=(!!email&&email===currentUser.email)||(!!id&&id===currentUser.id);
+  return esDueno()||esMio||(!!currentUser.isAdmin&&!creadorEsDueno);
+}
+const MSG_NO_BORRAR="Solo puedes eliminar lo que creaste tú. Lo que crearon José o Andreina lo eliminan ellos.";
 function sbEliminar(tipo,id){
   sbConfirmar=null;
-  if(tipo!=="categoria"&&(!currentUser||!currentUser.isAdmin)){ toast("Solo un administrador puede eliminar esto","error"); renderSidebar(); return; }
+  if(tipo!=="categoria"){
+    const item=tipo==="lista"?listas[id]:tipo==="elemento"?elementos[id]:tipo==="carpeta"?carpetas[id]:espacios[id];
+    if(!puedeBorrarCreacion(item)){ toast(MSG_NO_BORRAR,"error"); renderSidebar(); return; }
+  }
   if(tipo==="categoria"){
     if(!ADMINS_ELIMINAR_CATEGORIA.includes(currentUser?.email)){ toast("No tienes autorización para eliminar esta categoría. Contacta a José Perozo o Andreina Rodriguez.","error"); renderSidebar(); return; }
     firebase.database().ref("tago_categorias_custom/"+id).remove().catch(()=>toast("No se pudo eliminar la categoría","error"));
@@ -5761,10 +5776,10 @@ function renderSidebar(){
     const elemActivoSp=currentTab==="elemento"&&elementos[elementoActual]?.espacio===sp.id;
     const puedeCrear=!sp.fijo&&(puedeEsp||espacioVisible(sp.id)); // quien ve el espacio crea en él; borrar sigue siendo de admins
     const plusBtn=(carpeta)=>puedeCrear&&!col?`<button class="sb-add sb-plus" title="Crear aquí" onclick="event.stopPropagation();sbAbrirMenuCrear(event,'${sp.id}',${carpeta?`'${carpeta}'`:"null"})">+</button>`:"";
-    const filaLista=([id,l],sub)=>{ const activo=currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&tareaFiltro.id===id; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="irATareas({tipo:'lista',id:'${id}'})"><span class="sb-ic sb-ic-sm">${ic("list")}</span><span class="sb-label">${esc(l.nombre)}</span><span class="sb-count">${nLista(id)}</span>${puedeEsp?`<button class="sb-del" title="Campos de la lista" onclick="event.stopPropagation();abrirCampos('${id}')">${ic("columns-3")}</button>`:""}${puedeEsp?delBtn("lista",id):""}${confirmar("lista",id)}</div>`; };
-    const filaElem=([id,e],sub)=>{ const activo=currentTab==="elemento"&&elementoActual===id; const n=e.tipo==="formulario"?Object.values(tareas).filter(t=>t.origenFormulario===id).length:""; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="abrirElemento('${id}')"><span class="sb-ic sb-ic-sm">${ic(ELEM_TIPOS[e.tipo]?.icono||"file-text")}</span><span class="sb-label">${esc(e.nombre)}</span><span class="sb-count">${n||""}</span>${puedeEsp?delBtn("elemento",id):""}${confirmar("elemento",id)}</div>`; };
+    const filaLista=([id,l],sub)=>{ const activo=currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&tareaFiltro.id===id; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="irATareas({tipo:'lista',id:'${id}'})"><span class="sb-ic sb-ic-sm">${ic("list")}</span><span class="sb-label">${esc(l.nombre)}</span><span class="sb-count">${nLista(id)}</span>${puedeEsp?`<button class="sb-del" title="Campos de la lista" onclick="event.stopPropagation();abrirCampos('${id}')">${ic("columns-3")}</button>`:""}${puedeBorrarCreacion(l)?delBtn("lista",id):""}${confirmar("lista",id)}</div>`; };
+    const filaElem=([id,e],sub)=>{ const activo=currentTab==="elemento"&&elementoActual===id; const n=e.tipo==="formulario"?Object.values(tareas).filter(t=>t.origenFormulario===id).length:""; return `<div class="sb-node sb-list${sub?" sb-sub":""}${activo?" active":""}" onclick="abrirElemento('${id}')"><span class="sb-ic sb-ic-sm">${ic(ELEM_TIPOS[e.tipo]?.icono||"file-text")}</span><span class="sb-label">${esc(e.nombre)}</span><span class="sb-count">${n||""}</span>${puedeBorrarCreacion(e)?delBtn("elemento",id):""}${confirmar("elemento",id)}</div>`; };
     const filaEditando=(carpeta)=>{ const ed=sbEditando; if(!ed||ed.espacio!==sp.id||(ed.carpeta||null)!==(carpeta||null)||!["lista","carpeta","elemento"].includes(ed.tipo)) return ""; const c=carpeta?`'${carpeta}'`:"null"; const ph=ed.tipo==="lista"?"Nombre de la lista":ed.tipo==="carpeta"?"Nombre de la carpeta":"Nombre del "+(ELEM_TIPOS[ed.etipo]?.nombre||"elemento").toLowerCase(); const fn=ed.tipo==="lista"?`sbCrearLista('${sp.id}',this.value,${c})`:ed.tipo==="carpeta"?`sbCrearCarpeta('${sp.id}',this.value)`:`sbCrearElemento('${sp.id}','${ed.etipo}',this.value,${c})`; return inputInline(ph,fn,"sbEditando=null;renderSidebar()",true); };
-    h+=`<div class="sb-space${activoSp||elemActivoSp?" active":""}"><div class="sb-node sb-space-head" onclick="${col?irSp:`sbToggleEspacio('${sp.id}')`}" title="${esc(sp.nombre)}"><span class="sb-caret">${abierto?"▾":"▸"}</span><span class="sb-ic">${sp.fijo?ic("square-check-big"):sbAvatarEspacio(sp)}</span><span class="sb-label">${esc(sp.nombre)}</span>${!sp.fijo&&espacioPrivado(sp.id)?`<span class="sb-lock" title="Espacio privado: solo lo ven algunas personas">${ic("key-round")}</span>`:""}<span class="sb-count">${nSp}</span>${plusBtn(null)}${!sp.fijo&&puedeConfigurarEspacio(sp.id)&&!col?`<button class="sb-del" title="Quién puede ver este espacio" onclick="event.stopPropagation();abrirConfigEspacio('${sp.id}')">${ic("settings-2")}</button>`:""}${!sp.fijo&&puedeEsp?delBtn("espacio",sp.id):""}${confirmar("espacio",sp.id)}</div>`;
+    h+=`<div class="sb-space${activoSp||elemActivoSp?" active":""}"><div class="sb-node sb-space-head" onclick="${col?irSp:`sbToggleEspacio('${sp.id}')`}" title="${esc(sp.nombre)}"><span class="sb-caret">${abierto?"▾":"▸"}</span><span class="sb-ic">${sp.fijo?ic("square-check-big"):sbAvatarEspacio(sp)}</span><span class="sb-label">${esc(sp.nombre)}</span>${!sp.fijo&&espacioPrivado(sp.id)?`<span class="sb-lock" title="Espacio privado: solo lo ven algunas personas">${ic("key-round")}</span>`:""}<span class="sb-count">${nSp}</span>${plusBtn(null)}${!sp.fijo&&puedeConfigurarEspacio(sp.id)&&!col?`<button class="sb-del" title="Quién puede ver este espacio" onclick="event.stopPropagation();abrirConfigEspacio('${sp.id}')">${ic("settings-2")}</button>`:""}${!sp.fijo&&puedeBorrarCreacion(sp)?delBtn("espacio",sp.id):""}${confirmar("espacio",sp.id)}</div>`;
     if(abierto){
       h+=`<div class="sb-node sb-list${todoActivo?" active":""}" onclick="${irSp}"><span class="sb-label">${sp.fijo?"Todas las tareas":"Todo el espacio"}</span><span class="sb-count">${nSp}</span></div>`;
       misCarpetas.forEach(([cid,c])=>{
@@ -5772,7 +5787,7 @@ function renderSidebar(){
         const listasC=misListas.filter(([,l])=>l.carpeta===cid), elemsC=misElems.filter(([,e])=>e.carpeta===cid);
         const nC=listasC.reduce((a,[id])=>a+nLista(id),0);
         const activaC=(currentTab==="tareas"&&tareaFiltro.tipo==="lista"&&listas[tareaFiltro.id]?.carpeta===cid)||(currentTab==="elemento"&&elementos[elementoActual]?.carpeta===cid);
-        h+=`<div class="sb-node sb-list sb-carpeta${activaC&&!abiertaC?" active":""}" onclick="sbToggleEspacio('c_${cid}')"><span class="sb-caret">${abiertaC?"▾":"▸"}</span><span class="sb-ic sb-ic-sm">${ic("folder")}</span><span class="sb-label">${esc(c.nombre)}</span><span class="sb-count">${nC||""}</span>${plusBtn(cid)}${puedeEsp?delBtn("carpeta",cid):""}${confirmar("carpeta",cid)}</div>`;
+        h+=`<div class="sb-node sb-list sb-carpeta${activaC&&!abiertaC?" active":""}" onclick="sbToggleEspacio('c_${cid}')"><span class="sb-caret">${abiertaC?"▾":"▸"}</span><span class="sb-ic sb-ic-sm">${ic("folder")}</span><span class="sb-label">${esc(c.nombre)}</span><span class="sb-count">${nC||""}</span>${plusBtn(cid)}${puedeBorrarCreacion(c)?delBtn("carpeta",cid):""}${confirmar("carpeta",cid)}</div>`;
         if(abiertaC){ listasC.forEach(x=>h+=filaLista(x,true)); elemsC.forEach(x=>h+=filaElem(x,true)); h+=filaEditando(cid); }
       });
       misListas.filter(([,l])=>!l.carpeta||!carpetas[l.carpeta]).forEach(x=>h+=filaLista(x,false));
@@ -6578,7 +6593,7 @@ function renderTarea(forzar){
   <div class="fh-top">
     <span class="fh-crumb">${crumb}<span class="fh-sep">›</span><span class="fh-id">${t.padre?"Subtarea":"Tarea"}</span></span>
     <span class="fh-tools">
-      ${currentUser&&currentUser.isAdmin?`<button class="fh-ico" title="Eliminar tarea" onclick="delTarea('${id}')">${ic("trash")}</button>`:""}
+      ${puedeBorrarCreacion(tareas[id])?`<button class="fh-ico" title="Eliminar tarea" onclick="delTarea('${id}')">${ic("trash")}</button>`:""}
       <button class="fh-ico" title="Cerrar (Esc)" onclick="cerrarTarea()">✕</button>
     </span>
   </div>
