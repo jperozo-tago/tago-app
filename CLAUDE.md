@@ -220,6 +220,11 @@ Firestore).
   «API». Probado en real el 14-sep-2026: los dos correos llegaron. Klaviyo
   tarda ~8 min en mandar después de activar un flujo; si un evento entra
   (se ve en la métrica) y no sale correo, reactivar el flujo y esperar.
+  Desde el 24-sep-2026, además, **todo** pedido (retiro o envío) manda
+  «Pedido entregado» al pasar a Entregado (`momento:"entregado"`,
+  `marcarEntregaKlaviyo`, silencioso: sin toast; guarda `aviso.entregadoAt`
+  o `aviso.entregadoError` y una línea en el historial; no se repite). En
+  Klaviyo un flujo aparte espera 7 días y pide al cliente que califique.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o

@@ -3951,13 +3951,16 @@ function fichaShopifyHtml(j){
   return txt?fiFila(ic("shopping-cart")+" Shopify",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true):"";
 }
 // ── Aviso al cliente por Klaviyo: retiro al pasar a Listo («Pedido listo para retiro»), envío al pasar a Entregado («Pedido despachado») ──
+// Además, todo pedido (retiro o envío) manda «Pedido entregado» al pasar a Entregado: Klaviyo espera 7 días y pide la calificación.
+const EVENTO_KLAVIYO={retiro:"Pedido listo para retiro",despacho:"Pedido despachado",entregado:"Pedido entregado"};
 const KLAVIYO_CLAVE_PUBLICA="SQFMGt"; // clave pública de la cuenta TAGO (la misma del sitio web): solo sirve para registrar eventos
 function correoDe(j){ return (j&&j.correo||"").trim().toLowerCase()||null; } // solo lo que escribió quien creó el pedido
-async function avisarCliente(id,j,momento){ // momento: "retiro" (pedido listo para retirar) | "despacho" (entregado al courier)
+async function avisarCliente(id,j,momento){ // momento: "retiro" (pedido listo para retirar) | "despacho" (entregado al courier) | "entregado" (inicia la espera de 7 días para pedir calificación)
   const correo=correoDe(j); if(!correo||!dbRef)return;
-  const e=j.envio||{}, evento=momento==="retiro"?"Pedido listo para retiro":"Pedido despachado";
+  const e=j.envio||{}, evento=EVENTO_KLAVIYO[momento];
   const props={pedidoId:id,pedido:j.pedido||"",cliente:j.cliente||"",momento,tipoEntrega:j.tipoEntrega||"Retiro",transportista:momento==="despacho"?(j.tipoEntrega||""):"",destinatario:e.nombre||"",direccion:e.dir||"",producto:j.tipoDtf||"",cantidad:j.cantidad||"",unidad:j.unidad||getUnit(j.tipoDtf),responsable:j.responsable||""};
   const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),unique_id:`${id}-${momento}-${Date.now()}`,metric:{data:{type:"metric",attributes:{name:evento}}},profile:{data:{type:"profile",attributes:{email:correo}}}}}};
+  if(momento==="entregado") return marcarEntregaKlaviyo(id,correo,body);
   const clave=momento==="retiro"?"retiroAt":"despachoAt";
   try{
     const r=await fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)});
@@ -3969,6 +3972,14 @@ async function avisarCliente(id,j,momento){ // momento: "retiro" (pedido listo p
     dbRef.child(id).update({"aviso/error":String(err.message||err),"aviso/intentadoAt":new Date().toISOString(),"aviso/correo":correo});
     toast("No se pudo avisar al cliente: "+(err.message||err),"error");
   }
+}
+async function marcarEntregaKlaviyo(id,correo,body){ // silencioso: el correo de calificación sale 7 días después desde Klaviyo
+  try{
+    const r=await fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("Klaviyo respondió "+r.status);
+    dbRef.child(id).update({"aviso/entregadoAt":new Date().toISOString(),"aviso/entregadoError":null});
+    registrarLog(id,"Aviso al cliente","—",`entrega registrada en Klaviyo: en 7 días se le pide calificar a ${correo}`);
+  }catch(err){ dbRef.child(id).update({"aviso/entregadoError":String(err.message||err)}); }
 }
 function reenviarAviso(id){
   const j=jobs[id]; if(!j)return;
@@ -4019,7 +4030,8 @@ function moverEstado(id,nuevoEstado){
   toast((atras?"← ":"→ ")+ST[nuevoEstado].label,"ok");
   { const retiro=(j.tipoEntrega||"Retiro")==="Retiro", a=j.aviso||{}; // Klaviyo avisa al cliente: retiro al estar listo, envío al entregarse al courier
     if(nuevoEstado==="listo"&&retiro&&!a.retiroAt) avisarCliente(id,{...j,...upd},"retiro");
-    if(nuevoEstado==="entregado"&&!retiro&&!a.despachoAt) avisarCliente(id,{...j,...upd},"despacho"); }
+    if(nuevoEstado==="entregado"&&!retiro&&!a.despachoAt) avisarCliente(id,{...j,...upd},"despacho");
+    if(nuevoEstado==="entregado"&&!a.entregadoAt) avisarCliente(id,{...j,...upd},"entregado"); }
 }
 
 function del(id){ if(!confirm("¿Eliminar este pedido?"))return; filasAbiertas.delete(id); delete borradoresComentario[id]; delete imagenesPendientesComentario[id]; if(dbRef) dbRef.child(id).remove(); else{ delete jobs[id]; saveLocal(); render(); } toast("Eliminado"); }
