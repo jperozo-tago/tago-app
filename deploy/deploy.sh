@@ -7,6 +7,7 @@
 #   /pedidos     -> Seguimiento de Pedidos (en desarrollo, no visible como activa aún)
 #   /tablero     -> Tablero de negocio (lee sus datos de tago_tablero en Realtime Database)
 #   /ruta        -> Ruta TAGO, plan de 12 semanas (privada; datos en tago_ruta)
+#   /opinion     -> Página pública de opinión para clientes (sin login; manda a Klaviyo)
 #
 # Uso (desde la carpeta deploy/):
 #   ./deploy.sh                     arma public/ y publica Hosting en producción
@@ -62,6 +63,9 @@ cp "../Control de inventario/index.html" "public/inventario/index.html"
 cp -R "../Control de inventario/assets" "public/inventario/assets"
 # Seguimiento de Pedidos bajo /pedidos
 cp -R "../Pedidos/." "public/pedidos/"
+# Página pública de opinión (clientes con 1–3 estrellas en el correo de calificación de Klaviyo)
+mkdir -p public/opinion
+cp "../Opinion/index.html" "public/opinion/index.html"
 # Tablero de negocio bajo /tablero. La carpeta vive en la rama `tablero`, así que en un
 # checkout sin ella el deploy de las demás apps tiene que seguir funcionando igual.
 # Se publica SOLO index.html: cualquier otro archivo que quede en Tablero/ (un .json de

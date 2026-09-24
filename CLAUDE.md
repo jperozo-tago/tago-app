@@ -225,6 +225,10 @@ Firestore).
   `marcarEntregaKlaviyo`, silencioso: sin toast; guarda `aviso.entregadoAt`
   o `aviso.entregadoError` y una línea en el historial; no se repite). En
   Klaviyo un flujo aparte espera 7 días y pide al cliente que califique.
+  El correo lleva 5 estrellas: 4–5 van a la reseña de Google; 1–3 van a
+  `/opinion` (carpeta `Opinion/`, pública, sin login ni Firebase), que recibe
+  `?n=&e=&p=` y manda a Klaviyo «Opinión de cliente» (estrellas, comentario,
+  quiereContacto, pedido); otro flujo se lo reenvía a Andreina.
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o

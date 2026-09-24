@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tu opinión · TAGO</title>
+<link rel="icon" href="/assets/logo-color.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&family=Open+Sans:wght@400&display=swap" rel="stylesheet">
+<!--
+  Página pública (sin login) a la que llegan los clientes que marcan 1, 2 o 3 estrellas en el
+  correo «¿Cómo fue tu experiencia con TAGO?» (flujo de Klaviyo que parte con «Pedido entregado»).
+  Recibe ?n=<estrellas>&e=<correo>&p=<n° de pedido>. Al enviar, registra en Klaviyo el evento
+  «Opinión de cliente» con la API pública del cliente (company_id SQFMGt, sin secretos); un flujo
+  de Klaviyo le reenvía cada opinión a Andreina. No guarda nada en Firebase.
+-->
+<style>
+  :root{--oscuro:#0B1447;--verde:#49CEAB;--verde-txt:#1C7A63;--azul:#4063F9;--gris:#EDEDED;--sec:#545B7E;--muted:#858AA3;--borde:#E1E3EC;--estrella:#F2B33D}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--gris);font-family:'Open Sans',Arial,sans-serif;color:var(--oscuro);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px}
+  .card{width:100%;max-width:520px;background:#fff;border:1px solid var(--borde);border-radius:16px;overflow:hidden}
+  .cab{background:var(--oscuro);padding:26px 24px 22px;text-align:center}
+  .cab img{height:34px;width:auto}
+  .franja{height:5px;background:var(--verde)}
+  .cuerpo{padding:32px 32px 30px}
+  .eyebrow{font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-txt);margin:0 0 6px}
+  h1{font-family:'DM Sans',sans-serif;font-weight:600;font-size:24px;line-height:1.3;margin:0 0 10px}
+  p{font-size:15.5px;line-height:1.6;margin:0 0 14px;color:var(--oscuro)}
+  .sec{color:var(--sec)}
+  .estrellas{display:flex;justify-content:center;gap:6px;margin:18px 0 4px}
+  .estrellas button{background:none;border:none;cursor:pointer;font-size:40px;line-height:1;padding:2px 4px;color:#D9DCE6;transition:transform .12s,color .12s}
+  .estrellas button.on{color:var(--estrella)}
+  .estrellas button:hover{transform:scale(1.12)}
+  .estrellas button:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:6px}
+  .escala{display:flex;justify-content:space-between;max-width:270px;margin:0 auto 22px;font-size:12px;color:var(--muted)}
+  label{display:block;font-family:'DM Sans',sans-serif;font-weight:600;font-size:15px;margin:0 0 8px}
+  textarea{width:100%;min-height:130px;resize:vertical;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;font:inherit;font-size:15px;line-height:1.5;color:var(--oscuro)}
+  textarea:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(64,99,249,.15)}
+  .check{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;font-size:14.5px;line-height:1.5;color:var(--sec);cursor:pointer}
+  .check input{margin-top:3px;width:17px;height:17px;accent-color:var(--azul)}
+  .btn{display:block;width:100%;margin-top:22px;background:var(--azul);color:#fff;border:none;border-radius:10px;padding:14px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:16px;cursor:pointer;text-align:center;text-decoration:none}
+  .btn:hover{background:#3354e0}
+  .btn[disabled]{opacity:.6;cursor:default}
+  .btn.verde{background:var(--verde);color:var(--oscuro)}
+  .error{display:none;margin-top:12px;font-size:14px;color:#C0261C}
+  .hecho{text-align:center;padding:10px 0 4px}
+  .hecho .ico{width:56px;height:56px;border-radius:50%;background:rgba(73,206,171,.15);color:var(--verde-txt);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px}
+  .pie{text-align:center;font-size:12.5px;color:var(--muted);padding:18px 16px 0}
+  .pie a{color:var(--muted)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div>
+<div class="card">
+  <div class="cab"><img src="/assets/logo.svg" alt="TAGO"></div>
+  <div class="franja"></div>
+  <div class="cuerpo">
+    <form id="form" novalidate>
+      <p class="eyebrow">Tu opinión cuenta</p>
+      <h1>Lamentamos que tu experiencia no haya sido la mejor.</h1>
+      <p class="sec">Cuéntanos qué pasó. Lo lee directamente nuestro equipo y nos ayuda a mejorar.</p>
+      <div class="estrellas" id="estrellas" role="radiogroup" aria-label="Tu calificación"></div>
+      <div class="escala"><span>Mala</span><span>Excelente</span></div>
+      <div id="bloque-google" hidden>
+        <p style="text-align:center">¡Qué bueno! Nos ayudaría mucho que lo contaras en Google.</p>
+        <a class="btn verde" id="ir-google" href="#" rel="noopener">Dejar mi reseña en Google</a>
+        <p class="sec" style="text-align:center;margin-top:14px;font-size:14px">¿Prefieres contárnoslo a nosotros? Escríbelo abajo.</p>
+      </div>
+      <label for="comentario">¿Qué pasó?</label>
+      <textarea id="comentario" maxlength="2000" placeholder="Por ejemplo: el pedido llegó tarde, la impresión no quedó como esperaba, la atención…"></textarea>
+      <label class="check"><input type="checkbox" id="contactar" checked> Quiero que alguien de TAGO me contacte para resolverlo.</label>
+      <button class="btn" type="submit" id="enviar">Enviar mi opinión</button>
+      <div class="error" id="error"></div>
+    </form>
+    <div class="hecho" id="hecho" hidden>
+      <div class="ico">✓</div>
+      <h1>¡Gracias por contarnos!</h1>
+      <p class="sec" id="hecho-txt">Recibimos tu opinión y la revisaremos con el equipo.</p>
+    </div>
+  </div>
+</div>
+<div class="pie">TAGO · Av. Francisco Bilbao 1940, Providencia · <a href="https://www.tago.cl">tago.cl</a></div>
+</div>
+<script>
+const KLAVIYO_CLAVE_PUBLICA="SQFMGt";
+const GOOGLE_RESENA="https://www.google.com/search?hl=es-419&gl=cl&q=TAGO+-+Av.+Francisco+Bilbao+1940,+7501024+Providencia,+Regi%C3%B3n+Metropolitana&ludocid=663012650540659751&lsig=AB86z5VCrYkGJhXI8G98u72CPwOQ#lrd=0x9662d15c5b4da627:0x9337e7e2d10f427,3";
+const q=new URLSearchParams(location.search);
+const correo=(q.get("e")||"").trim().toLowerCase();
+const pedido=(q.get("p")||"").trim().slice(0,60);
+let estrellas=Math.min(5,Math.max(0,parseInt(q.get("n"),10)||0));
+document.getElementById("ir-google").href=GOOGLE_RESENA;
+
+const cont=document.getElementById("estrellas");
+for(let i=1;i<=5;i++){
+  const b=document.createElement("button");
+  b.type="button"; b.textContent="★"; b.setAttribute("role","radio"); b.setAttribute("aria-label",i+(i===1?" estrella":" estrellas"));
+  b.onclick=()=>{ estrellas=i; pintar(); };
+  cont.appendChild(b);
+}
+function pintar(){
+  [...cont.children].forEach((b,k)=>{ b.classList.toggle("on",k<estrellas); b.setAttribute("aria-checked",k+1===estrellas); });
+  document.getElementById("bloque-google").hidden=estrellas<4;
+}
+pintar();
+
+document.getElementById("form").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const err=document.getElementById("error"), btn=document.getElementById("enviar");
+  const comentario=document.getElementById("comentario").value.trim();
+  const contactar=document.getElementById("contactar").checked;
+  err.style.display="none";
+  if(!estrellas){ err.textContent="Elige cuántas estrellas nos das."; err.style.display="block"; return; }
+  if(!comentario){ err.textContent="Cuéntanos brevemente qué pasó."; err.style.display="block"; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){ err.textContent="No pudimos identificar tu correo. Escríbenos a ventas@tago.cl y lo revisamos."; err.style.display="block"; return; }
+  btn.disabled=true; btn.textContent="Enviando…";
+  const body={data:{type:"event",attributes:{
+    properties:{estrellas,comentario,quiereContacto:contactar?"Sí":"No",pedido,origen:"Correo de calificación"},
+    time:new Date().toISOString(),unique_id:"opinion-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),
+    metric:{data:{type:"metric",attributes:{name:"Opinión de cliente"}}},
+    profile:{data:{type:"profile",attributes:{email:correo}}}}}};
+  try{
+    const r=await fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error(r.status);
+    document.getElementById("form").hidden=true;
+    document.getElementById("hecho").hidden=false;
+    if(contactar) document.getElementById("hecho-txt").textContent="Recibimos tu opinión. Alguien de nuestro equipo te va a contactar para resolverlo.";
+  }catch(e){
+    btn.disabled=false; btn.textContent="Enviar mi opinión";
+    err.textContent="No se pudo enviar. Intenta de nuevo o escríbenos a ventas@tago.cl."; err.style.display="block";
+  }
+});
+</script>
+</body>
+</html>
