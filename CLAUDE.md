@@ -228,7 +228,9 @@ Firestore).
   El correo lleva 5 estrellas: 4–5 van a la reseña de Google; 1–3 van a
   `/opinion` (carpeta `Opinion/`, pública, sin login ni Firebase), que recibe
   `?n=&e=&p=` y manda a Klaviyo «Opinión de cliente» (estrellas, comentario,
-  quiereContacto, pedido); otro flujo se lo reenvía a Andreina.
+  quiereContacto, pedido) y, además, «Aviso de opinión» en el perfil de
+  a.rodriguez@tago.cl, que dispara un correo normal a Andreina (la alerta
+  interna creada por API no quedaba configurada en la interfaz de Klaviyo).
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
   2026, reemplaza la planilla «Control packs»). Cada pack es
   `{cliente, tipo:"textil"|"uv"|"fluor", metros, codigo, documento (n° boleta o

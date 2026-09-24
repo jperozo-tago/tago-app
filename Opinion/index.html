@@ -14,7 +14,8 @@
   correo «¿Cómo fue tu experiencia con TAGO?» (flujo de Klaviyo que parte con «Pedido entregado»).
   Recibe ?n=<estrellas>&e=<correo>&p=<n° de pedido>. Al enviar, registra en Klaviyo el evento
   «Opinión de cliente» con la API pública del cliente (company_id SQFMGt, sin secretos); un flujo
-  de Klaviyo le reenvía cada opinión a Andreina. No guarda nada en Firebase.
+  de Klaviyo le reenvía cada opinión a Andreina
+  (evento «Aviso de opinión» en su propio perfil → flujo con correo normal). No guarda nada en Firebase.
 -->
 <style>
   :root{--oscuro:#0B1447;--verde:#49CEAB;--verde-txt:#1C7A63;--azul:#4063F9;--gris:#EDEDED;--sec:#545B7E;--muted:#858AA3;--borde:#E1E3EC;--estrella:#F2B33D}
@@ -106,6 +107,17 @@ function pintar(){
 }
 pintar();
 
+// Copia para el equipo: el mismo contenido como evento en el perfil de quien recibe el aviso. Así el flujo
+// «Aviso de opinión» es un correo normal (las alertas internas creadas por API no se ven bien en Klaviyo).
+const CORREO_AVISO="a.rodriguez@tago.cl";
+function avisarEquipo(props){
+  const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),
+    unique_id:"aviso-opinion-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),
+    metric:{data:{type:"metric",attributes:{name:"Aviso de opinión"}}},
+    profile:{data:{type:"profile",attributes:{email:CORREO_AVISO}}}}}};
+  return fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)}).catch(()=>{});
+}
+
 document.getElementById("form").addEventListener("submit",async ev=>{
   ev.preventDefault();
   const err=document.getElementById("error"), btn=document.getElementById("enviar");
@@ -124,6 +136,7 @@ document.getElementById("form").addEventListener("submit",async ev=>{
   try{
     const r=await fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)});
     if(!r.ok) throw new Error(r.status);
+    avisarEquipo({estrellas,comentario,quiereContacto:contactar?"Sí":"No",pedido,correoCliente:correo});
     document.getElementById("form").hidden=true;
     document.getElementById("hecho").hidden=false;
     if(contactar) document.getElementById("hecho-txt").textContent="Recibimos tu opinión. Alguien de nuestro equipo te va a contactar para resolverlo.";
