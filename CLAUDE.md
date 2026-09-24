@@ -225,7 +225,9 @@ Firestore).
   `marcarEntregaKlaviyo`, silencioso: sin toast; guarda `aviso.entregadoAt`
   o `aviso.entregadoError` y una línea en el historial; no se repite). En
   Klaviyo un flujo aparte espera 7 días y pide al cliente que califique.
-  El correo lleva 5 estrellas: 4–5 van a la reseña de Google; 1–3 van a
+  El correo lleva 5 estrellas: 4–5 van a la reseña de Google (enlace
+  search.google.com/local/writereview?placeid=ChIJJ6ZNW1zRYpYRJ_QQLX5-Mwk: el
+  de la búsqueda con #lrd no abre la casilla en el celular); 1–3 van a
   `/opinion` (carpeta `Opinion/`, pública, sin login ni Firebase), que recibe
   `?n=&e=&p=` y manda a Klaviyo «Opinión de cliente» (estrellas, comentario,
   quiereContacto, pedido) y, además, «Aviso de opinión» en el perfil de Andreina, Carol y José
