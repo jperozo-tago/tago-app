@@ -107,15 +107,17 @@ function pintar(){
 }
 pintar();
 
-// Copia para el equipo: el mismo contenido como evento en el perfil de quien recibe el aviso. Así el flujo
+// Copia para el equipo: el mismo contenido como evento en el perfil de cada persona que recibe el aviso. Así el flujo
 // «Aviso de opinión» es un correo normal (las alertas internas creadas por API no se ven bien en Klaviyo).
-const CORREO_AVISO="a.rodriguez@tago.cl";
+const CORREOS_AVISO=["a.rodriguez@tago.cl","c.oviedo@tago.cl","jr.perozo@tago.cl"]; // Andreina, Carol y José
 function avisarEquipo(props){
-  const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),
-    unique_id:"aviso-opinion-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),
-    metric:{data:{type:"metric",attributes:{name:"Aviso de opinión"}}},
-    profile:{data:{type:"profile",attributes:{email:CORREO_AVISO}}}}}};
-  return fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)}).catch(()=>{});
+  return Promise.all(CORREOS_AVISO.map(correo=>{
+    const body={data:{type:"event",attributes:{properties:props,time:new Date().toISOString(),
+      unique_id:"aviso-opinion-"+correo+"-"+Date.now(),
+      metric:{data:{type:"metric",attributes:{name:"Aviso de opinión"}}},
+      profile:{data:{type:"profile",attributes:{email:correo}}}}}};
+    return fetch("https://a.klaviyo.com/client/events/?company_id="+KLAVIYO_CLAVE_PUBLICA,{method:"POST",headers:{"Content-Type":"application/json","revision":"2025-07-15"},body:JSON.stringify(body)}).catch(()=>{});
+  }));
 }
 
 document.getElementById("form").addEventListener("submit",async ev=>{
