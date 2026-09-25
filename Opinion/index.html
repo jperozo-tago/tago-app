@@ -44,8 +44,7 @@
   .btn{display:block;width:100%;margin-top:22px;background:var(--azul);color:#fff;border:none;border-radius:10px;padding:14px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:16px;cursor:pointer;text-align:center;text-decoration:none}
   .btn:hover{background:#3354e0}
   .btn[disabled]{opacity:.6;cursor:default}
-  .btn.verde{background:var(--verde);color:var(--oscuro)}
-  .error{display:none;margin-top:12px;font-size:14px;color:#C0261C}
+    .error{display:none;margin-top:12px;font-size:14px;color:#C0261C}
   .hecho{text-align:center;padding:10px 0 4px}
   .hecho .ico{width:56px;height:56px;border-radius:50%;background:rgba(73,206,171,.15);color:var(--verde-txt);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px}
   .pie{text-align:center;font-size:12.5px;color:var(--muted);padding:18px 16px 0}
@@ -61,18 +60,13 @@
   <div class="cuerpo">
     <form id="form" novalidate>
       <p class="eyebrow">Tu opinión cuenta</p>
-      <h1>Lamentamos que tu experiencia no haya sido la mejor.</h1>
-      <p class="sec">Cuéntanos qué pasó. Lo lee directamente nuestro equipo y nos ayuda a mejorar.</p>
+      <h1 id="titulo">Lamentamos que tu experiencia no haya sido la mejor.</h1>
+      <p class="sec" id="bajada">Cuéntanos qué pasó. Lo lee directamente nuestro equipo y nos ayuda a mejorar.</p>
       <div class="estrellas" id="estrellas" role="radiogroup" aria-label="Tu calificación"></div>
       <div class="escala"><span>Mala</span><span>Excelente</span></div>
-      <div id="bloque-google" hidden>
-        <p style="text-align:center">¡Qué bueno! Nos ayudaría mucho que lo contaras en Google.</p>
-        <a class="btn verde" id="ir-google" href="#" rel="noopener">Dejar mi reseña en Google</a>
-        <p class="sec" style="text-align:center;margin-top:14px;font-size:14px">¿Prefieres contárnoslo a nosotros? Escríbelo abajo.</p>
-      </div>
-      <label for="comentario">¿Qué pasó?</label>
+      <label for="comentario" id="etiqueta">¿Qué pasó?</label>
       <textarea id="comentario" maxlength="2000" placeholder="Por ejemplo: el pedido llegó tarde, la impresión no quedó como esperaba, la atención…"></textarea>
-      <label class="check"><input type="checkbox" id="contactar" checked> Quiero que alguien de TAGO me contacte para resolverlo.</label>
+      <label class="check" id="fila-contactar"><input type="checkbox" id="contactar" checked> Quiero que alguien de TAGO me contacte para resolverlo.</label>
       <button class="btn" type="submit" id="enviar">Enviar mi opinión</button>
       <div class="error" id="error"></div>
     </form>
@@ -87,12 +81,10 @@
 </div>
 <script>
 const KLAVIYO_CLAVE_PUBLICA="SQFMGt";
-const GOOGLE_RESENA="https://search.google.com/local/writereview?placeid=ChIJJ6ZNW1zRYpYRJ_QQLX5-Mwk"; // abre la casilla de reseña también en el celular
 const q=new URLSearchParams(location.search);
 const correo=(q.get("e")||"").trim().toLowerCase();
 const pedido=(q.get("p")||"").trim().slice(0,60);
 let estrellas=Math.min(5,Math.max(0,parseInt(q.get("n"),10)||0));
-document.getElementById("ir-google").href=GOOGLE_RESENA;
 
 const cont=document.getElementById("estrellas");
 for(let i=1;i<=5;i++){
@@ -103,7 +95,14 @@ for(let i=1;i<=5;i++){
 }
 function pintar(){
   [...cont.children].forEach((b,k)=>{ b.classList.toggle("on",k<estrellas); b.setAttribute("aria-checked",k+1===estrellas); });
-  document.getElementById("bloque-google").hidden=estrellas<4;
+  // Si el cliente sube a 4 o 5 aquí mismo, la opinión se queda en esta página (sin mandarlo a Google):
+  // solo cambian los textos para que no suenen a queja.
+  const buena=estrellas>=4;
+  document.getElementById("titulo").textContent=buena?"¡Gracias por calificarnos!":"Lamentamos que tu experiencia no haya sido la mejor.";
+  document.getElementById("bajada").textContent=buena?"Cuéntanos cómo fue tu experiencia. Lo lee directamente nuestro equipo.":"Cuéntanos qué pasó. Lo lee directamente nuestro equipo y nos ayuda a mejorar.";
+  document.getElementById("etiqueta").textContent=buena?"Tu comentario":"¿Qué pasó?";
+  document.getElementById("comentario").placeholder=buena?"Cuéntanos lo que más te gustó o lo que podríamos mejorar…":"Por ejemplo: el pedido llegó tarde, la impresión no quedó como esperaba, la atención…";
+  document.getElementById("fila-contactar").hidden=buena;
 }
 pintar();
 
@@ -124,10 +123,10 @@ document.getElementById("form").addEventListener("submit",async ev=>{
   ev.preventDefault();
   const err=document.getElementById("error"), btn=document.getElementById("enviar");
   const comentario=document.getElementById("comentario").value.trim();
-  const contactar=document.getElementById("contactar").checked;
+  const contactar=estrellas<4&&document.getElementById("contactar").checked;
   err.style.display="none";
   if(!estrellas){ err.textContent="Elige cuántas estrellas nos das."; err.style.display="block"; return; }
-  if(!comentario){ err.textContent="Cuéntanos brevemente qué pasó."; err.style.display="block"; return; }
+  if(!comentario){ err.textContent="Escribe un breve comentario."; err.style.display="block"; return; }
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){ err.textContent="No pudimos identificar tu correo. Escríbenos a ventas@tago.cl y lo revisamos."; err.style.display="block"; return; }
   btn.disabled=true; btn.textContent="Enviando…";
   const body={data:{type:"event",attributes:{

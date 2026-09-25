@@ -230,7 +230,8 @@ Firestore).
   de la búsqueda con #lrd no abre la casilla en el celular); 1–3 van a
   `/opinion` (carpeta `Opinion/`, pública, sin login ni Firebase), que recibe
   `?n=&e=&p=` y manda a Klaviyo «Opinión de cliente» (estrellas, comentario,
-  quiereContacto, pedido) y, además, «Aviso de opinión» en el perfil de Andreina, Carol y José
+  quiereContacto, pedido; si ahí sube a 4–5 NO se le ofrece Google, a pedido de
+  Andreina: solo cambian los textos y se oculta «contactarme») y, además, «Aviso de opinión» en el perfil de Andreina, Carol y José
   (`CORREOS_AVISO`), que dispara un correo normal a cada uno (la alerta
   interna creada por API no quedaba configurada en la interfaz de Klaviyo).
 - `tago_packs` — packs DTF: metros comprados por adelantado (septiembre
