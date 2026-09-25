@@ -3058,7 +3058,10 @@ function listaClientes() {
   /* A quien solo se le hizo una nota de crédito no le vendiste nada en el período. */
   for (const [k, c] of m) if (!c.docs) m.delete(k);
   const out = [...m.values()];
-  for (const c of out) { c.nombre = D.cli[c.ci][0]; c.nuevo = D.prim[c.ci] >= F.a;
+  /* «nuevo» = su primera compra cae dentro del período. Con el período «Todo» eso vale
+     para todos y la etiqueta deja de decir nada, así que ahí no se marca a nadie. */
+  const todoElRegistro = F.a <= 0;
+  for (const c of out) { c.nombre = D.cli[c.ci][0]; c.nuevo = !todoElRegistro && D.prim[c.ci] >= F.a;
     /* la atribución de GoHighLevel pesa más que lo que se dedujo leyendo el chat */
     c.origen = D.publi[c.ci] ? "anuncio_confirmado" : (D.origen[c.ci] || ""); }
   out.sort((a,b) => b.total - a.total);
