@@ -3196,8 +3196,8 @@ function tablaClientesSec(clave, cs, g) {
           ? ' <span style="color:var(--verde);font-size:.78rem;font-weight:700">nuevo</span>' : ""}</td>
         <td class="num"><b style="color:var(--tinta)">${num(c.docs)}</b></td>
         <td class="num">${clp(c.total)}</td>
-        <td class="f">${etCorta(deDias(c.prim))}</td>
-        <td class="f">${c.ult >= 0 ? etCorta(deDias(c.ult)) : "—"}</td>
+        <td class="f">${etMesC(mesDe(deDias(c.prim)))}</td>
+        <td class="f">${c.ult >= 0 ? etMesC(mesDe(deDias(c.ult))) : "—"}</td>
         <td style="text-align:left;font-size:.82rem;color:var(--gris);white-space:normal">${
           comoLlego(c.ci, c.origen)}</td></tr>`).join("")}
     </tbody><tfoot><tr><td>${num(l.length)} ${l.length === 1 ? "cliente" : "clientes"}</td>
@@ -3210,7 +3210,7 @@ function filaCli(c) {
     <td class="nom">${esc(c.nombre)}${c.nuevo
       ? ' <span style="color:var(--verde);font-size:.78rem">nuevo</span>' : ""}</td>
     <td class="num">${num(c.docs)}</td><td class="num">${clp(c.total)}</td>
-    <td class="f">${etCorta(deDias(c.prim))}</td><td class="f">${etCorta(deDias(c.ult))}</td>
+    <td class="f">${etMesC(mesDe(deDias(c.prim)))}</td><td class="f">${etMesC(mesDe(deDias(c.ult)))}</td>
     <td style="text-align:left;font-size:.82rem;color:var(--gris);white-space:normal">${
       comoLlego(c.ci, c.origen)}</td></tr>`;
 }
