@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0B1447">
+<title>Merma TAGO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&family=Open+Sans:wght@400;700&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<style>
+/* Sistema de diseño TAGO (brandbook 2026): mismos tokens que Ruta y el tablero. */
+:root{
+  --film:#F6F6F6; --papel:#FFFFFF; --papel2:#F6F6F6; --papel3:#EDEDED;
+  --linea:#E7E8ED; --linea2:#B6B9C8;
+  --tinta:#0B1447; --tinta2:#545B7E; --gris:#858AA3;
+  --azul:#4063F9; --azul-suave:rgba(64,99,249,.10); --azul-fill:#4063F9;
+  --verde:#1C7A63; --verde-fill:#49CEAB; --verde-suave:rgba(73,206,171,.16);
+  --rojo:#C0261C; --rojo-suave:rgba(192,38,28,.09);
+  --ambar:#9A6B00; --ambar-suave:rgba(212,135,10,.12);
+  --r:18px; --pill:100px;
+  --btn-fondo:#0B1447; --btn-texto:#FFFFFF; --btn-hover:#16246B;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --film:#0B1447; --papel:rgba(255,255,255,.06); --papel2:rgba(255,255,255,.03); --papel3:rgba(255,255,255,.10);
+  --linea:rgba(255,255,255,.16); --linea2:rgba(255,255,255,.30);
+  --tinta:#FFFFFF; --tinta2:#DDE1FF; --gris:#9499BF;
+  --azul:#49CEAB; --azul-suave:rgba(73,206,171,.16); --azul-fill:#49CEAB;
+  --verde:#49CEAB; --verde-fill:#49CEAB; --verde-suave:rgba(73,206,171,.18);
+  --rojo:#FF8B82; --rojo-suave:rgba(255,139,130,.14);
+  --ambar:#F2C265; --ambar-suave:rgba(242,194,101,.14);
+  --btn-fondo:#49CEAB; --btn-texto:#0B1447; --btn-hover:#6FDCBF;
+}}
+:root[data-theme="dark"]{
+  --film:#0B1447; --papel:rgba(255,255,255,.06); --papel2:rgba(255,255,255,.03); --papel3:rgba(255,255,255,.10);
+  --linea:rgba(255,255,255,.16); --linea2:rgba(255,255,255,.30);
+  --tinta:#FFFFFF; --tinta2:#DDE1FF; --gris:#9499BF;
+  --azul:#49CEAB; --azul-suave:rgba(73,206,171,.16); --azul-fill:#49CEAB;
+  --verde:#49CEAB; --verde-fill:#49CEAB; --verde-suave:rgba(73,206,171,.18);
+  --rojo:#FF8B82; --rojo-suave:rgba(255,139,130,.14);
+  --ambar:#F2C265; --ambar-suave:rgba(242,194,101,.14);
+  --btn-fondo:#49CEAB; --btn-texto:#0B1447; --btn-hover:#6FDCBF;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--film);color:var(--tinta);font-family:"Open Sans","Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;padding-inline:clamp(16px,3vw,32px);padding-block:0 64px}
+h1,h2,h3{font-family:"DM Sans","Helvetica Neue",Arial,sans-serif;font-weight:600;line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:2rem} h2{font-size:1.35rem} h3{font-size:1.05rem}
+p{margin:0}
+a{color:var(--azul)}
+b,strong{font-weight:600}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1120px;margin:0 auto}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--tinta2)} .faint{color:var(--gris)} .small{font-size:13px}
+.eyebrow{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris)}
+
+/* cabecera */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:26px 14px}
+.marca{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.marca .logo{width:118px;height:auto;display:block;color:var(--tinta)}
+.marca span{font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--azul);padding-left:12px;border-left:1px solid var(--linea2);line-height:1.4}
+.top .sub{margin-top:8px;color:var(--tinta2);max-width:62ch}
+.volver{display:inline-flex;align-items:center;border-radius:var(--pill);border:1.5px solid var(--linea2);color:var(--tinta2);text-decoration:none;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.78rem;padding:6px 13px}
+.volver:hover{border-color:var(--azul);color:var(--azul)}
+.quien{font-size:13px;color:var(--gris);display:flex;gap:10px;align-items:center}
+.quien button{background:none;border:0;color:var(--azul);padding:0;font-size:13px}
+
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--linea);margin-bottom:22px}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font-family:"DM Sans",sans-serif;font-weight:600;color:var(--tinta2);margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--azul-fill)}
+
+.card{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:18px 20px}
+.grid{display:grid;gap:12px}
+.g-prod{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.g-kpi{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.fila{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.entre{justify-content:space-between}
+.sep{height:1px;background:var(--linea);margin:14px 0}
+
+label.campo{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--tinta2)}
+.inp,select.inp,textarea.inp{width:100%;background-color:var(--papel2);border:1px solid var(--linea);border-radius:10px;padding:8px 11px;font-size:15px;color:var(--tinta)}
+textarea.inp{min-height:64px;resize:vertical}
+.inp:focus{border-color:var(--azul);outline:none}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:560px){.dos,.tres{grid-template-columns:1fr}}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--tinta2)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:var(--pill);background:var(--btn-fondo);color:var(--btn-texto);font-family:"DM Sans",sans-serif;font-weight:600;font-size:14px;padding:9px 18px}
+.btn:hover{background:var(--btn-hover)}
+.btn.sec{background:transparent;color:var(--tinta);border:1.5px solid var(--linea2)}
+.btn.sec:hover{border-color:var(--azul);color:var(--azul)}
+.btn.chico{padding:5px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.link{background:none;border:0;color:var(--azul);padding:0;font-size:13px}
+.link.rojo{color:var(--rojo)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--pill);background:var(--papel2);border:1px solid var(--linea);font-size:12.5px;color:var(--tinta2);white-space:nowrap}
+.pill.ok{background:var(--verde-suave);border-color:transparent;color:var(--verde)}
+.pill.mal{background:var(--rojo-suave);border-color:transparent;color:var(--rojo)}
+.pill.warn{background:var(--ambar-suave);border-color:transparent;color:var(--ambar)}
+.aviso{padding:10px 14px;border-radius:12px;font-size:13.5px;background:var(--ambar-suave);color:var(--tinta)}
+.aviso.info{background:var(--azul-suave)}
+
+.kpi .v{font-family:"DM Sans",sans-serif;font-weight:600;font-size:1.8rem;line-height:1.1;margin-top:4px}
+.kpi .d{font-size:13px;color:var(--tinta2);margin-top:4px}
+
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th{text-align:left;font-family:"DM Sans",sans-serif;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--gris);padding:8px 10px;border-bottom:1px solid var(--linea)}
+table.t td{padding:9px 10px;border-bottom:1px solid var(--linea);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
+#view-prod table.t input[data-c="nombre"]{min-width:210px}
+#view-prod table.t select{min-width:150px}
+#view-prod table.t input[data-c="costo"]{min-width:120px}
+#view-prod .chk{white-space:nowrap}
+.scroll{overflow-x:auto}
+
+.barras{display:flex;flex-direction:column;gap:8px}
+.barra{display:grid;grid-template-columns:minmax(120px,240px) 1fr 110px;gap:10px;align-items:center;font-size:13.5px}
+.barra .pista{height:12px;background:var(--papel3);border-radius:6px;overflow:hidden}
+.barra .llena{height:100%;background:var(--azul-fill);border-radius:6px}
+.barra .llena.tago{background:var(--rojo)}
+.barra .llena.cli{background:var(--verde-fill)}
+@media (max-width:560px){.barra{grid-template-columns:1fr 90px}.barra .pista{grid-column:1/-1;grid-row:2}}
+
+.tendencia{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:10px}
+.tendencia .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.tendencia .pares{display:flex;align-items:flex-end;gap:2px;height:110px;width:100%;justify-content:center}
+.tendencia .b{width:42%;max-width:18px;border-radius:4px 4px 0 0;background:var(--azul-fill)}
+.tendencia .b.uv{background:var(--verde-fill)}
+.tendencia .b.vacio{background:var(--papel3);height:4px}
+.tendencia .m{font-size:11px;color:var(--gris);white-space:nowrap}
+.leyenda{display:flex;gap:14px;font-size:12.5px;color:var(--tinta2)}
+.leyenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+dialog{border:1px solid var(--linea);border-radius:var(--r);background:var(--film);color:var(--tinta);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgba(11,20,71,.45)}
+dialog .cuerpo{padding:22px;display:flex;flex-direction:column;gap:12px}
+.sugerencias{border:1px solid var(--linea);border-radius:10px;background:var(--papel);max-height:190px;overflow:auto}
+.sugerencias button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--linea);padding:7px 11px;font-size:13.5px}
+.sugerencias button:hover{background:var(--azul-suave)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0B1447;color:#fff;padding:10px 18px;border-radius:var(--pill);font-size:14px;z-index:2000}
+
+/* entrada con Google (misma pantalla que Ruta y el tablero) */
+.entrada{position:fixed;inset:0;z-index:1000;background:#0B1447;color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:24px;text-align:center;overflow:auto}
+.entrada .logo{width:220px;height:auto;display:block;color:#FFFFFF;margin:0 auto}
+.entrada .sub{display:block;margin-top:12px;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.95rem;color:#DDE1FF}
+.tarjetaEntrada{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:var(--r);padding:30px 28px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:9px}
+.tarjetaEntrada h2{font-size:1.15rem;color:#FFFFFF}
+.tarjetaEntrada p{font-size:.85rem;color:#9499BF;line-height:1.5}
+.google{display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;border:0;border-radius:var(--pill);background:#FFFFFF;color:#0B1447;font-family:"DM Sans",sans-serif;font-weight:600;font-size:.95rem;padding:13px 22px}
+.errorEntrada{min-height:1.4em;font-size:.83rem;color:#FF8B82;line-height:1.45}
+.avisoEntrada{font-size:.83rem;color:#DDE1FF;line-height:1.55;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:13px 14px;text-align:left}
+.avisoEntrada b{color:#49CEAB}
+.abriendo{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:380px;font-size:.95rem;color:#DDE1FF}
+.abriendo i{width:26px;height:26px;border-radius:99px;border:3px solid rgba(255,255,255,.18);border-top-color:#49CEAB;animation:gira 1s linear infinite;display:block}
+@keyframes gira{to{transform:rotate(360deg)}}
+.salirEntrada{background:none;border:0;padding:6px 10px;font-size:.8rem;color:#9499BF;text-decoration:underline}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="logo-tago" viewBox="0 0 585.18 116.62"><path fill="currentColor" d="m228.96.01v26.83h-37v89.77h-29.27V26.84h-36.84V.01h103.11Z"></path><path fill="currentColor" d="m300.59,99.05h-45.54l-6.18,17.56h-30.98L263.83,0h28.13l45.78,116.61h-30.9l-6.26-17.56h.01Zm-22.69-63.43l-13.25,37.32h26.43"></path><path fill="currentColor" d="m417.44,34.32c-7.81-5.77-14.47-7.72-20.65-7.72-18.3,0-30.33,13.99-30.33,31.79,0,16.75,11.79,31.55,30.33,31.55,13.58,0,25.7-8.05,30-23.17h-34.07v-26.83h60.66c1.95,6.51,2.85,12.77,2.85,18.78,0,32.77-25.29,57.9-59.44,57.9s-59.77-23.91-59.77-58.22S362.55.02,396.79.02c12.28,0,24.15,3.33,36.84,11.95l-16.18,22.36h0Z"></path><path fill="currentColor" d="m525.58.01c-34.48,0-59.6,25.45-59.6,58.3s25.13,58.3,59.6,58.3,59.6-25.45,59.6-58.3S560.05.01,525.58.01Zm0,89.85c-18.54,0-30-13.9-30-31.55s11.47-31.63,30-31.63,30.01,13.99,30.01,31.63-11.47,31.55-30.01,31.55Z"></path><path fill="#49CEAB" d="m77.42,55.32l-18.5-18.5-18.5,18.5h6.29v5.92h-6.29l18.5,18.5,18.5-18.5h-4.92v-5.92h4.92Zm-10.5,5.92h-14.63v-5.92h14.63v5.92Z"></path><path fill="#49CEAB" d="m59.6.01C25.12.01,0,25.46,0,58.31s25.13,58.3,59.6,58.3c4.83,0,9.47-.52,13.88-1.47v-1.81c0-25.98,18.91-47.13,45.23-47.29.31-2.53.49-5.1.49-7.73C119.2,25.46,94.07,0,59.6,0h0Zm41.3,61.23h-7.37l-26.55,26.56,3.64,3.64-8.06,8.06-3.64-3.64-3.64,3.64-8.06-8.06,3.64-3.64-26.56-26.55h-6.01v-5.92h6.01l26.55-26.56-3.64-3.64,8.06-8.06,3.64,3.64,3.64-3.64,8.06,8.06-3.64,3.64,26.56,26.55h7.37v5.92Z"></path><path fill="#49CEAB" d="m78.2,113.34l39.39-42.24c-21.75,0-39.39,18.91-39.39,42.24Z"></path></symbol></svg>
+<div class="entrada" id="entrada">
+  <div><svg class="logo" viewBox="0 0 585.18 116.62" role="img" aria-label="TAGO"><use href="#logo-tago"/></svg>
+    <span class="sub">Control de merma</span></div>
+  <div class="tarjetaEntrada" id="tarjetaEntrada">
+    <h2>Acceso privado.</h2>
+    <p id="entradaDesc">Entra con tu cuenta Google de TAGO. Esta app solo la ve el equipo autorizado.</p>
+    <button type="button" class="google" id="entrar">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Entrar con Google
+    </button>
+    <div class="errorEntrada" id="errorEntrada"></div>
+    <div class="avisoEntrada" id="avisoEntrada" hidden>Por seguridad, Apple no deja iniciar sesión con Google desde una app instalada en la pantalla de inicio.<br><br>Abre <b>tago-app-489c1.web.app/merma</b> en Safari, inicia sesión ahí una vez y vuelve a abrir esta app.</div>
+  </div>
+  <div class="abriendo" id="abriendo" hidden><i></i><span id="abriendoTxt">Abriendo Merma…</span>
+    <button type="button" class="salirEntrada" id="salirEntrada">Salir</button></div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div>
+      <div class="marca"><svg class="logo" viewBox="0 0 585.18 116.62" role="img" aria-label="TAGO"><use href="#logo-tago"/></svg><span>Merma</span><a class="volver" href="/">← Volver al panel</a></div>
+      <h1>Lo que se pierde, y por qué.</h1>
+      <p class="sub">Cierre diario por producto y registro de cada reimpresión con su causa. Reemplaza al Excel de control de merma.</p>
+    </div>
+    <div class="quien"><span id="quien"></span><button type="button" id="salir">Salir</button></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" data-view="dia" aria-selected="true">Cierre del día</button>
+    <button type="button" data-view="reimp" aria-selected="false">Reimpresiones</button>
+    <button type="button" data-view="panel" aria-selected="false">Panel</button>
+    <button type="button" data-view="prod" aria-selected="false" hidden>Productos</button>
+  </nav>
+
+  <section class="view" id="view-dia"></section>
+  <section class="view" id="view-reimp" hidden></section>
+  <section class="view" id="view-panel" hidden></section>
+  <section class="view" id="view-prod" hidden></section>
+</div>
+
+<dialog id="dlgReimp"><form class="cuerpo" id="formReimp" method="dialog" autocomplete="off"></form></dialog>
+
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ───────────── Catálogo ───────────── */
+/* Productos: la misma lista de Pedidos. Lo que está en tago_merma/config/productos manda sobre esto.
+   Costo = material + tinta por unidad de medida (DTF: dato de José, 27-09-2026; el resto, por confirmar). */
+const PROD_DEF = {
+  dtf_textil: {nombre:"DTF Textil",          unidad:"ml", costo:3454, porConfirmar:false, activa:true,  orden:1},
+  dtf_uv:     {nombre:"DTF UV",              unidad:"ml", costo:4420, porConfirmar:false, activa:true,  orden:2},
+  dtf_fluor:  {nombre:"DTF Flúor",           unidad:"ml", costo:null, porConfirmar:true,  activa:true,  orden:3},
+  stickers:   {nombre:"Stickers UV",         unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:4},
+  pendon:     {nombre:"Pendón Roller",       unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:5},
+  insignias:  {nombre:"Insignias / Parches", unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:6},
+  pines:      {nombre:"Pines",               unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:7},
+  medallas:   {nombre:"Medallas",            unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:8},
+  imanes:     {nombre:"Imanes",              unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:9},
+  llaveros:   {nombre:"Llaveros",            unidad:"u",  costo:null, porConfirmar:true,  activa:true,  orden:10},
+  kit:        {nombre:"Kit Corporativo",     unidad:"u",  costo:null, porConfirmar:true,  activa:false, orden:11},
+  otro:       {nombre:"Otro",                unidad:"u",  costo:null, porConfirmar:true,  activa:false, orden:12},
+};
+const UNIDADES = {ml:"metros lineales", m2:"m²", u:"unidades", h:"hojas"};
+const UCORTA = {ml:"m", m2:"m²", u:"u.", h:"hojas"};
+
+/* Origen de la reimpresión. "asume" es quién paga por defecto (se puede cambiar).
+   Regla del manual: lo que pre-prensa revisa es lo que TAGO garantiza. */
+/* area = de quién es el error: "externo" no se atribuye a nadie del equipo (cliente o proveedor). */
+const ORIGENES = [
+  {id:"cliente",      nombre:"Cliente: fuera de lo que revisamos",           asume:"cliente", area:"externo", externo:"Cliente"},
+  {id:"no_detectado", nombre:"Cliente: no detectado en pre-prensa",          asume:"tago",    area:"preprensa"},
+  {id:"ventas",       nombre:"Ventas: producto o medida mal tomados",        asume:"tago",    area:"ventas"},
+  {id:"preprensa",    nombre:"Pre-prensa: diagramación",                     asume:"tago",    area:"preprensa"},
+  {id:"maquina",      nombre:"Máquina",                                      asume:"tago",    area:"produccion"},
+  {id:"material",     nombre:"Material o insumo",                            asume:"tago",    area:"externo", externo:"Proveedor"},
+  {id:"operacion",    nombre:"Operación: manipulación, corte o terminación", asume:"tago",    area:"produccion"},
+];
+/* Motivos posibles según el origen: solo se ofrecen los que tienen sentido para ese origen. */
+const MOTIVOS_POR_ORIGEN = {
+  cliente:      ["Error de contenido del cliente (texto, ortografía, diseño)","Colores distintos a lo esperado (pantalla vs. impresión)","El cliente cambió el archivo o la medida después de aprobar","Otro"],
+  no_detectado: ["Baja resolución","Fondo no transparente","Medida o proporción del archivo","Formato de archivo no apto","Otro"],
+  ventas:       ["Medida errónea","Producto equivocado","Cantidad errónea","Datos del pedido incompletos o equivocados","Otro"],
+  preprensa:    ["Capas, offset o blanco","Medida o escala errónea","Archivo equivocado o versión antigua","Leyenda, espejado u orientación","Trazado de corte o puntos de registro","Colores (perfil o tintas planas)","Otro"],
+  maquina:      ["Banding o inyector tapado","Golpe, mancha o goteo","Falla de tensión o avance del material","Calibración o desfase del blanco","Falla de horno, lámpara o polvo","Otro"],
+  material:     ["Material defectuoso","Tinta o insumo defectuoso","Otro"],
+  operacion:    ["Error de corte","Manipulación (arrugado, rayado, doblado)","Planchado o prensado","Embalaje o despacho","Otro"],
+};
+const ASUME = {tago:"TAGO", cliente:"Cliente"};
+
+/* Tipo de producto del pedido (tipoDtf en Pedidos) → producto de Merma. */
+const PROD_DE_TIPO = {"DTF Textil":"dtf_textil","DTF UV":"dtf_uv","DTF Flúor":"dtf_fluor","Stickers UV":"stickers","Pendón Roller":"pendon",
+  "Insignias / Parches":"insignias","Pines":"pines","Medallas":"medallas","Imanes":"imanes","Llaveros":"llaveros","Kit Corporativo":"kit","Otro":"otro"};
+
+/* Mismas personas que Pedidos. Admin = configura productos y costos e importa el historial
+   (control visual; la seguridad real está en las reglas de tago_merma/config). */
+const PERSONAS = [
+  {email:"allysonalvarez.tago@gmail.com", id:"AL", nombre:"Allyson",            area:"preprensa"},
+  {email:"m.perez@tago.cl",               id:"MR", nombre:"Mari Perez",         area:"ventas"},
+  {email:"a.querales@tago.cl",            id:"AQ", nombre:"Andrea Querales",    area:"ventas"},
+  {email:"produccion.tago@gmail.com",     id:"MG", nombre:"Miguel Gonzalez",    area:"produccion"},
+  {email:"producciondtf.tago@gmail.com",  id:"IP", nombre:"Ignacio Paredes",    area:"produccion"},
+  {email:"c.oviedo@tago.cl",              id:"CO", nombre:"Carol Oviedo",       area:"gerencia"},
+  {email:"j.perozo@tago.cl",              id:"JP", nombre:"José Perozo",        area:"gerencia"},
+  {email:"a.rodriguez@tago.cl",           id:"AR", nombre:"Andreina Rodriguez", area:"gerencia"},
+  {email:"emartinez.tago@gmail.com",      id:"EM", nombre:"Eva Martinez",       area:"contenido"},
+];
+const EQUIPO = Object.fromEntries(PERSONAS.map(x=>[x.email, x.nombre]));
+const AREAS = {preprensa:"Pre-prensa", ventas:"Ventas", produccion:"Producción", gerencia:"Gerencia", contenido:"Contenido", externo:"Externo"};
+const ADMINS = ["j.perozo@tago.cl","a.rodriguez@tago.cl","c.oviedo@tago.cl"];
+
+/* Historial del Excel «Calendario_Merma_TAGO con graficos v1» (nov-2025 a sep-2026).
+   f fecha · m producto · i impreso · x merma total · r rollo nuevo · o operador · n observación */
+const HISTORICO = [{"f":"2025-11-10","m":"dtf_textil","i":17.7,"x":1.7,"o":"Miguel Gonzalez"},{"f":"2025-11-10","m":"dtf_uv","i":17.7,"x":1.36,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-11","m":"dtf_textil","i":30.74,"x":3.45,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-11","m":"dtf_uv","i":22.43,"x":3.97,"o":"Miguel Gonzalez"},{"f":"2025-11-12","m":"dtf_textil","i":52.06,"x":2.78,"o":"Miguel Gonzalez"},{"f":"2025-11-12","m":"dtf_uv","i":19.6,"x":3.03,"o":"Miguel Gonzalez"},{"f":"2025-11-13","m":"dtf_textil","i":35.9,"x":4.9,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-13","m":"dtf_uv","i":10.7,"x":1.16,"o":"Miguel Gonzalez"},{"f":"2025-11-14","m":"dtf_textil","i":33.8,"x":1.06,"o":"Miguel Gonzalez"},{"f":"2025-11-14","m":"dtf_uv","i":15.5,"x":1.66,"o":"Miguel Gonzalez"},{"f":"2025-11-15","m":"dtf_textil","i":28.8,"x":5.38,"o":"Miguel Gonzalez","n":"problema con el inyector negro tapado"},{"f":"2025-11-15","m":"dtf_uv","i":3.5,"x":2.09,"r":1,"o":"Miguel Gonzalez","n":"cambio de rollo"},{"f":"2025-11-17","m":"dtf_textil","i":25.3,"x":11.7,"o":"Miguel Gonzalez","n":"Ajuste y calibración de los cabezales, el blanco salia desfasado"},{"f":"2025-11-17","m":"dtf_uv","i":0.0,"x":1.73,"o":"Miguel Gonzalez","n":"se cerró el neoStampa y no hay datos de impresión"},{"f":"2025-11-18","m":"dtf_textil","i":54.1,"x":3.81,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-18","m":"dtf_uv","i":15.5,"x":2.59,"o":"Miguel Gonzalez"},{"f":"2025-11-19","m":"dtf_textil","i":47.4,"x":3.06,"o":"Miguel Gonzalez"},{"f":"2025-11-19","m":"dtf_uv","i":8.5,"x":0.87,"o":"Miguel Gonzalez"},{"f":"2025-11-20","m":"dtf_textil","i":35.8,"x":2.56,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-20","m":"dtf_uv","i":18.0,"x":2.4,"o":"Miguel Gonzalez"},{"f":"2025-11-21","m":"dtf_textil","i":43.81,"x":1.68,"o":"Miguel Gonzalez"},{"f":"2025-11-21","m":"dtf_uv","i":9.19,"x":2.2,"o":"Miguel Gonzalez"},{"f":"2025-11-22","m":"dtf_textil","i":6.0,"x":1.02,"o":"Miguel Gonzalez"},{"f":"2025-11-22","m":"dtf_uv","i":3.29,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2025-11-24","m":"dtf_textil","i":40.8,"x":3.69,"o":"Miguel Gonzalez"},{"f":"2025-11-24","m":"dtf_uv","i":20.2,"x":2.85,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-25","m":"dtf_textil","i":45.1,"x":2.53,"o":"Miguel Gonzalez"},{"f":"2025-11-25","m":"dtf_uv","i":25.9,"x":3.87,"o":"Miguel Gonzalez","n":"Problema con la tensión de la máquina, se dobla desde la parte de atrás"},{"f":"2025-11-26","m":"dtf_textil","i":55.3,"x":3.51,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-11-26","m":"dtf_uv","i":14.17,"x":2.27,"o":"Miguel Gonzalez"},{"f":"2025-11-27","m":"dtf_textil","i":45.1,"x":2.2,"o":"Miguel Gonzalez"},{"f":"2025-11-27","m":"dtf_uv","i":0.0,"x":1.28,"o":"Miguel Gonzalez","n":"Cabezal dañado"},{"f":"2025-11-28","m":"dtf_textil","i":27.6,"x":7.85,"o":"Miguel Gonzalez"},{"f":"2025-11-28","m":"dtf_uv","i":32.2,"x":15.34,"o":"Miguel Gonzalez"},{"f":"2025-11-29","m":"dtf_textil","i":7.0,"x":1.37,"o":"Miguel Gonzalez"},{"f":"2025-11-29","m":"dtf_uv","i":8.8,"x":2.13,"o":"Miguel Gonzalez"},{"f":"2025-12-01","m":"dtf_textil","i":37.7,"x":0.77,"o":"Miguel Gonzalez"},{"f":"2025-12-01","m":"dtf_uv","i":9.8,"x":3.19,"o":"Miguel Gonzalez"},{"f":"2025-12-02","m":"dtf_textil","i":25.7,"x":1.68,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-02","m":"dtf_uv","i":12.1,"x":1.27,"o":"Miguel Gonzalez"},{"f":"2025-12-03","m":"dtf_textil","i":74.4,"x":4.03,"o":"Miguel Gonzalez"},{"f":"2025-12-03","m":"dtf_uv","i":18.8,"x":4.97,"o":"Miguel Gonzalez"},{"f":"2025-12-04","m":"dtf_textil","i":62.8,"x":1.93,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-04","m":"dtf_uv","i":22.8,"x":4.77,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-05","m":"dtf_textil","i":41.4,"x":2.73,"o":"Miguel Gonzalez"},{"f":"2025-12-05","m":"dtf_uv","i":16.5,"x":4.3,"o":"Miguel Gonzalez"},{"f":"2025-12-06","m":"dtf_textil","i":33.8,"x":0.82,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-06","m":"dtf_uv","i":8.7,"x":0.87,"o":"Miguel Gonzalez"},{"f":"2025-12-09","m":"dtf_textil","i":0.0,"x":8.35,"o":"Miguel Gonzalez"},{"f":"2025-12-09","m":"dtf_uv","i":22.1,"x":1.55,"o":"Miguel Gonzalez"},{"f":"2025-12-10","m":"dtf_textil","i":24.2,"x":1.07,"o":"Miguel Gonzalez"},{"f":"2025-12-10","m":"dtf_uv","i":15.9,"x":1.58,"o":"Miguel Gonzalez"},{"f":"2025-12-11","m":"dtf_textil","i":78.6,"x":3.48,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-11","m":"dtf_uv","i":32.8,"x":6.51,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-12","m":"dtf_textil","i":59.2,"x":2.66,"o":"Miguel Gonzalez"},{"f":"2025-12-12","m":"dtf_uv","i":37.5,"x":2.73,"o":"Miguel Gonzalez"},{"f":"2025-12-13","m":"dtf_textil","i":29.5,"x":4.76,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-13","m":"dtf_uv","i":14.9,"x":0.53,"o":"Miguel Gonzalez"},{"f":"2025-12-15","m":"dtf_textil","i":58.9,"x":1.95,"o":"Miguel Gonzalez"},{"f":"2025-12-15","m":"dtf_uv","i":13.5,"x":3.79,"o":"Miguel Gonzalez"},{"f":"2025-12-16","m":"dtf_textil","i":29.7,"x":6.0,"o":"Miguel Gonzalez"},{"f":"2025-12-16","m":"dtf_uv","i":17.1,"x":2.6,"o":"Miguel Gonzalez"},{"f":"2025-12-17","m":"dtf_textil","i":72.0,"x":3.25,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-17","m":"dtf_uv","i":20.0,"x":3.72,"o":"Miguel Gonzalez"},{"f":"2025-12-18","m":"dtf_textil","i":51.4,"x":2.77,"o":"Miguel Gonzalez"},{"f":"2025-12-18","m":"dtf_uv","i":16.4,"x":5.25,"o":"Miguel Gonzalez"},{"f":"2025-12-19","m":"dtf_textil","i":47.5,"x":2.06,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-19","m":"dtf_uv","i":32.3,"x":5.94,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-20","m":"dtf_textil","i":26.6,"x":2.65,"o":"Miguel Gonzalez"},{"f":"2025-12-20","m":"dtf_uv","i":5.8,"x":2.73,"o":"Miguel Gonzalez"},{"f":"2025-12-23","m":"dtf_textil","i":29.1,"x":36.46,"r":1,"o":"Miguel Gonzalez"},{"f":"2025-12-23","m":"dtf_uv","i":17.9,"x":4.59,"o":"Miguel Gonzalez"},{"f":"2025-12-24","m":"dtf_textil","i":25.7,"x":1.53,"o":"Miguel Gonzalez"},{"f":"2025-12-24","m":"dtf_uv","i":7.4,"x":6.29,"o":"Miguel Gonzalez"},{"f":"2025-12-26","m":"dtf_textil","i":18.1,"x":3.28,"o":"Miguel Gonzalez"},{"f":"2025-12-26","m":"dtf_uv","i":0.0,"x":6.6,"o":"Miguel Gonzalez"},{"f":"2025-12-27","m":"dtf_textil","i":4.6,"x":0.67,"o":"Miguel Gonzalez"},{"f":"2025-12-29","m":"dtf_textil","i":15.9,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2025-12-30","m":"dtf_textil","i":37.4,"x":3.5,"o":"Miguel Gonzalez"},{"f":"2025-12-31","m":"dtf_textil","i":15.4,"x":1.37,"o":"Miguel Gonzalez"},{"f":"2026-01-06","m":"dtf_textil","i":53.4,"x":9.09,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-01-06","m":"dtf_uv","i":15.4,"x":12.87,"o":"Miguel Gonzalez"},{"f":"2026-01-07","m":"dtf_textil","i":54.2,"x":3.33,"o":"Miguel Gonzalez"},{"f":"2026-01-07","m":"dtf_uv","i":9.4,"x":2.78,"o":"Miguel Gonzalez"},{"f":"2026-01-08","m":"dtf_textil","i":81.7,"x":5.38,"o":"Miguel Gonzalez"},{"f":"2026-01-08","m":"dtf_uv","i":6.6,"x":1.72,"o":"Miguel Gonzalez"},{"f":"2026-01-09","m":"dtf_textil","i":17.65,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-01-09","m":"dtf_uv","i":0.0,"x":1.3,"o":"Miguel Gonzalez"},{"f":"2026-01-10","m":"dtf_textil","i":20.9,"x":1.05,"o":"Miguel Gonzalez"},{"f":"2026-01-10","m":"dtf_uv","i":3.5,"x":1.3,"o":"Miguel Gonzalez"},{"f":"2026-01-12","m":"dtf_textil","i":21.1,"x":1.15,"o":"Miguel Gonzalez"},{"f":"2026-01-12","m":"dtf_uv","i":5.4,"x":3.24,"o":"Miguel Gonzalez"},{"f":"2026-01-14","m":"dtf_textil","i":59.2,"x":4.23,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-01-14","m":"dtf_uv","i":19.2,"x":13.92,"o":"Miguel Gonzalez"},{"f":"2026-01-15","m":"dtf_textil","i":72.6,"x":2.58,"o":"Miguel Gonzalez"},{"f":"2026-01-15","m":"dtf_uv","i":0.0,"x":8.82,"o":"Miguel Gonzalez"},{"f":"2026-01-16","m":"dtf_textil","i":27.3,"x":2.25,"o":"Kenyer Alizo"},{"f":"2026-01-16","m":"dtf_uv","i":10.39,"x":3.58,"o":"Kenyer Alizo"},{"f":"2026-01-17","m":"dtf_textil","i":9.9,"x":1.46,"o":"Miguel Gonzalez"},{"f":"2026-01-17","m":"dtf_uv","i":2.1,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-01-19","m":"dtf_textil","i":16.3,"x":2.3,"o":"Miguel Gonzalez"},{"f":"2026-01-19","m":"dtf_uv","i":12.5,"x":9.68,"o":"Miguel Gonzalez"},{"f":"2026-01-20","m":"dtf_textil","i":42.3,"x":2.62,"o":"Miguel Gonzalez"},{"f":"2026-01-20","m":"dtf_uv","i":3.5,"x":11.09,"o":"Miguel Gonzalez"},{"f":"2026-01-21","m":"dtf_textil","i":27.0,"x":1.17,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-01-21","m":"dtf_uv","i":11.2,"x":3.3,"o":"Miguel Gonzalez"},{"f":"2026-01-22","m":"dtf_textil","i":14.56,"x":4.82,"o":"Miguel Gonzalez"},{"f":"2026-01-22","m":"dtf_uv","i":16.6,"x":3.75,"o":"Miguel Gonzalez"},{"f":"2026-01-24","m":"dtf_textil","i":0.0,"x":6.9,"r":1,"o":"Kenyer Alizo"},{"f":"2026-01-24","m":"dtf_uv","i":0.0,"x":0.52,"o":"Kenyer Alizo"},{"f":"2026-01-26","m":"dtf_textil","i":18.6,"x":2.22},{"f":"2026-01-26","m":"dtf_uv","i":4.1,"x":0.43},{"f":"2026-01-27","m":"dtf_textil","i":24.1,"x":4.6,"o":"Kenyer Alizo"},{"f":"2026-01-27","m":"dtf_uv","i":8.0,"x":2.16,"o":"Kenyer Alizo"},{"f":"2026-01-28","m":"dtf_textil","i":60.04,"x":4.05,"r":1,"o":"Kenyer Alizo"},{"f":"2026-01-28","m":"dtf_uv","i":12.5,"x":3.58,"o":"Kenyer Alizo"},{"f":"2026-01-29","m":"dtf_textil","i":34.6,"x":0.95,"r":1,"o":"Kenyer Alizo"},{"f":"2026-01-29","m":"dtf_uv","i":8.15,"x":1.89,"o":"Kenyer Alizo"},{"f":"2026-01-30","m":"dtf_textil","i":50.7,"x":4.75,"o":"Kenyer Alizo"},{"f":"2026-01-30","m":"dtf_uv","i":9.3,"x":1.77,"o":"Kenyer Alizo"},{"f":"2026-01-31","m":"dtf_textil","i":10.3,"x":0.0},{"f":"2026-01-31","m":"dtf_uv","i":2.0,"x":0.0,"r":1},{"f":"2026-02-02","m":"dtf_textil","i":36.2,"x":6.34,"r":1,"o":"Kenyer Alizo"},{"f":"2026-02-02","m":"dtf_uv","i":9.3,"x":1.19,"o":"Kenyer Alizo"},{"f":"2026-02-03","m":"dtf_textil","i":38.8,"x":13.16,"o":"Kenyer Alizo"},{"f":"2026-02-03","m":"dtf_uv","i":9.5,"x":1.19,"o":"Kenyer Alizo"},{"f":"2026-02-04","m":"dtf_textil","i":45.2,"x":20.15,"o":"Kenyer Alizo"},{"f":"2026-02-04","m":"dtf_uv","i":15.6,"x":1.94,"o":"Kenyer Alizo"},{"f":"2026-02-05","m":"dtf_textil","i":39.7,"x":0.0},{"f":"2026-02-05","m":"dtf_uv","i":1.6,"x":0.0},{"f":"2026-02-06","m":"dtf_textil","i":15.4,"x":0.0},{"f":"2026-02-06","m":"dtf_uv","i":11.85,"x":0.0},{"f":"2026-02-07","m":"dtf_textil","i":43.6,"x":0.0,"r":1},{"f":"2026-02-09","m":"dtf_textil","i":40.0,"x":0.0},{"f":"2026-02-10","m":"dtf_uv","i":7.1,"x":0.0},{"f":"2026-02-11","m":"dtf_textil","i":33.2,"x":0.0},{"f":"2026-02-11","m":"dtf_uv","i":3.8,"x":0.0},{"f":"2026-02-12","m":"dtf_textil","i":59.6,"x":0.0},{"f":"2026-02-14","m":"dtf_textil","i":10.9,"x":0.0},{"f":"2026-06-01","m":"dtf_textil","i":44.2,"x":1.84,"o":"Miguel Gonzalez"},{"f":"2026-06-01","m":"dtf_uv","i":10.1,"x":1.8,"o":"Miguel Gonzalez"},{"f":"2026-06-02","m":"dtf_textil","i":37.8,"x":1.08,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-02","m":"dtf_uv","i":7.9,"x":0.71,"o":"Miguel Gonzalez"},{"f":"2026-06-03","m":"dtf_textil","i":57.4,"x":1.55,"o":"Miguel Gonzalez"},{"f":"2026-06-03","m":"dtf_uv","i":12.2,"x":1.98,"o":"Miguel Gonzalez"},{"f":"2026-06-04","m":"dtf_textil","i":43.7,"x":1.61,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-04","m":"dtf_uv","i":20.6,"x":2.1,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-05","m":"dtf_textil","i":27.9,"x":1.17,"o":"Miguel Gonzalez"},{"f":"2026-06-05","m":"dtf_uv","i":8.6,"x":1.06,"o":"Miguel Gonzalez"},{"f":"2026-06-08","m":"dtf_textil","i":27.7,"x":2.9,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-08","m":"dtf_uv","i":10.6,"x":1.8,"o":"Miguel Gonzalez"},{"f":"2026-06-09","m":"dtf_textil","i":14.2,"x":0.54,"o":"Miguel Gonzalez"},{"f":"2026-06-09","m":"dtf_uv","i":9.3,"x":0.5,"o":"Miguel Gonzalez"},{"f":"2026-06-10","m":"dtf_textil","i":30.6,"x":1.16,"o":"Miguel Gonzalez"},{"f":"2026-06-10","m":"dtf_uv","i":14.7,"x":2.31,"o":"Miguel Gonzalez"},{"f":"2026-06-11","m":"dtf_textil","i":22.0,"x":2.92,"o":"Miguel Gonzalez"},{"f":"2026-06-11","m":"dtf_uv","i":13.8,"x":1.0,"o":"Miguel Gonzalez"},{"f":"2026-06-12","m":"dtf_textil","i":25.0,"x":3.18,"o":"Miguel Gonzalez"},{"f":"2026-06-12","m":"dtf_uv","i":10.9,"x":1.0,"o":"Miguel Gonzalez"},{"f":"2026-06-15","m":"dtf_textil","i":81.2,"x":0.86,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-15","m":"dtf_uv","i":10.4,"x":0.7,"o":"Miguel Gonzalez"},{"f":"2026-06-16","m":"dtf_textil","i":33.7,"x":1.85,"o":"Miguel Gonzalez"},{"f":"2026-06-16","m":"dtf_uv","i":10.9,"x":0.76,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-17","m":"dtf_textil","i":33.4,"x":3.57,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-17","m":"dtf_uv","i":5.95,"x":0.7,"o":"Miguel Gonzalez"},{"f":"2026-06-18","m":"dtf_textil","i":35.4,"x":3.12,"o":"Miguel Gonzalez"},{"f":"2026-06-18","m":"dtf_uv","i":22.0,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2026-06-19","m":"dtf_textil","i":70.1,"x":3.2,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-19","m":"dtf_uv","i":10.9,"x":0.95,"o":"Miguel Gonzalez"},{"f":"2026-06-22","m":"dtf_textil","i":60.9,"x":0.8,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-22","m":"dtf_uv","i":5.5,"x":0.6,"o":"Miguel Gonzalez"},{"f":"2026-06-23","m":"dtf_textil","i":68.0,"x":1.35,"o":"Miguel Gonzalez"},{"f":"2026-06-23","m":"dtf_uv","i":9.4,"x":0.7,"o":"Miguel Gonzalez"},{"f":"2026-06-24","m":"dtf_textil","i":24.5,"x":1.76,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-24","m":"dtf_uv","i":9.3,"x":0.72,"o":"Miguel Gonzalez"},{"f":"2026-06-25","m":"dtf_textil","i":51.4,"x":1.73,"o":"Miguel Gonzalez"},{"f":"2026-06-25","m":"dtf_uv","i":3.0,"x":0.5,"o":"Miguel Gonzalez"},{"f":"2026-06-26","m":"dtf_textil","i":18.7,"x":1.44,"o":"Miguel Gonzalez"},{"f":"2026-06-26","m":"dtf_uv","i":8.3,"x":1.42,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-06-30","m":"dtf_textil","i":19.5,"x":1.16,"o":"Miguel Gonzalez"},{"f":"2026-06-30","m":"dtf_uv","i":9.3,"x":0.3,"o":"Miguel Gonzalez"},{"f":"2026-07-01","m":"dtf_textil","i":34.5,"x":1.2,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-07-01","m":"dtf_uv","i":10.5,"x":0.75,"o":"Miguel Gonzalez"},{"f":"2026-07-02","m":"dtf_textil","i":8.5,"x":1.0,"o":"Miguel Gonzalez"},{"f":"2026-07-02","m":"dtf_uv","i":22.3,"x":1.7,"o":"Miguel Gonzalez"},{"f":"2026-07-03","m":"dtf_textil","i":20.6,"x":1.23,"o":"Miguel Gonzalez"},{"f":"2026-07-03","m":"dtf_uv","i":11.6,"x":2.0,"o":"Miguel Gonzalez"},{"f":"2026-07-06","m":"dtf_textil","i":11.2,"x":0.85,"o":"Miguel Gonzalez"},{"f":"2026-07-06","m":"dtf_uv","i":6.9,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-07-07","m":"dtf_textil","i":24.0,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-07-07","m":"dtf_uv","i":8.0,"x":0.7,"o":"Miguel Gonzalez"},{"f":"2026-07-08","m":"dtf_textil","i":37.1,"x":2.2,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-07-08","m":"dtf_uv","i":5.6,"x":1.4,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-07-09","m":"dtf_textil","i":10.9,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-07-09","m":"dtf_uv","i":5.8,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2026-07-10","m":"dtf_textil","i":18.4,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-07-10","m":"dtf_uv","i":10.2,"x":1.3,"o":"Miguel Gonzalez"},{"f":"2026-07-13","m":"dtf_textil","i":24.8,"x":1.7,"o":"Miguel Gonzalez"},{"f":"2026-07-13","m":"dtf_uv","i":24.8,"x":1.7,"o":"Miguel Gonzalez"},{"f":"2026-07-14","m":"dtf_textil","i":12.4,"x":1.4,"o":"Miguel Gonzalez"},{"f":"2026-07-14","m":"dtf_uv","i":8.6,"x":1.24,"o":"Miguel Gonzalez"},{"f":"2026-07-15","m":"dtf_textil","i":23.1,"x":2.5,"o":"Miguel Gonzalez"},{"f":"2026-07-15","m":"dtf_uv","i":9.6,"x":1.15,"o":"Miguel Gonzalez"},{"f":"2026-07-16","m":"dtf_textil","i":24.8,"x":1.7,"o":"Miguel Gonzalez"},{"f":"2026-07-16","m":"dtf_uv","i":24.8,"x":1.7,"o":"Miguel Gonzalez"},{"f":"2026-07-17","m":"dtf_textil","i":4.4,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-07-17","m":"dtf_uv","i":2.6,"x":1.1,"o":"Miguel Gonzalez"},{"f":"2026-07-20","m":"dtf_textil","i":13.2,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-07-20","m":"dtf_uv","i":9.1,"x":1.85,"o":"Miguel Gonzalez"},{"f":"2026-07-21","m":"dtf_textil","i":14.0,"x":1.05,"o":"Miguel Gonzalez"},{"f":"2026-07-21","m":"dtf_uv","i":6.2,"x":0.95,"o":"Miguel Gonzalez"},{"f":"2026-07-22","m":"dtf_textil","i":40.1,"x":5.0,"o":"Miguel Gonzalez"},{"f":"2026-07-22","m":"dtf_uv","i":11.2,"x":1.5,"o":"Miguel Gonzalez"},{"f":"2026-07-23","m":"dtf_textil","i":57.5,"x":2.2,"o":"Miguel Gonzalez"},{"f":"2026-07-23","m":"dtf_uv","i":10.6,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-07-24","m":"dtf_textil","i":29.0,"x":1.1,"o":"Miguel Gonzalez"},{"f":"2026-07-24","m":"dtf_uv","i":14.6,"x":2.9,"o":"Miguel Gonzalez"},{"f":"2026-07-27","m":"dtf_textil","i":8.4,"x":2.5,"o":"Miguel Gonzalez"},{"f":"2026-07-27","m":"dtf_uv","i":18.1,"x":1.5,"o":"Miguel Gonzalez"},{"f":"2026-07-28","m":"dtf_textil","i":11.7,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-07-28","m":"dtf_uv","i":0.0,"x":0.95,"o":"Miguel Gonzalez"},{"f":"2026-07-29","m":"dtf_textil","i":21.8,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2026-07-29","m":"dtf_uv","i":9.4,"x":3.2,"o":"Miguel Gonzalez"},{"f":"2026-07-30","m":"dtf_textil","i":15.6,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2026-07-30","m":"dtf_uv","i":5.6,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-07-31","m":"dtf_textil","i":14.9,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2026-07-31","m":"dtf_uv","i":8.9,"x":1.6,"o":"Miguel Gonzalez"},{"f":"2026-08-03","m":"dtf_textil","i":21.4,"x":2.05,"o":"Miguel Gonzalez"},{"f":"2026-08-03","m":"dtf_uv","i":8.1,"x":1.66,"o":"Miguel Gonzalez"},{"f":"2026-08-04","m":"dtf_textil","i":25.7,"x":2.0,"o":"Miguel Gonzalez"},{"f":"2026-08-04","m":"dtf_uv","i":10.0,"x":5.4,"o":"Miguel Gonzalez"},{"f":"2026-08-05","m":"dtf_textil","i":28.1,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-08-05","m":"dtf_uv","i":13.6,"x":3.2,"o":"Miguel Gonzalez"},{"f":"2026-08-06","m":"dtf_textil","i":67.2,"x":1.05,"o":"Miguel Gonzalez"},{"f":"2026-08-06","m":"dtf_uv","i":14.8,"x":1.3,"o":"Miguel Gonzalez"},{"f":"2026-08-07","m":"dtf_textil","i":44.9,"x":0.7,"o":"Miguel Gonzalez"},{"f":"2026-08-07","m":"dtf_uv","i":11.2,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-08-10","m":"dtf_textil","i":64.0,"x":0.9,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-08-10","m":"dtf_uv","i":31.4,"x":2.6,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-08-13","m":"dtf_textil","i":14.9,"x":2.2,"o":"Miguel Gonzalez"},{"f":"2026-08-13","m":"dtf_uv","i":16.5,"x":1.4,"o":"Miguel Gonzalez"},{"f":"2026-08-14","m":"dtf_textil","i":10.0,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-08-14","m":"dtf_uv","i":10.8,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-08-17","m":"dtf_textil","i":5.4,"x":0.8,"o":"Miguel Gonzalez"},{"f":"2026-08-17","m":"dtf_uv","i":5.4,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-08-18","m":"dtf_textil","i":58.2,"x":2.0,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-08-18","m":"dtf_uv","i":32.3,"x":3.1,"o":"Miguel Gonzalez"},{"f":"2026-08-19","m":"dtf_textil","i":22.6,"x":2.9,"o":"Miguel Gonzalez"},{"f":"2026-08-19","m":"dtf_uv","i":8.1,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-08-20","m":"dtf_textil","i":17.2,"x":0.9,"o":"Miguel Gonzalez"},{"f":"2026-08-20","m":"dtf_uv","i":28.0,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-08-21","m":"dtf_textil","i":29.2,"x":0.75,"o":"Miguel Gonzalez"},{"f":"2026-08-21","m":"dtf_uv","i":10.5,"x":1.6,"o":"Miguel Gonzalez"},{"f":"2026-08-24","m":"dtf_textil","i":39.5,"x":1.8,"o":"Miguel Gonzalez"},{"f":"2026-08-24","m":"dtf_uv","i":13.5,"x":2.9,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-08-25","m":"dtf_textil","i":7.0,"x":0.85,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-08-25","m":"dtf_uv","i":10.2,"x":2.1,"o":"Miguel Gonzalez"},{"f":"2026-08-26","m":"dtf_textil","i":72.7,"x":0.7,"o":"Miguel Gonzalez"},{"f":"2026-08-26","m":"dtf_uv","i":14.5,"x":4.8,"o":"Miguel Gonzalez"},{"f":"2026-08-27","m":"dtf_textil","i":48.3,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-08-27","m":"dtf_uv","i":6.7,"x":1.0,"o":"Miguel Gonzalez"},{"f":"2026-08-28","m":"dtf_textil","i":45.1,"x":1.1,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-08-28","m":"dtf_uv","i":26.7,"x":1.2,"o":"Miguel Gonzalez"},{"f":"2026-08-31","m":"dtf_textil","i":46.0,"x":1.5,"o":"Miguel Gonzalez"},{"f":"2026-08-31","m":"dtf_uv","i":8.0,"x":10.4,"o":"Miguel Gonzalez"},{"f":"2026-09-01","m":"dtf_textil","i":18.7,"x":1.8,"o":"Miguel Gonzalez"},{"f":"2026-09-01","m":"dtf_uv","i":21.7,"x":0.6,"o":"Miguel Gonzalez"},{"f":"2026-09-02","m":"dtf_textil","i":28.2,"x":4.0,"o":"Miguel Gonzalez"},{"f":"2026-09-02","m":"dtf_uv","i":6.6,"x":2.7,"o":"Miguel Gonzalez"},{"f":"2026-09-03","m":"dtf_textil","i":21.4,"x":2.5,"o":"Miguel Gonzalez"},{"f":"2026-09-03","m":"dtf_uv","i":44.0,"x":6.6,"o":"Miguel Gonzalez"},{"f":"2026-09-04","m":"dtf_textil","i":22.0,"x":2.6,"o":"Miguel Gonzalez"},{"f":"2026-09-04","m":"dtf_uv","i":7.9,"x":3.1,"o":"Miguel Gonzalez"},{"f":"2026-09-07","m":"dtf_textil","i":21.8,"x":1.6,"o":"Miguel Gonzalez"},{"f":"2026-09-07","m":"dtf_uv","i":12.2,"x":2.3,"o":"Miguel Gonzalez"},{"f":"2026-09-08","m":"dtf_textil","i":50.1,"x":2.3,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-09-08","m":"dtf_uv","i":13.1,"x":2.4,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-09-09","m":"dtf_textil","i":60.3,"x":2.0,"o":"Miguel Gonzalez"},{"f":"2026-09-09","m":"dtf_uv","i":5.0,"x":2.0,"o":"Miguel Gonzalez"},{"f":"2026-09-10","m":"dtf_textil","i":14.8,"x":0.8,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-09-10","m":"dtf_uv","i":11.5,"x":4.0,"o":"Miguel Gonzalez"},{"f":"2026-09-11","m":"dtf_textil","i":32.5,"x":1.8,"o":"Miguel Gonzalez"},{"f":"2026-09-11","m":"dtf_uv","i":27.8,"x":4.0,"o":"Miguel Gonzalez"},{"f":"2026-09-14","m":"dtf_textil","i":10.9,"x":2.8,"o":"Miguel Gonzalez"},{"f":"2026-09-14","m":"dtf_uv","i":51.1,"x":2.1,"o":"Miguel Gonzalez"},{"f":"2026-09-15","m":"dtf_textil","i":42.5,"x":2.6,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-09-15","m":"dtf_uv","i":15.6,"x":3.5,"o":"Miguel Gonzalez"},{"f":"2026-09-16","m":"dtf_textil","i":65.8,"x":3.2,"o":"Miguel Gonzalez"},{"f":"2026-09-16","m":"dtf_uv","i":28.4,"x":3.5,"o":"Miguel Gonzalez"},{"f":"2026-09-17","m":"dtf_textil","i":31.7,"x":4.8,"o":"Miguel Gonzalez"},{"f":"2026-09-17","m":"dtf_uv","i":7.7,"x":1.3,"o":"Miguel Gonzalez"},{"f":"2026-09-21","m":"dtf_textil","i":99.4,"x":5.0,"r":1,"o":"Miguel Gonzalez"},{"f":"2026-09-21","m":"dtf_uv","i":13.0,"x":3.0,"o":"Miguel Gonzalez"},{"f":"2026-09-22","m":"dtf_textil","i":72.2,"x":1.1,"o":"Miguel Gonzalez"},{"f":"2026-09-22","m":"dtf_uv","i":11.2,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-09-23","m":"dtf_textil","i":22.9,"x":1.9,"o":"Miguel Gonzalez"},{"f":"2026-09-23","m":"dtf_uv","i":9.1,"x":3.2,"o":"Miguel Gonzalez"},{"f":"2026-09-24","m":"dtf_textil","i":60.2,"x":0.0,"o":"Miguel Gonzalez"},{"f":"2026-09-24","m":"dtf_uv","i":13.3,"x":0.0,"o":"Miguel Gonzalez"}];
+
+/* ───────────── Utilidades ───────────── */
+const hoy = () => new Date().toLocaleDateString("sv-SE");
+const mesDe = f => String(f).slice(0,7);
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const nomMes = m => { const [y,mm]=m.split("-"); return MESES[+mm-1]+" "+y; };
+const nomMesCorto = m => { const [y,mm]=m.split("-"); return MESES[+mm-1].slice(0,3)+" "+y.slice(2); };
+const fmtN = (n,d=1) => (n==null||isNaN(n)) ? "—" : Number(n).toLocaleString("es-CL",{minimumFractionDigits:0,maximumFractionDigits:d});
+const fmtP = n => (n==null||!isFinite(n)) ? "—" : (n*100).toLocaleString("es-CL",{maximumFractionDigits:1})+"%";
+const fmt$ = n => (n==null||isNaN(n)) ? "—" : "$"+Math.round(n).toLocaleString("es-CL");
+const fmtFecha = f => { const [y,m,d]=String(f).split("-"); return `${+d} ${MESES[+m-1].slice(0,3)} ${y}`; };
+const num = v => { if(v===""||v==null) return null; const n=parseFloat(String(v).replace(",",".")); return isFinite(n)?n:null; };
+const claveEmail = e => String(e).replace(/\./g,"_");
+function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const d=document.createElement("div"); d.className="toast"; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2600); }
+
+/* ───────────── Estado ───────────── */
+const state = { view:"dia", fecha:hoy(), borrador:{}, mesPanel:null, mesReimp:null, prodCfg:{}, diario:{}, reimp:{}, meta:{}, pedidos:null, pedidoSel:null };
+let sesion = null, escuchas = [];
+const esAdmin = () => !!sesion && ADMINS.includes(sesion.email);
+const nombreYo = () => sesion ? (EQUIPO[sesion.email] || sesion.email) : "";
+
+function productos(){
+  const out = {};
+  for(const [id,d] of Object.entries(PROD_DEF)) out[id] = {...d, ...(state.prodCfg[id]||{}), id};
+  for(const [id,d] of Object.entries(state.prodCfg)) if(!out[id]) out[id] = {unidad:"u", costo:null, porConfirmar:true, activa:true, orden:99, ...d, id};
+  return Object.values(out).sort((a,b)=>(a.orden||0)-(b.orden||0));
+}
+const prod = id => productos().find(m=>m.id===id) || {id, nombre:id, unidad:"u", costo:null, porConfirmar:true};
+const costoDe = (m, cant) => (m.costo!=null && cant!=null) ? m.costo*cant : null;
+
+/* ───────────── Cálculo del mes ───────────── */
+/* Merma total del día (lo que anota producción) = técnica + reimpresiones + sin explicar.
+   En los meses importados del Excel no hay desglose: toda la merma queda "sin desglose". */
+function resumenMes(mes){
+  const porProd = {};
+  const base = id => porProd[id] || (porProd[id] = {impreso:0, merma:0, mermaApp:0, tecnica:0, reimp:0, dias:0, historico:0});
+  for(const [f,dia] of Object.entries(state.diario)){
+    if(mesDe(f)!==mes) continue;
+    for(const [id,r] of Object.entries(dia||{})){
+      const b=base(id); b.impreso+=r.impreso||0; b.merma+=r.merma||0; b.tecnica+=r.tecnica||0; b.dias++;
+      if(r.fuente==="excel") b.historico++; else b.mermaApp+=r.merma||0;
+    }
+  }
+  const reimps = Object.entries(state.reimp).map(([id,r])=>({...r,id})).filter(r=>mesDe(r.fecha)===mes);
+  for(const r of reimps) base(r.producto).reimp += r.cantidad||0;
+  for(const [id,b] of Object.entries(porProd)){
+    const m=prod(id);
+    b.pct = b.impreso>0 ? b.merma/b.impreso : null;
+    b.sinExplicar = Math.max(0, b.mermaApp - b.tecnica - b.reimp);   // solo días anotados en la app: los del Excel no traen desglose
+    b.costo = costoDe(m, Math.max(b.merma, b.reimp));
+    b.soloHistorico = b.dias>0 && b.historico===b.dias;
+  }
+  return {porProd, reimps};
+}
+function mesesConDatos(){
+  const s = new Set(Object.keys(state.diario).map(mesDe));
+  Object.values(state.reimp).forEach(r=>r.fecha && s.add(mesDe(r.fecha)));
+  s.add(mesDe(hoy()));
+  return [...s].sort().reverse();
+}
+
+/* ───────────── Vista: Cierre del día ───────────── */
+/* Cantidad producida sugerida: suma de los pedidos de ese producto que pasaron a
+   «Enviado a Impresión» ese día (o a Listo, si se saltaron la etapa). Es la cantidad vendida,
+   no la medida real en máquina: producción la confirma o la corrige. */
+function sugeridoImpreso(prodId, fecha){
+  if(!state.pedidos) return null;
+  const ps = state.pedidos.filter(p=>PROD_DE_TIPO[p.tipo]===prodId && p.impresionAt && new Date(p.impresionAt).toLocaleDateString("sv-SE")===fecha);
+  if(!ps.length) return null;
+  return {metros: Math.round(ps.reduce((s,p)=>s+(+p.cantidad||0),0)*100)/100, n: ps.length};
+}
+function renderDia(){
+  const f = state.fecha, dia = state.diario[f] || {};
+  const reimpDia = Object.values(state.reimp).filter(r=>r.fecha===f);
+  const cards = productos().filter(m=>m.activa!==false).map(m=>{
+    const r = {...(dia[m.id] || {}), ...(state.borrador[m.id] || {})}, u = UCORTA[m.unidad]||"";   // lo escrito sin guardar no se pierde al refrescar
+    const reimpM = reimpDia.filter(x=>x.producto===m.id).reduce((s,x)=>s+(x.cantidad||0),0);
+    const pct = (r.impreso>0 && r.merma!=null) ? r.merma/r.impreso : null;
+    const aviso = (r.merma!=null && reimpM>r.merma+0.001) ? `<p class="aviso small">Las reimpresiones registradas (${fmtN(reimpM,2)} ${u}) superan la merma anotada. Revisa la merma del día.</p>` : "";
+    const ro = r.fuente==="excel" ? `<span class="pill">del Excel</span>` : "";
+    return `<article class="card" data-prod="${m.id}">
+      <div class="fila entre"><h3>${esc(m.nombre)}</h3><div class="fila">${m.porConfirmar?'<span class="pill warn">por confirmar</span>':''}${ro}${pct!=null?`<span class="pill ${pct>0.12?'mal':pct>0.07?'warn':'ok'}">${fmtP(pct)} merma</span>`:''}</div></div>
+      <p class="small faint" style="margin:2px 0 12px">Todo en ${esc(UNIDADES[m.unidad]||m.unidad)}${m.costo!=null?` · ${fmt$(m.costo)} por ${u}`:" · costo por confirmar"}</p>
+      <div class="tres">
+        <label class="campo">Producido<input class="inp num" inputmode="decimal" data-k="impreso" value="${r.impreso??""}"></label>
+        <label class="campo">Merma total<input class="inp num" inputmode="decimal" data-k="merma" value="${r.merma??""}"></label>
+        <label class="campo">Merma técnica<input class="inp num" inputmode="decimal" data-k="tecnica" value="${r.tecnica??""}"></label>
+      </div>
+      ${(()=>{ const s=sugeridoImpreso(m.id,f); return s?`<p class="small muted" style="margin-top:8px">Según Pedidos: <b>${fmtN(s.metros,2)} ${u}</b> en ${s.n} pedido${s.n>1?"s":""} enviado${s.n>1?"s":""} a producción este día. <button type="button" class="link" data-usar="${m.id}" data-valor="${s.metros}">Usar esta cifra</button></p>`:""; })()}
+      ${m.unidad==="ml"||m.unidad==="m2"?`<label class="chk" style="margin-top:10px"><input type="checkbox" data-k="rollo" ${r.rollo?"checked":""}> Rollo nuevo</label>`:""}
+      <label class="campo" style="margin-top:8px">Observación<input class="inp" data-k="obs" value="${esc(r.obs||"")}" placeholder="Ej: inyector negro tapado, recalibración"></label>
+      ${aviso}
+      <div class="fila entre" style="margin-top:12px">
+        <span class="small faint">${reimpM?`Reimpresiones del día: <b>${fmtN(reimpM,2)} ${u}</b>`:"Sin reimpresiones registradas"}${r.por?` · guardó ${esc(r.por)}`:""}</span>
+        <button type="button" class="btn chico" data-guardar="${m.id}">Guardar</button>
+      </div>
+    </article>`;
+  }).join("");
+  $("#view-dia").innerHTML = `
+    <div class="fila entre" style="margin-bottom:14px">
+      <div class="fila"><label class="campo" style="flex-direction:row;align-items:center;gap:10px">Día <input type="date" class="inp" id="fechaDia" value="${f}" max="${hoy()}" style="width:auto"></label>
+      ${f!==hoy()?`<button type="button" class="link" id="irHoy">Ir a hoy</button>`:""}</div>
+      <button type="button" class="btn sec" data-nueva-reimp="1">+ Registrar reimpresión</button>
+    </div>
+    <p class="aviso info small" style="margin-bottom:14px"><b>Merma total</b> es todo lo que se botó ese día en ese producto, reimpresiones incluidas. <b>Merma técnica</b> es la parte de esa merma que no se puede evitar: purgas, test de inyectores, arranque y cambio de rollo. Cada reimpresión se registra aparte, con su causa, en «Registrar reimpresión». Lo que no es técnico ni reimpresión queda como «sin explicar» en el Panel.</p>
+    <div class="grid g-prod">${cards}</div>`;
+}
+function guardarDia(id){
+  const card = document.querySelector(`#view-dia [data-prod="${id}"]`); if(!card) return;
+  const v = k => card.querySelector(`[data-k="${k}"]`);
+  const impreso=num(v("impreso").value), merma=num(v("merma").value), tecnica=num(v("tecnica").value);
+  if(impreso==null && merma==null){ toast("Anota al menos lo impreso o la merma."); return; }
+  if([impreso,merma,tecnica].some(n=>n!=null && n<0)){ toast("Los valores no pueden ser negativos."); return; }
+  if(tecnica!=null && merma!=null && tecnica>merma){ toast("La merma técnica no puede ser mayor que la merma total."); return; }
+  const rec = {impreso:impreso??0, merma:merma??0, por:nombreYo(), porEmail:sesion.email, ts:Date.now()};
+  if(tecnica!=null) rec.tecnica=tecnica;
+  if(v("rollo") && v("rollo").checked) rec.rollo=true;
+  const obs=v("obs").value.trim(); if(obs) rec.obs=obs.slice(0,500);
+  firebase.database().ref(`tago_merma/diario/${state.fecha}/${id}`).set(rec)
+    .then(()=>{ delete state.borrador[id]; toast(`${prod(id).nombre}: guardado`); }).catch(e=>toast("No se pudo guardar: "+(e.message||e)));
+}
+
+/* ───────────── Vista: Reimpresiones ───────────── */
+function renderReimp(){
+  const meses = mesesConDatos(); if(!state.mesReimp || !meses.includes(state.mesReimp)) state.mesReimp = meses[0];
+  const lista = Object.entries(state.reimp).map(([id,r])=>({...r,id})).filter(r=>mesDe(r.fecha)===state.mesReimp)
+    .sort((a,b)=> (b.fecha||"").localeCompare(a.fecha||"") || (b.ts||0)-(a.ts||0));
+  const filas = lista.map(r=>{
+    const m=prod(r.producto), o=ORIGENES.find(x=>x.id===r.origen);
+    const puede = esAdmin() || r.porEmail===sesion.email;
+    return `<tr>
+      <td class="num">${fmtFecha(r.fecha)}</td>
+      <td>${r.pedidoId?`<b>${esc(r.pedidoId)}</b>`:'<span class="faint">sin pedido</span>'}${r.cliente?`<div class="small muted">${esc(r.cliente)}</div>`:""}</td>
+      <td>${esc(m.nombre)}</td>
+      <td class="n">${fmtN(r.cantidad,2)} ${UCORTA[m.unidad]||""}</td>
+      <td>${esc(o?o.nombre:r.origen)}<div class="small muted">${esc(r.motivo||"")}${r.responsable?` · <b>${esc(r.responsable)}</b>`:""}</div></td>
+      <td><span class="pill ${r.asume==="cliente"?"ok":"mal"}">${ASUME[r.asume]||"—"}</span></td>
+      <td class="n">${fmt$(costoDe(m,r.cantidad))}</td>
+      <td>${r.foto?`<a href="${esc(r.foto)}" target="_blank" rel="noopener">foto</a> `:""}${r.nota?`<span class="small muted">${esc(r.nota)}</span>`:""}<div class="small faint">${esc(r.por||"")}</div>
+        ${puede?`<button type="button" class="link rojo" data-borrar-reimp="${esc(r.id)}">eliminar</button>`:""}</td>
+    </tr>`;
+  }).join("");
+  const tot = lista.reduce((s,r)=>s+(costoDe(prod(r.producto),r.cantidad)||0),0);
+  $("#view-reimp").innerHTML = `
+    <div class="fila entre" style="margin-bottom:14px">
+      <label class="campo" style="flex-direction:row;align-items:center;gap:10px">Mes <select class="inp" id="mesReimp" style="width:auto">${meses.map(m=>`<option value="${m}" ${m===state.mesReimp?"selected":""}>${nomMes(m)}</option>`).join("")}</select></label>
+      <button type="button" class="btn" data-nueva-reimp="1">+ Registrar reimpresión</button>
+    </div>
+    <div class="card scroll">${lista.length?`<table class="t"><thead><tr><th>Fecha</th><th>Pedido</th><th>Producto</th><th class="n">Perdido</th><th>Origen y motivo</th><th>Asume</th><th class="n">Costo</th><th></th></tr></thead><tbody>${filas}</tbody></table>
+      <p class="small muted" style="margin-top:10px">${lista.length} reimpresiones · ${fmt$(tot)} en material (solo productos con costo definido)</p>`
+      : `<p class="muted">No hay reimpresiones registradas en ${nomMes(state.mesReimp)}.</p>`}</div>`;
+}
+
+function abrirReimp(pedidoId){
+  state.pedidoSel = null;
+  const opt = (arr,sel,f) => arr.map(x=>`<option value="${esc(f(x)[0])}" ${f(x)[0]===sel?"selected":""}>${esc(f(x)[1])}</option>`).join("");
+  $("#formReimp").innerHTML = `
+    <h2>Registrar reimpresión</h2>
+    <label class="campo">Pedido <input class="inp" id="rPedido" placeholder="TG-0142 o nombre del cliente"></label>
+    <div id="rSug" class="sugerencias" hidden></div>
+    <div id="rPedidoInfo" class="small muted"></div>
+    <div class="dos">
+      <label class="campo">Fecha<input type="date" class="inp" id="rFecha" value="${state.fecha}" max="${hoy()}"></label>
+      <label class="campo">Producto<select class="inp" id="rProd">${opt(productos().filter(m=>m.activa!==false),"dtf_textil",m=>[m.id,m.nombre])}</select></label>
+    </div>
+    <div class="dos">
+      <label class="campo"><span id="rCantLbl">Cantidad perdida</span><input class="inp num" id="rCant" inputmode="decimal" required></label>
+      <label class="campo">Quién asume<select class="inp" id="rAsume"><option value="tago">TAGO</option><option value="cliente">Cliente</option></select></label>
+    </div>
+    <label class="campo">Origen<select class="inp" id="rOrigen" required><option value="">Elige el origen…</option>${opt(ORIGENES,"",o=>[o.id,o.nombre])}</select></label>
+    <label class="campo" id="rRespCampo" hidden>Atribuible a<select class="inp" id="rResp"></select><span class="small faint" id="rRespAyuda"></span></label>
+    <label class="campo">Motivo<select class="inp" id="rMotivo" required disabled><option value="">Primero elige el origen</option></select></label>
+    <label class="campo">Link de la foto (Drive u otro)<input class="inp" id="rFoto" type="url" placeholder="https://"></label>
+    <label class="campo">Nota<textarea class="inp" id="rNota" placeholder="Qué pasó, qué se hizo"></textarea></label>
+    <p class="small faint" id="rCosto"></p>
+    <div class="fila entre"><button type="button" class="btn sec" id="rCancelar">Cancelar</button><button type="submit" class="btn">Guardar</button></div>`;
+  const dlg=$("#dlgReimp"); if(!dlg.open) dlg.showModal();
+  actualizarCantidad();
+  cargarPedidos().then(()=>{ if(pedidoId){ const p=(state.pedidos||[]).find(x=>x.id===pedidoId); if(p) elegirPedido(p); else $("#rPedido").value=pedidoId; } });
+}
+function actualizarCantidad(){
+  const m=prod($("#rProd").value), u=UCORTA[m.unidad]||"";
+  $("#rCantLbl").textContent = `Cantidad perdida (${u})`;
+  const c=num($("#rCant").value), co=costoDe(m,c);
+  $("#rCosto").textContent = co!=null ? `Costo estimado en material: ${fmt$(co)}` : (m.costo==null ? "Este producto aún no tiene costo definido." : "");
+}
+function cargarPedidos(){
+  if(state.pedidos) return Promise.resolve();
+  return firebase.database().ref("tago_pedidos").orderByKey().limitToLast(400).once("value").then(s=>{
+    const v=s.val()||{};
+    state.pedidos = Object.entries(v).map(([id,p])=>({id, cliente:p.cliente||"", tipo:p.tipoDtf||"", cantidad:p.cantidad, unidad:p.unidad||"", shopify:p.pedido||"", impresionAt:p.impresionAt||p.listaAt||null, creadoPor:(p.createdBy&&p.createdBy.id)||null, produjo:((p.impresionBy||p.listaBy)||{}).id||null})).reverse();
+  }).catch(e=>{ console.warn("pedidos",e); state.pedidos=[]; });
+}
+function buscarPedidos(q){
+  q=q.trim().toLowerCase(); if(!q || !state.pedidos) return [];
+  const sinTilde = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const qq=sinTilde(q);
+  return state.pedidos.filter(p=> p.id.toLowerCase().includes(qq) || sinTilde(p.cliente.toLowerCase()).includes(qq) || String(p.shopify).includes(qq)).slice(0,12);
+}
+/* Quién es responsable del error, según el origen: primero las personas del área, sugerida
+   la más probable (Ventas: quien creó el pedido; Producción: quien lo mandó a impresión o quien registra). */
+function actualizarMotivos(){
+  const lista=MOTIVOS_POR_ORIGEN[$("#rOrigen").value], sel=$("#rMotivo");
+  if(!lista){ sel.innerHTML=`<option value="">Primero elige el origen</option>`; sel.disabled=true; return; }
+  sel.disabled=false; sel.innerHTML=`<option value="">Elige el motivo…</option>`+lista.map(m=>`<option>${esc(m)}</option>`).join("");
+}
+function actualizarResponsable(){
+  const o=ORIGENES.find(x=>x.id===$("#rOrigen").value), campo=$("#rRespCampo"), sel=$("#rResp");
+  if(!o){ campo.hidden=true; return; }
+  campo.hidden=false;
+  if(o.area==="externo"){ sel.innerHTML=`<option value="externo:${o.externo}">${o.externo} (externo)</option>`; sel.disabled=true; $("#rRespAyuda").textContent="No se atribuye a nadie del equipo."; return; }
+  sel.disabled=false;
+  const delArea=PERSONAS.filter(x=>x.area===o.area), otros=PERSONAS.filter(x=>x.area!==o.area);
+  const p=state.pedidoSel, idDe=id=>(PERSONAS.find(x=>x.id===id)||{}).email;
+  let sug=null;
+  if(delArea.length===1) sug=delArea[0].email;
+  else if(o.area==="ventas" && p && delArea.some(x=>x.id===p.creadoPor)) sug=idDe(p.creadoPor);
+  else if(o.area==="produccion"){ if(delArea.some(x=>x.email===sesion.email)) sug=sesion.email; else if(p && delArea.some(x=>x.id===p.produjo)) sug=idDe(p.produjo); }
+  const op=x=>`<option value="${x.email}" ${x.email===sug?"selected":""}>${esc(x.nombre)}</option>`;
+  sel.innerHTML=`${sug?"":`<option value="" selected>Elige a la persona…</option>`}<optgroup label="${AREAS[o.area]}">${delArea.map(op).join("")}</optgroup><optgroup label="Otras personas">${otros.map(op).join("")}</optgroup><option value="sin">No se sabe</option>`;
+  $("#rRespAyuda").textContent = sug ? "Sugerido según el pedido; cámbialo si no corresponde." : "";
+}
+function elegirPedido(p){
+  state.pedidoSel=p; $("#rPedido").value=p.id; $("#rSug").hidden=true;
+  $("#rPedidoInfo").textContent = `${p.cliente} · ${p.tipo}${p.cantidad!=null?` · ${p.cantidad} ${p.unidad}`:""}${p.shopify?` · Shopify #${p.shopify}`:""}`;
+  const m=PROD_DE_TIPO[p.tipo]; if(m && productos().some(x=>x.id===m)){ $("#rProd").value=m; actualizarCantidad(); }
+  actualizarResponsable();
+}
+function guardarReimp(){
+  const cant=num($("#rCant").value), origen=$("#rOrigen").value, motivo=$("#rMotivo").value, fecha=$("#rFecha").value;
+  if(!fecha){ toast("Falta la fecha."); return; }
+  if(cant==null || cant<=0){ toast("Anota la cantidad perdida."); return; }
+  if(!origen || !motivo){ toast("Elige el origen y el motivo."); return; }
+  if(!(MOTIVOS_POR_ORIGEN[origen]||[]).includes(motivo)){ toast("Ese motivo no corresponde al origen elegido."); return; }
+  const resp=$("#rResp").value;
+  if(!resp){ toast("Indica a quién es atribuible el error (o «No se sabe»)."); return; }
+  const txt=$("#rPedido").value.trim();
+  const p = state.pedidoSel && state.pedidoSel.id===txt ? state.pedidoSel : (state.pedidos||[]).find(x=>x.id.toLowerCase()===txt.toLowerCase());
+  const rec = {fecha, producto:$("#rProd").value, cantidad:cant, origen, motivo, asume:$("#rAsume").value, por:nombreYo(), porEmail:sesion.email, ts:Date.now()};
+  if(resp.startsWith("externo:")) rec.responsable=resp.slice(8);
+  else if(resp!=="sin"){ rec.responsableEmail=resp; rec.responsable=EQUIPO[resp]||resp; }
+  if(p){ rec.pedidoId=p.id; if(p.cliente) rec.cliente=p.cliente; }
+  else if(txt){ rec.pedidoTexto=txt.slice(0,80); }
+  const foto=$("#rFoto").value.trim(); if(foto) rec.foto=foto.slice(0,500);
+  const nota=$("#rNota").value.trim(); if(nota) rec.nota=nota.slice(0,1000);
+  firebase.database().ref("tago_merma/reimpresiones").push(rec)
+    .then(()=>{ $("#dlgReimp").close(); toast("Reimpresión registrada"); if(!p && txt) toast("Ojo: no encontré ese pedido; quedó como texto."); })
+    .catch(e=>toast("No se pudo guardar: "+(e.message||e)));
+}
+
+/* ───────────── Vista: Panel ───────────── */
+function renderPanel(){
+  const meses = mesesConDatos(); if(!state.mesPanel || !meses.includes(state.mesPanel)) state.mesPanel = meses[0];
+  const {porProd, reimps} = resumenMes(state.mesPanel);
+  const ms = productos().filter(m=>porProd[m.id]);
+  const costoTot = ms.reduce((s,m)=>s+(porProd[m.id].costo||0),0);
+  const reimpCosto = reimps.reduce((s,r)=>s+(costoDe(prod(r.producto),r.cantidad)||0),0);
+  const reimpTago = reimps.filter(r=>r.asume!=="cliente").reduce((s,r)=>s+(costoDe(prod(r.producto),r.cantidad)||0),0);
+  const t=porProd.dtf_textil, u=porProd.dtf_uv;
+  const soloHist = ms.length && ms.every(m=>porProd[m.id].soloHistorico);
+
+  const filas = ms.map(m=>{ const b=porProd[m.id], un=UCORTA[m.unidad]||"";
+    return `<tr><td><b>${esc(m.nombre)}</b>${m.porConfirmar?' <span class="pill warn">por confirmar</span>':""}</td>
+      <td class="n">${fmtN(b.impreso)} ${un}</td><td class="n">${fmtN(b.merma,2)} ${un}</td><td class="n">${fmtP(b.pct)}</td>
+      <td class="n">${b.soloHistorico?'<span class="faint">sin desglose</span>':fmtN(b.tecnica,2)}</td>
+      <td class="n">${fmtN(b.reimp,2)}</td>
+      <td class="n">${b.soloHistorico?'—':fmtN(b.sinExplicar,2)}${b.historico&&!b.soloHistorico?`<div class="small faint">${b.historico} días del Excel sin desglose</div>`:""}</td>
+      <td class="n">${fmt$(b.costo)}</td></tr>`; }).join("");
+
+  const agrupa = (k, lista) => { const g={}; for(const r of lista){ const key=r[k]||"—"; const m=prod(r.producto);
+    g[key] = g[key] || {n:0, cant:0, costo:0, asume:{}}; g[key].n++; g[key].costo += costoDe(m,r.cantidad)||0; g[key].asume[r.asume]=(g[key].asume[r.asume]||0)+1; }
+    return Object.entries(g).sort((a,b)=>b[1].costo-a[1].costo || b[1].n-a[1].n); };
+  const barras = (pares, nombre) => { const max=Math.max(1,...pares.map(([,v])=>v.costo||v.n));
+    return pares.map(([k,v])=>`<div class="barra"><span>${esc(nombre(k))}</span><div class="pista"><div class="llena ${(v.asume.cliente||0)>(v.asume.tago||0)?"cli":"tago"}" style="width:${Math.max(3,100*(v.costo||v.n)/max)}%"></div></div><span class="num small">${v.n} · ${fmt$(v.costo)}</span></div>`).join(""); };
+
+  // Tendencia de 12 meses: % de merma de DTF Textil y DTF UV
+  const [yy,mm]=state.mesPanel.split("-").map(Number); const doce=[];
+  for(let i=11;i>=0;i--){ const d=new Date(yy,mm-1-i,1); doce.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); }
+  const res = doce.map(mm=>({mm, r:resumenMes(mm).porProd}));
+  const maxP = Math.max(0.2, ...res.flatMap(x=>[x.r.dtf_textil?.pct||0, x.r.dtf_uv?.pct||0]).filter(isFinite));
+  const barra = (b,cls) => (b && b.pct!=null && isFinite(b.pct)) ? `<div class="b ${cls}" style="height:${Math.max(4,100*Math.min(b.pct,maxP)/maxP)}%" title="${fmtP(b.pct)}"></div>` : `<div class="b vacio ${cls}" title="sin datos"></div>`;
+  const tend = res.map(x=>`<div class="col"><div class="pares">${barra(x.r.dtf_textil,"")}${barra(x.r.dtf_uv,"uv")}</div><span class="m">${nomMesCorto(x.mm)}</span></div>`).join("");
+
+  $("#view-panel").innerHTML = `
+    <div class="fila entre" style="margin-bottom:14px">
+      <label class="campo" style="flex-direction:row;align-items:center;gap:10px">Mes <select class="inp" id="mesPanel" style="width:auto">${meses.map(m=>`<option value="${m}" ${m===state.mesPanel?"selected":""}>${nomMes(m)}</option>`).join("")}</select></label>
+      ${soloHist?'<span class="pill">datos importados del Excel: sin desglose por causa</span>':""}
+    </div>
+    <div class="grid g-kpi" style="margin-bottom:12px">
+      <div class="card kpi"><p class="eyebrow">Costo de la merma</p><p class="v num">${fmt$(costoTot)}</p><p class="d">material y tinta, productos con costo definido</p></div>
+      <div class="card kpi"><p class="eyebrow">DTF Textil</p><p class="v num">${fmtP(t?.pct)}</p><p class="d">${t?`${fmtN(t.merma)} m de ${fmtN(t.impreso)} m`:"sin datos"}</p></div>
+      <div class="card kpi"><p class="eyebrow">DTF UV</p><p class="v num">${fmtP(u?.pct)}</p><p class="d">${u?`${fmtN(u.merma)} m de ${fmtN(u.impreso)} m`:"sin datos"}</p></div>
+      <div class="card kpi"><p class="eyebrow">Reimpresiones</p><p class="v num">${reimps.length}</p><p class="d">${fmt$(reimpCosto)} · ${fmt$(reimpTago)} lo asume TAGO</p></div>
+    </div>
+    <div class="card scroll" style="margin-bottom:12px">
+      <h3 style="margin-bottom:8px">Por producto</h3>
+      ${ms.length?`<table class="t"><thead><tr><th>Producto</th><th class="n">Producido</th><th class="n">Merma</th><th class="n">%</th><th class="n">Técnica</th><th class="n">Reimpresiones</th><th class="n">Sin explicar</th><th class="n">Costo</th></tr></thead><tbody>${filas}</tbody></table>
+      <p class="small muted" style="margin-top:10px"><b>Sin explicar</b> = merma total − técnica − reimpresiones registradas. Si es alto, falta registrar reimpresiones o anotar la parte técnica.</p>`:`<p class="muted">Sin registros en ${nomMes(state.mesPanel)}.</p>`}
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));margin-bottom:12px">
+      <div class="card"><h3 style="margin-bottom:10px">Reimpresiones por origen</h3>${reimps.length?`<div class="barras">${barras(agrupa("origen",reimps), k=>(ORIGENES.find(o=>o.id===k)||{nombre:k}).nombre)}</div><p class="leyenda" style="margin-top:10px"><span><i style="background:var(--rojo)"></i>asume TAGO</span><span><i style="background:var(--verde-fill)"></i>asume el cliente</span></p>`:'<p class="muted small">Aún no hay reimpresiones este mes.</p>'}</div>
+      <div class="card"><h3 style="margin-bottom:10px">Reimpresiones por motivo</h3>${reimps.length?`<div class="barras">${barras(agrupa("motivo",reimps), k=>k)}</div>`:'<p class="muted small">Aún no hay reimpresiones este mes.</p>'}</div>
+    </div>
+    ${esAdmin()?monitorPersonas(reimps):""}
+    <div class="card">
+      <div class="fila entre"><h3>% de merma, últimos 12 meses</h3><p class="leyenda"><span><i style="background:var(--azul-fill)"></i>DTF Textil</span><span><i style="background:var(--verde-fill)"></i>DTF UV</span></p></div>
+      <div class="tendencia">${tend}</div>
+    </div>`;
+}
+
+/* Costo de errores atribuible a cada persona (solo lo ven los administradores). */
+function monitorPersonas(reimps){
+  const g={};
+  for(const r of reimps){
+    const o=ORIGENES.find(x=>x.id===r.origen)||{};
+    const per=PERSONAS.find(x=>x.email===r.responsableEmail);
+    const k = per ? per.email : (r.responsable ? "ext:"+r.responsable : "sin");
+    const b = g[k] || (g[k] = {nombre: per?per.nombre:(r.responsable||"Sin atribuir"), area: per?AREAS[per.area]:(r.responsable?"Externo":"—"), n:0, costo:0, costoTago:0, cant:{}, externo:!per});
+    const pr=prod(r.producto), c=costoDe(pr,r.cantidad)||0, u=UCORTA[pr.unidad]||"";
+    b.n++; b.costo+=c; if(r.asume!=="cliente") b.costoTago+=c; b.cant[u]=(b.cant[u]||0)+(r.cantidad||0);
+  }
+  const filas=Object.values(g).sort((a,b)=>(a.externo-b.externo)||(b.costoTago-a.costoTago)||(b.n-a.n));
+  const tot=filas.reduce((s,x)=>({n:s.n+x.n, costo:s.costo+x.costo, costoTago:s.costoTago+x.costoTago}),{n:0,costo:0,costoTago:0});
+  const perdido=x=>Object.entries(x.cant).map(([u,c])=>`${fmtN(c,2)} ${u}`).join(" + ");
+  return `<div class="card scroll" style="margin-bottom:12px">
+    <div class="fila entre"><h3>Costo de errores por persona</h3><span class="pill">solo administradores</span></div>
+    ${filas.length?`<table class="t" style="margin-top:8px"><thead><tr><th>Persona</th><th>Área</th><th class="n">Errores</th><th class="n">Perdido</th><th class="n">Costo</th><th class="n">Asume TAGO</th><th class="n">% del costo TAGO</th></tr></thead><tbody>
+      ${filas.map(x=>`<tr><td><b>${esc(x.nombre)}</b></td><td class="muted">${esc(x.area)}</td><td class="n">${x.n}</td><td class="n">${perdido(x)}</td><td class="n">${fmt$(x.costo)}</td><td class="n">${fmt$(x.costoTago)}</td><td class="n">${tot.costoTago?fmtP(x.costoTago/tot.costoTago):"—"}</td></tr>`).join("")}
+      <tr><td><b>Total</b></td><td></td><td class="n"><b>${tot.n}</b></td><td></td><td class="n"><b>${fmt$(tot.costo)}</b></td><td class="n"><b>${fmt$(tot.costoTago)}</b></td><td></td></tr></tbody></table>
+      <p class="small muted" style="margin-top:10px">Cuenta las reimpresiones del mes según a quién se atribuyó cada una al registrarla. El costo solo incluye productos con costo definido.</p>`
+      :'<p class="muted small" style="margin-top:6px">Aún no hay reimpresiones este mes.</p>'}
+  </div>`;
+}
+
+/* ───────────── Vista: Productos ───────────── */
+function renderProd(){
+  if(!esAdmin()){ $("#view-prod").innerHTML=""; return; }
+  const ed = true;
+  const filas = productos().map(m=>`<tr data-cfg="${m.id}">
+    <td>${ed?`<input class="inp" data-c="nombre" value="${esc(m.nombre)}">`:esc(m.nombre)}</td>
+    <td>${ed?`<select class="inp" data-c="unidad">${Object.entries(UNIDADES).map(([k,v])=>`<option value="${k}" ${k===m.unidad?"selected":""}>${v}</option>`).join("")}</select>`:esc(UNIDADES[m.unidad]||m.unidad)}</td>
+    <td class="n">${ed?`<input class="inp num" data-c="costo" inputmode="numeric" value="${m.costo??""}" placeholder="por confirmar" style="text-align:right">`:fmt$(m.costo)}</td>
+    <td>${ed?`<label class="chk"><input type="checkbox" data-c="porConfirmar" ${m.porConfirmar?"checked":""}> por confirmar</label>`:(m.porConfirmar?'<span class="pill warn">por confirmar</span>':'<span class="pill ok">confirmado</span>')}</td>
+    <td>${ed?`<label class="chk"><input type="checkbox" data-c="activa" ${m.activa!==false?"checked":""}> activa</label>`:(m.activa!==false?"activa":"inactiva")}</td>
+    ${ed?`<td><button type="button" class="btn chico" data-guardar-cfg="${m.id}">Guardar</button></td>`:""}</tr>`).join("");
+  const imp = state.meta.historicoImportado;
+  $("#view-prod").innerHTML = `
+    <div class="card scroll" style="margin-bottom:12px">
+      <h3 style="margin-bottom:6px">Productos y costo por unidad</h3>
+      <p class="small muted" style="margin-bottom:10px">Costo = material + tinta por unidad de medida. Con él se valoriza la merma. ${ed?"":"Solo gerencia puede editarlo."}</p>
+      <table class="t"><thead><tr><th>Producto</th><th>Unidad</th><th class="n">Costo</th><th>Dato</th><th>Estado</th>${ed?"<th></th>":""}</tr></thead><tbody>${filas}</tbody></table>
+    </div>
+    ${ed?`<div class="card"><h3 style="margin-bottom:6px">Historial del Excel</h3>
+      ${imp?`<p class="small muted">Importado el ${new Date(imp.ts).toLocaleString("es-CL")} por ${esc(imp.por)}: ${imp.n} registros (nov-2025 a sep-2026).</p>`
+        :`<p class="small muted" style="margin-bottom:10px">Carga los ${HISTORICO.length} registros diarios del Excel «Control de merma» (noviembre 2025 a septiembre 2026) como línea base (solo DTF Textil y DTF UV: las demás columnas del Excel eran por máquina, no por producto). No reemplaza días que ya tengan datos en la app.</p><button type="button" class="btn" id="importar">Importar historial</button>`}</div>`:""}`;
+}
+function guardarCfg(id){
+  const tr=document.querySelector(`[data-cfg="${id}"]`), g=k=>tr.querySelector(`[data-c="${k}"]`);
+  const nombre=g("nombre").value.trim(); if(!nombre){ toast("El nombre no puede quedar vacío."); return; }
+  const costo=num(g("costo").value);
+  if(costo!=null && costo<0){ toast("El costo no puede ser negativo."); return; }
+  const rec={nombre, unidad:g("unidad").value, costo:costo, porConfirmar:g("porConfirmar").checked, activa:g("activa").checked, orden:prod(id).orden||99, por:nombreYo(), ts:Date.now()};
+  firebase.database().ref(`tago_merma/config/productos/${id}`).set(rec).then(()=>toast("Producto guardado")).catch(e=>toast("No se pudo guardar: "+(e.message||e)));
+}
+function importarHistorico(){
+  if(!confirm(`Se cargarán ${HISTORICO.length} registros del Excel. ¿Continuar?`)) return;
+  const up={}; let n=0;
+  for(const h of HISTORICO){
+    if(state.diario[h.f] && state.diario[h.f][h.m]) continue;
+    const rec={impreso:h.i, merma:h.x, fuente:"excel", por:h.o||"Excel", ts:Date.now()};
+    if(h.r) rec.rollo=true; if(h.n) rec.obs=h.n;
+    up[`diario/${h.f}/${h.m}`]=rec; n++;
+  }
+  up["meta/historicoImportado"]={ts:Date.now(), por:nombreYo(), n};
+  firebase.database().ref("tago_merma").update(up).then(()=>toast(`Historial importado: ${n} registros`)).catch(e=>toast("No se pudo importar: "+(e.message||e)));
+}
+
+/* ───────────── Navegación ───────────── */
+function render(){ ({dia:renderDia, reimp:renderReimp, panel:renderPanel, prod:renderProd})[state.view](); }
+function showView(v){
+  if(v==="prod" && !esAdmin()) v="dia";   // Productos (costos): solo administradores
+  state.view=v;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.view===v)));
+  document.querySelectorAll(".view").forEach(s=>s.hidden = s.id!=="view-"+v);
+  render();
+}
+
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.view) showView(b.dataset.view);
+  else if(b.dataset.guardar) guardarDia(b.dataset.guardar);
+  else if(b.dataset.nuevaReimp) abrirReimp();
+  else if(b.dataset.borrarReimp){ if(confirm("¿Eliminar esta reimpresión?")) firebase.database().ref("tago_merma/reimpresiones/"+b.dataset.borrarReimp).remove().catch(er=>toast("No se pudo eliminar: "+(er.message||er))); }
+  else if(b.dataset.guardarCfg) guardarCfg(b.dataset.guardarCfg);
+  else if(b.dataset.pedido){ const p=(state.pedidos||[]).find(x=>x.id===b.dataset.pedido); if(p) elegirPedido(p); }
+  else if(b.dataset.usar){ const i=document.querySelector(`#view-dia [data-prod="${b.dataset.usar}"] [data-k="impreso"]`); if(i){ i.value=b.dataset.valor; (state.borrador[b.dataset.usar] ||= {}).impreso=b.dataset.valor; i.focus(); } }
+  else if(b.id==="importar") importarHistorico();
+  else if(b.id==="irHoy"){ state.fecha=hoy(); state.borrador={}; renderDia(); }
+  else if(b.id==="rCancelar") $("#dlgReimp").close();
+});
+document.addEventListener("change", e=>{
+  const t=e.target;
+  if(t.id==="fechaDia" && t.value){ state.fecha=t.value; state.borrador={}; renderDia(); }
+  else if(t.dataset && t.dataset.k==="rollo"){ const c=t.closest("[data-prod]"); (state.borrador[c.dataset.prod] ||= {}).rollo = t.checked; }
+  else if(t.id==="mesPanel"){ state.mesPanel=t.value; renderPanel(); }
+  else if(t.id==="mesReimp"){ state.mesReimp=t.value; renderReimp(); }
+  else if(t.id==="rProd") actualizarCantidad();
+  else if(t.id==="rOrigen"){ const o=ORIGENES.find(x=>x.id===t.value); if(o) $("#rAsume").value=o.asume; actualizarMotivos(); actualizarResponsable(); }
+});
+document.addEventListener("input", e=>{
+  const t=e.target;
+  if(t.dataset && t.dataset.k && t.closest("#view-dia [data-prod]")){ const c=t.closest("[data-prod]"), k=t.dataset.k; (state.borrador[c.dataset.prod] ||= {})[k] = k==="obs" ? t.value : (t.value===""?"":t.value); }
+  else if(t.id==="rCant") actualizarCantidad();
+  else if(t.id==="rPedido"){
+    state.pedidoSel=null; $("#rPedidoInfo").textContent="";
+    const r=buscarPedidos(t.value), box=$("#rSug");
+    box.innerHTML=r.map(p=>`<button type="button" data-pedido="${esc(p.id)}"><b>${esc(p.id)}</b> · ${esc(p.cliente)} · ${esc(p.tipo)}${p.cantidad!=null?` · ${esc(p.cantidad)} ${esc(p.unidad)}`:""}</button>`).join("");
+    box.hidden=!r.length;
+  }
+});
+$("#formReimp").addEventListener("submit", e=>{ e.preventDefault(); guardarReimp(); });
+$("#dlgReimp").addEventListener("click", e=>{ if(e.target===$("#dlgReimp")) $("#dlgReimp").close(); });
+
+/* ───────────── Entrada con Google y datos (tago_merma) ───────────── */
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyC_9mguXUm-Oo8v8FuqhesCNQ1mCEIc0zI", authDomain:"tago-app-489c1.firebaseapp.com",
+  databaseURL:"https://tago-app-489c1-default-rtdb.firebaseio.com",
+  projectId:"tago-app-489c1", storageBucket:"tago-app-489c1.firebasestorage.app",
+  messagingSenderId:"919374961221", appId:"1:919374961221:web:d3adc54d9b9abc358ea12c"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt:"select_account" });
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+function muestraEntrada(modo, texto){ $("#entrada").hidden=false; $("#tarjetaEntrada").hidden = modo!=="tarjeta"; $("#abriendo").hidden = modo!=="abriendo"; if(texto) $("#abriendoTxt").textContent=texto; }
+$("#entrar").addEventListener("click", ()=>{ $("#errorEntrada").textContent=""; firebase.auth().signInWithPopup(googleProvider).catch(()=>{ $("#errorEntrada").textContent="No se pudo iniciar sesión con Google. Inténtalo de nuevo."; }); });
+if(window.navigator.standalone===true){ $("#entrar").hidden=true; $("#entradaDesc").hidden=true; $("#avisoEntrada").hidden=false; }
+const salir = () => firebase.auth().signOut();
+$("#salirEntrada").addEventListener("click", salir);
+$("#salir").addEventListener("click", salir);
+const esPermisoDenegado = e => /permission[_ ]denied/i.test((e && (e.code+" "+e.message)) || "");
+function escucha(ruta, ok){ const r=firebase.database().ref(ruta); const cb=r.on("value", ok, e=>console.warn(ruta,e)); escuchas.push([r,cb]); }
+function cierraEscuchas(){ for(const [r,cb] of escuchas){ try{ r.off("value",cb); }catch(e){} } escuchas=[]; }
+
+firebase.auth().onAuthStateChanged(user=>{ if(!user){ sale(); return; } sesion={email:(user.email||"").toLowerCase(), uid:user.uid}; entra(); });
+function entra(){
+  muestraEntrada("abriendo","Abriendo Merma…"); $("#quien").textContent = nombreYo();
+  // La lectura de tago_merma solo la permiten las reglas a quien está en tago_permitidos.
+  firebase.database().ref("tago_merma/config").once("value").then(()=>{
+    $("#entrada").hidden=true; $("#app").hidden=false;
+    document.querySelector('nav.tabs [data-view="prod"]').hidden = !esAdmin();
+    if(state.view==="prod" && !esAdmin()) state.view="dia";
+    escucha("tago_merma/config/productos", s=>{ state.prodCfg=s.val()||{}; render(); });
+    escucha("tago_merma/diario", s=>{ state.diario=s.val()||{}; render(); });
+    escucha("tago_merma/reimpresiones", s=>{ state.reimp=s.val()||{}; render(); });
+    escucha("tago_merma/meta", s=>{ state.meta=s.val()||{}; if(state.view==="prod") renderProd(); });
+    render();
+    cargarPedidos().then(()=>{ if(state.view==="dia") renderDia(); });
+    const ped = new URLSearchParams(location.search).get("pedido");
+    if(ped){ showView("reimp"); abrirReimp(ped); }
+  }).catch(e=>{
+    if(esPermisoDenegado(e)){ $("#errorEntrada").textContent="La cuenta "+sesion.email+" no tiene acceso a Merma."; muestraEntrada("tarjeta"); salir(); }
+    else muestraEntrada("abriendo","No se pudo abrir Merma: "+(e && e.message || e));
+  });
+}
+function sale(){ cierraEscuchas(); sesion=null; state.diario={}; state.reimp={}; state.prodCfg={}; state.pedidos=null; $("#app").hidden=true; if($("#dlgReimp").open) $("#dlgReimp").close(); muestraEntrada("tarjeta"); }
+})();
+</script>
+</body>
+</html>

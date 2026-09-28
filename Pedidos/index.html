@@ -2197,6 +2197,10 @@ const CATEGORIAS_PRODUCTO=[
 const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||"impresiones";
 const categoriaDePedido=j=>j.categoria||categoriaDeTipo(j.tipoDtf);
 let categoriasCustom={},categoriaSeleccionada="impresiones";
+// Merma (app /merma): reimpresiones registradas por producción, enlazadas por pedidoId. Pedidos solo las lee.
+var reimpresiones={};
+const MERMA_ORIGEN={cliente:"Cliente: fuera de lo que revisamos",no_detectado:"Cliente: no detectado en pre-prensa",ventas:"Ventas: producto o medida",preprensa:"Pre-prensa: diagramación",maquina:"Máquina",material:"Material o insumo",operacion:"Operación"};
+const MERMA_UNIDAD={dtf_textil:"m",dtf_uv:"m",dtf_fluor:"m"};   // el resto de los productos va en unidades
 var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackBuscando=false, fichaPackRechazados=new Set(), packsFiltro="abiertos", packsTipo=null; // Packs DTF
 var tareaFichaId=null, tareaFichaPendiente=false, tareaFichaAsigAbierto=false, tareaSubNueva=false, ttSubNuevo=null, tareaPadrePreset=null; // ficha de tarea y subtareas
 var ttSubPlegadas=new Set(); try{ const v=JSON.parse(localStorage.getItem("tago_tareas_sub_plegadas")||"null"); if(Array.isArray(v)) ttSubPlegadas=new Set(v); }catch(e){}
@@ -3772,6 +3776,10 @@ function initFirebaseData(){
     firebase.database().ref("tago_packs").on("value",
       snap=>{ packs=snap.val()||{}; if(currentTab==="packs")renderPacks(); if(packFichaId)renderPack(); if(fichaId)renderFicha(); renderSidebar(); },
       err=>{ console.error(err); toast("No se pudieron cargar los packs DTF: "+err.message,"error"); }
+    );
+    firebase.database().ref("tago_merma/reimpresiones").on("value",
+      snap=>{ reimpresiones=snap.val()||{}; if(fichaId&&!fichaNuevo)renderFicha(); },
+      err=>console.warn("Merma: no se pudieron leer las reimpresiones",err)
     );
     notifRef=firebase.database().ref("tago_notificaciones/"+sanitizeEmailKey(currentUser.email));
     notifRef.on("value",
@@ -6228,6 +6236,13 @@ function renderFicha(forzar){
       return `<div class="fi-tarea" onclick="openTareaModal('${tid}')" title="Abrir tarea"><span class="tarea-grupo-pill" style="background:${est?est.color+"22":"var(--panel)"};color:${est?est.color:"var(--text-muted)"}">${esc(est?est.nombre:"—")}</span><span class="fi-tarea-nombre">${esc(t.nombre)}</span><span class="avatars">${asig}</span><span class="fi-tarea-fecha${overdueTarea(t)?" overdue":""}">${t.fechaLimite?fmtDate(t.fechaLimite):""}</span></div>`;
     }).join("");
     html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("square-check-big")} Tareas enlazadas <span class="fi-tareas-n">${misTareas.length}</span></div>${filas||`<div class="fi-muted">Sin tareas enlazadas</div>`}<button class="btn btn-secondary fi-tarea-add" onclick="openTareaModal(null,null,'${fichaId}')">+ Nueva tarea para este pedido</button></div>`;
+    const misReimp=Object.values(reimpresiones).filter(r=>r&&r.pedidoId===fichaId).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+    const filasR=misReimp.map(r=>{
+      const f=String(r.fecha||"").split("-"), dia=f.length===3?`${+f[2]} ${MESES_CORTO[+f[1]-1]}`:"—";
+      const cliente=r.asume==="cliente";
+      return `<div class="fi-tarea" title="${esc(r.nota||"")}"><span class="tarea-grupo-pill" style="background:${cliente?"rgba(73,206,171,.18)":"rgba(192,38,28,.10)"};color:${cliente?"#1C7A63":"#C0261C"}">asume ${cliente?"cliente":"TAGO"}</span><span class="fi-tarea-nombre">${esc(MERMA_ORIGEN[r.origen]||r.origen||"")} · ${esc(r.motivo||"")}${r.responsable?` · ${esc(r.responsable)}`:""}</span><span class="fi-tarea-fecha">${String(r.cantidad).replace(".",",")} ${MERMA_UNIDAD[r.producto]||"u."} · ${dia}</span></div>`;
+    }).join("");
+    html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("refresh-cw")} Reimpresiones <span class="fi-tareas-n">${misReimp.length}</span></div>${filasR||`<div class="fi-muted">Sin reimpresiones</div>`}<a class="btn btn-secondary fi-tarea-add" href="/merma?pedido=${encodeURIComponent(fichaId)}" target="_blank" rel="noopener" style="text-decoration:none">+ Registrar reimpresión</a></div>`;
   }
   html+=`<div class="fi-notas"><div class="fi-sec-title">Notas</div><textarea class="fi fi-area" rows="2" placeholder="Observaciones del pedido..." onchange="fichaCampo('notas',this.value)">${esc(j.notas)}</textarea></div>`;
   if(fichaNuevo){

@@ -8,6 +8,7 @@
 #   /tablero     -> Tablero de negocio (lee sus datos de tago_tablero en Realtime Database)
 #   /ruta        -> Ruta TAGO, plan de 12 semanas (privada; datos en tago_ruta)
 #   /opinion     -> Página pública de opinión para clientes (sin login; manda a Klaviyo)
+#   /merma       -> Control de merma: cierre diario por máquina y reimpresiones (datos en tago_merma)
 #
 # Uso (desde la carpeta deploy/):
 #   ./deploy.sh                     arma public/ y publica Hosting en producción
@@ -88,6 +89,12 @@ if [ -d "../Ruta" ]; then
   mkdir -p public/ruta
   cp "../Ruta/index.html" "public/ruta/index.html"
 fi
+# Merma (control de merma por máquina y reimpresiones) bajo /merma. SOLO index.html:
+# los datos viven en la base (tago_merma).
+if [ -d "../Merma" ]; then
+  mkdir -p public/merma
+  cp "../Merma/index.html" "public/merma/index.html"
+fi
 
 # ── vista previa: canal temporal, el sitio en vivo no cambia ──────────────
 if [ "$MODO" = "preview" ]; then
@@ -118,4 +125,7 @@ if [ "$CON_TABLERO" = "si" ]; then
 fi
 if [ -d "../Ruta" ]; then
   echo "  Ruta:        https://tago-app-489c1.web.app/ruta"
+fi
+if [ -d "../Merma" ]; then
+  echo "  Merma:       https://tago-app-489c1.web.app/merma"
 fi
