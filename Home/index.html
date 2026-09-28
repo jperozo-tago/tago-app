@@ -244,7 +244,9 @@ const APPS = [
   { key:'tablero',     nombre:'Tablero de negocio',       desc:'Ventas, publicidad, productos y clientes al día, con la facturación de relBase.', icono:'📊', acc:'#0B1447', estado:'activo', url:'/tablero', privada:true },
   // privada: el plan de 12 semanas de Andreina, con sus listas de clientes. Quién la ve: tago_ruta/permitidos;
   // quién la edita: tago_ruta/editores (solo Andreina; José entra en solo lectura).
-  { key:'ruta',        nombre:'Ruta TAGO',               desc:'El plan de doce semanas: tareas por persona, arranques de cada fecha y listas de clientes para recuperar.', icono:'🧭', acc:'#4063F9', estado:'activo', url:'/ruta', privada:true }
+  { key:'ruta',        nombre:'Ruta TAGO',               desc:'El plan de doce semanas: tareas por persona, arranques de cada fecha y listas de clientes para recuperar.', icono:'🧭', acc:'#4063F9', estado:'activo', url:'/ruta', privada:true },
+  // Merma: cierre diario por producto y reimpresiones con su causa (datos en tago_merma).
+  { key:'merma',       nombre:'Control de Merma',        desc:'Lo que se pierde por producto y por qué: cierre diario y registro de cada reimpresión.', icono:'📉', acc:'#1C7A63', estado:'activo', url:'/merma' }
 ];
 
 // --- Identidad central (compartida con las apps por la misma clave) ---
@@ -275,15 +277,15 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<
    las reglas de Firestore → seguridad REAL impuesta por el servidor: un extraño
    con el link no puede leer ni escribir nada. */
 const AUTORIZADOS = {
-  'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos','tablero','ruta'], admin:true },
-  'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos','tablero','ruta'], admin:true },
-  'c.oviedo@tago.cl':               { nombre:'Carol',    apps:['inventario','calculadora','pedidos'], admin:true },
-  'produccion.tago@gmail.com':      { nombre:'Miguel',   apps:['inventario','pedidos'],                admin:false },
-  'producciondtf.tago@gmail.com':   { nombre:'Ignacio',  apps:['inventario','pedidos'],                admin:false },
-  'a.querales@tago.cl':             { nombre:'Andrea',   apps:['calculadora','pedidos'],               admin:false },
-  'm.perez@tago.cl':                { nombre:'Mari',     apps:['calculadora','pedidos'],               admin:false },
-  'allysonalvarez.tago@gmail.com':  { nombre:'Allyson',  apps:['pedidos'],                              admin:false },
-  'emartinez.tago@gmail.com':       { nombre:'Eva',      apps:['pedidos'],                              admin:false }
+  'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos','tablero','ruta','merma'], admin:true },
+  'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos','tablero','ruta','merma'], admin:true },
+  'c.oviedo@tago.cl':               { nombre:'Carol',    apps:['inventario','calculadora','pedidos','merma'], admin:true },
+  'produccion.tago@gmail.com':      { nombre:'Miguel',   apps:['inventario','pedidos','merma'],        admin:false },
+  'producciondtf.tago@gmail.com':   { nombre:'Ignacio',  apps:['inventario','pedidos','merma'],        admin:false },
+  'a.querales@tago.cl':             { nombre:'Andrea',   apps:['calculadora','pedidos','merma'],       admin:false },
+  'm.perez@tago.cl':                { nombre:'Mari',     apps:['calculadora','pedidos','merma'],       admin:false },
+  'allysonalvarez.tago@gmail.com':  { nombre:'Allyson',  apps:['pedidos','merma'],                      admin:false },
+  'emartinez.tago@gmail.com':       { nombre:'Eva',      apps:['pedidos','merma'],                      admin:false }
 };
 
 function initLogin(){

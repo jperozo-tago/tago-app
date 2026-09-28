@@ -279,6 +279,9 @@ const PERSONAS = [
 const EQUIPO = Object.fromEntries(PERSONAS.map(x=>[x.email, x.nombre]));
 const AREAS = {preprensa:"Pre-prensa", ventas:"Ventas", produccion:"Producción", gerencia:"Gerencia", contenido:"Contenido", externo:"Externo"};
 const ADMINS = ["j.perozo@tago.cl","a.rodriguez@tago.cl","c.oviedo@tago.cl"];
+/* Todo el equipo puede ver Merma; registrar (cierre del día y reimpresiones) solo gerencia y producción.
+   Control visual: la seguridad real está en las reglas de tago_merma/diario y reimpresiones. */
+const EDITORES = [...ADMINS, "produccion.tago@gmail.com", "producciondtf.tago@gmail.com"];
 
 /* Historial del Excel «Calendario_Merma_TAGO con graficos v1» (nov-2025 a sep-2026).
    f fecha · m producto · i impreso · x merma total · r rollo nuevo · o operador · n observación */
@@ -302,6 +305,7 @@ function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); c
 const state = { view:"dia", fecha:hoy(), borrador:{}, mesPanel:null, mesReimp:null, prodCfg:{}, diario:{}, reimp:{}, meta:{}, pedidos:null, pedidoSel:null };
 let sesion = null, escuchas = [];
 const esAdmin = () => !!sesion && ADMINS.includes(sesion.email);
+const puedeEditar = () => !!sesion && EDITORES.includes(sesion.email);
 const nombreYo = () => sesion ? (EQUIPO[sesion.email] || sesion.email) : "";
 
 function productos(){
@@ -357,27 +361,28 @@ function sugeridoImpreso(prodId, fecha){
 function renderDia(){
   const f = state.fecha, dia = state.diario[f] || {};
   const reimpDia = Object.values(state.reimp).filter(r=>r.fecha===f);
+  const ro = puedeEditar() ? "" : " disabled";
   const cards = productos().filter(m=>m.activa!==false).map(m=>{
     const r = {...(dia[m.id] || {}), ...(state.borrador[m.id] || {})}, u = UCORTA[m.unidad]||"";   // lo escrito sin guardar no se pierde al refrescar
     const reimpM = reimpDia.filter(x=>x.producto===m.id).reduce((s,x)=>s+(x.cantidad||0),0);
     const pct = (r.impreso>0 && r.merma!=null) ? r.merma/r.impreso : null;
     const aviso = (r.merma!=null && reimpM>r.merma+0.001) ? `<p class="aviso small">Las reimpresiones registradas (${fmtN(reimpM,2)} ${u}) superan la merma anotada. Revisa la merma del día.</p>` : "";
-    const ro = r.fuente==="excel" ? `<span class="pill">del Excel</span>` : "";
+    const deExcel = r.fuente==="excel" ? `<span class="pill">del Excel</span>` : "";
     return `<article class="card" data-prod="${m.id}">
-      <div class="fila entre"><h3>${esc(m.nombre)}</h3><div class="fila">${m.porConfirmar?'<span class="pill warn">por confirmar</span>':''}${ro}${pct!=null?`<span class="pill ${pct>0.12?'mal':pct>0.07?'warn':'ok'}">${fmtP(pct)} merma</span>`:''}</div></div>
+      <div class="fila entre"><h3>${esc(m.nombre)}</h3><div class="fila">${m.porConfirmar?'<span class="pill warn">por confirmar</span>':''}${deExcel}${pct!=null?`<span class="pill ${pct>0.12?'mal':pct>0.07?'warn':'ok'}">${fmtP(pct)} merma</span>`:''}</div></div>
       <p class="small faint" style="margin:2px 0 12px">Todo en ${esc(UNIDADES[m.unidad]||m.unidad)}${m.costo!=null?` · ${fmt$(m.costo)} por ${u}`:" · costo por confirmar"}</p>
       <div class="tres">
-        <label class="campo">Producido<input class="inp num" inputmode="decimal" data-k="impreso" value="${r.impreso??""}"></label>
-        <label class="campo">Merma total<input class="inp num" inputmode="decimal" data-k="merma" value="${r.merma??""}"></label>
-        <label class="campo">Merma técnica<input class="inp num" inputmode="decimal" data-k="tecnica" value="${r.tecnica??""}"></label>
+        <label class="campo">Producido<input class="inp num" inputmode="decimal" data-k="impreso" value="${r.impreso??""}"${ro}></label>
+        <label class="campo">Merma total<input class="inp num" inputmode="decimal" data-k="merma" value="${r.merma??""}"${ro}></label>
+        <label class="campo">Merma técnica<input class="inp num" inputmode="decimal" data-k="tecnica" value="${r.tecnica??""}"${ro}></label>
       </div>
-      ${(()=>{ const s=sugeridoImpreso(m.id,f); return s?`<p class="small muted" style="margin-top:8px">Según Pedidos: <b>${fmtN(s.metros,2)} ${u}</b> en ${s.n} pedido${s.n>1?"s":""} enviado${s.n>1?"s":""} a producción este día. <button type="button" class="link" data-usar="${m.id}" data-valor="${s.metros}">Usar esta cifra</button></p>`:""; })()}
-      ${m.unidad==="ml"||m.unidad==="m2"?`<label class="chk" style="margin-top:10px"><input type="checkbox" data-k="rollo" ${r.rollo?"checked":""}> Rollo nuevo</label>`:""}
-      <label class="campo" style="margin-top:8px">Observación<input class="inp" data-k="obs" value="${esc(r.obs||"")}" placeholder="Ej: inyector negro tapado, recalibración"></label>
+      ${(()=>{ const s=sugeridoImpreso(m.id,f); return s?`<p class="small muted" style="margin-top:8px">Según Pedidos: <b>${fmtN(s.metros,2)} ${u}</b> en ${s.n} pedido${s.n>1?"s":""} enviado${s.n>1?"s":""} a producción este día.${ro?"":` <button type="button" class="link" data-usar="${m.id}" data-valor="${s.metros}">Usar esta cifra</button>`}</p>`:""; })()}
+      ${m.unidad==="ml"||m.unidad==="m2"?`<label class="chk" style="margin-top:10px"><input type="checkbox" data-k="rollo" ${r.rollo?"checked":""}${ro}> Rollo nuevo</label>`:""}
+      <label class="campo" style="margin-top:8px">Observación<input class="inp" data-k="obs" value="${esc(r.obs||"")}" placeholder="${ro?"":"Ej: inyector negro tapado, recalibración"}"${ro}></label>
       ${aviso}
       <div class="fila entre" style="margin-top:12px">
         <span class="small faint">${reimpM?`Reimpresiones del día: <b>${fmtN(reimpM,2)} ${u}</b>`:"Sin reimpresiones registradas"}${r.por?` · guardó ${esc(r.por)}`:""}</span>
-        <button type="button" class="btn chico" data-guardar="${m.id}">Guardar</button>
+        ${ro?"":`<button type="button" class="btn chico" data-guardar="${m.id}">Guardar</button>`}
       </div>
     </article>`;
   }).join("");
@@ -385,12 +390,13 @@ function renderDia(){
     <div class="fila entre" style="margin-bottom:14px">
       <div class="fila"><label class="campo" style="flex-direction:row;align-items:center;gap:10px">Día <input type="date" class="inp" id="fechaDia" value="${f}" max="${hoy()}" style="width:auto"></label>
       ${f!==hoy()?`<button type="button" class="link" id="irHoy">Ir a hoy</button>`:""}</div>
-      <button type="button" class="btn sec" data-nueva-reimp="1">+ Registrar reimpresión</button>
+      ${puedeEditar()?`<button type="button" class="btn sec" data-nueva-reimp="1">+ Registrar reimpresión</button>`:`<span class="pill">Solo lectura: registran gerencia y producción</span>`}
     </div>
     <p class="aviso info small" style="margin-bottom:14px"><b>Merma total</b> es todo lo que se botó ese día en ese producto, reimpresiones incluidas. <b>Merma técnica</b> es la parte de esa merma que no se puede evitar: purgas, test de inyectores, arranque y cambio de rollo. Cada reimpresión se registra aparte, con su causa, en «Registrar reimpresión». Lo que no es técnico ni reimpresión queda como «sin explicar» en el Panel.</p>
     <div class="grid g-prod">${cards}</div>`;
 }
 function guardarDia(id){
+  if(!puedeEditar()) return;
   const card = document.querySelector(`#view-dia [data-prod="${id}"]`); if(!card) return;
   const v = k => card.querySelector(`[data-k="${k}"]`);
   const impreso=num(v("impreso").value), merma=num(v("merma").value), tecnica=num(v("tecnica").value);
@@ -412,7 +418,7 @@ function renderReimp(){
     .sort((a,b)=> (b.fecha||"").localeCompare(a.fecha||"") || (b.ts||0)-(a.ts||0));
   const filas = lista.map(r=>{
     const m=prod(r.producto), o=ORIGENES.find(x=>x.id===r.origen);
-    const puede = esAdmin() || r.porEmail===sesion.email;
+    const puede = esAdmin() || (puedeEditar() && r.porEmail===sesion.email);
     return `<tr>
       <td class="num">${fmtFecha(r.fecha)}</td>
       <td>${r.pedidoId?`<b>${esc(r.pedidoId)}</b>`:'<span class="faint">sin pedido</span>'}${r.cliente?`<div class="small muted">${esc(r.cliente)}</div>`:""}</td>
@@ -429,7 +435,7 @@ function renderReimp(){
   $("#view-reimp").innerHTML = `
     <div class="fila entre" style="margin-bottom:14px">
       <label class="campo" style="flex-direction:row;align-items:center;gap:10px">Mes <select class="inp" id="mesReimp" style="width:auto">${meses.map(m=>`<option value="${m}" ${m===state.mesReimp?"selected":""}>${nomMes(m)}</option>`).join("")}</select></label>
-      <button type="button" class="btn" data-nueva-reimp="1">+ Registrar reimpresión</button>
+      ${puedeEditar()?`<button type="button" class="btn" data-nueva-reimp="1">+ Registrar reimpresión</button>`:`<span class="pill">Solo lectura</span>`}
     </div>
     <div class="card scroll">${lista.length?`<table class="t"><thead><tr><th>Fecha</th><th>Pedido</th><th>Producto</th><th class="n">Perdido</th><th>Origen y motivo</th><th>Asume</th><th class="n">Costo</th><th></th></tr></thead><tbody>${filas}</tbody></table>
       <p class="small muted" style="margin-top:10px">${lista.length} reimpresiones · ${fmt$(tot)} en material (solo productos con costo definido)</p>`
@@ -437,6 +443,7 @@ function renderReimp(){
 }
 
 function abrirReimp(pedidoId){
+  if(!puedeEditar()){ toast("Solo gerencia y producción registran reimpresiones."); return; }
   state.pedidoSel = null;
   const opt = (arr,sel,f) => arr.map(x=>`<option value="${esc(f(x)[0])}" ${f(x)[0]===sel?"selected":""}>${esc(f(x)[1])}</option>`).join("");
   $("#formReimp").innerHTML = `

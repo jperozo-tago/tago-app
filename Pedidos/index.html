@@ -2201,6 +2201,7 @@ let categoriasCustom={},categoriaSeleccionada="impresiones";
 var reimpresiones={};
 const MERMA_ORIGEN={cliente:"Cliente: fuera de lo que revisamos",no_detectado:"Cliente: no detectado en pre-prensa",ventas:"Ventas: producto o medida",preprensa:"Pre-prensa: diagramación",maquina:"Máquina",material:"Material o insumo",operacion:"Operación"};
 const MERMA_UNIDAD={dtf_textil:"m",dtf_uv:"m",dtf_fluor:"m"};   // el resto de los productos va en unidades
+const MERMA_EDITORES=["j.perozo@tago.cl","a.rodriguez@tago.cl","c.oviedo@tago.cl","produccion.tago@gmail.com","producciondtf.tago@gmail.com"];   // registran en Merma; el resto solo ve
 var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackBuscando=false, fichaPackRechazados=new Set(), packsFiltro="abiertos", packsTipo=null; // Packs DTF
 var tareaFichaId=null, tareaFichaPendiente=false, tareaFichaAsigAbierto=false, tareaSubNueva=false, ttSubNuevo=null, tareaPadrePreset=null; // ficha de tarea y subtareas
 var ttSubPlegadas=new Set(); try{ const v=JSON.parse(localStorage.getItem("tago_tareas_sub_plegadas")||"null"); if(Array.isArray(v)) ttSubPlegadas=new Set(v); }catch(e){}
@@ -6242,7 +6243,7 @@ function renderFicha(forzar){
       const cliente=r.asume==="cliente";
       return `<div class="fi-tarea" title="${esc(r.nota||"")}"><span class="tarea-grupo-pill" style="background:${cliente?"rgba(73,206,171,.18)":"rgba(192,38,28,.10)"};color:${cliente?"#1C7A63":"#C0261C"}">asume ${cliente?"cliente":"TAGO"}</span><span class="fi-tarea-nombre">${esc(MERMA_ORIGEN[r.origen]||r.origen||"")} · ${esc(r.motivo||"")}${r.responsable?` · ${esc(r.responsable)}`:""}</span><span class="fi-tarea-fecha">${String(r.cantidad).replace(".",",")} ${MERMA_UNIDAD[r.producto]||"u."} · ${dia}</span></div>`;
     }).join("");
-    html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("refresh-cw")} Reimpresiones <span class="fi-tareas-n">${misReimp.length}</span></div>${filasR||`<div class="fi-muted">Sin reimpresiones</div>`}<a class="btn btn-secondary fi-tarea-add" href="/merma?pedido=${encodeURIComponent(fichaId)}" target="_blank" rel="noopener" style="text-decoration:none">+ Registrar reimpresión</a></div>`;
+    html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("refresh-cw")} Reimpresiones <span class="fi-tareas-n">${misReimp.length}</span></div>${filasR||`<div class="fi-muted">Sin reimpresiones</div>`}${MERMA_EDITORES.includes(currentUser.email)?`<a class="btn btn-secondary fi-tarea-add" href="/merma?pedido=${encodeURIComponent(fichaId)}" target="_blank" rel="noopener" style="text-decoration:none">+ Registrar reimpresión</a>`:""}</div>`;
   }
   html+=`<div class="fi-notas"><div class="fi-sec-title">Notas</div><textarea class="fi fi-area" rows="2" placeholder="Observaciones del pedido..." onchange="fichaCampo('notas',this.value)">${esc(j.notas)}</textarea></div>`;
   if(fichaNuevo){
