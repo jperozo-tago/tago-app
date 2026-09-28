@@ -421,10 +421,10 @@ input:disabled,select:disabled{cursor:default;opacity:.7}
 
   <p class="avisoLectura" id="avisoLectura" hidden>Estás viendo la Ruta en modo solo lectura: puedes recorrerla y abrir cada tarea, pero los ticks, estados y notas solo los cambia Andreina.</p>
   <nav class="tabs" role="tablist" aria-label="Vistas">
+    <button role="tab" data-view="calendario" aria-selected="true">Calendario</button>
     <button role="tab" data-view="panel" aria-selected="false">Panel</button>
-    <button role="tab" data-view="semana" aria-selected="true">Esta semana</button>
+    <button role="tab" data-view="semana" aria-selected="false">Esta semana</button>
     <button role="tab" data-view="equipo" aria-selected="false">Matriz y equipo</button>
-    <button role="tab" data-view="calendario" aria-selected="false">Calendario</button>
     <button role="tab" data-view="prioridades" aria-selected="false">Prioridades</button>
     <button role="tab" data-view="clientes" aria-selected="false">Clientes</button>
   </nav>
@@ -436,7 +436,7 @@ input:disabled,select:disabled{cursor:default;opacity:.7}
   </section>
 
   <!-- ESTA SEMANA -->
-  <section class="view" id="view-semana">
+  <section class="view" id="view-semana" hidden>
     <div class="weekhead">
       <div>
         <h2 class="dm" id="wkTitle"></h2>
@@ -499,7 +499,7 @@ input:disabled,select:disabled{cursor:default;opacity:.7}
   </section>
 
   <!-- CALENDARIO -->
-  <section class="view" id="view-calendario" hidden>
+  <section class="view" id="view-calendario">
     <h2 class="dm h2" style="margin-top:6px">Los arranques del año.</h2>
     <p class="segdesc">Una sola regla: cada fecha importante arranca dos meses antes; Navidad, tres. Ese día defines si hay que crear producto, sacar precios, hacer creativos y armar la campaña, y agendas el resto. Los arranques están también en tu Google Calendar, en el calendario TAGO.</p>
     <div class="card tablewrap" id="arranques"></div>
@@ -707,7 +707,7 @@ const OWNER_P = {CA:['CO'],V:['MR','AQ'],P:['MG','IP'],CO:['EM'],D:['AL'],J:['JP
 const PED = {espacio:'-P1SlqW2R4wvheoBgQoK', lista:'-P1SlrNER5GYraLxArIZ', personal:{"espacio": "-P1TS2qGucMAyj8rzLJV", "lista": "-P1TS3aSaWQxvNL32S4N"}, activo:false, estados:{}, porHacer:null, listo:null};
 /* El seguimiento de clientes (estado y nota) vive en Control de producción: una tarea por cliente en el
    espacio Clientes. Aquí se lee y se escribe allá. El artifact de Claude no llega: solo muestra la foto. */
-const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"contacto": "-P1Sj9za67Zlcp5aWv9B", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {}};
+const PEDC = {"espacio": "-P1SEYDzKAG-_xUZ4uDl", "listas": {"R": "-P1Sj9zi-RsjzThV6IA9", "A": "-P1Sj9zjU16y8PQ6f1zF", "E": "-P1Sj9zkvmarmH44ff55", "B": "-P1Sj9zlmTAmIIW4AwoS", "D": "-P1Sj9zm4Mwim535xM1T", "C": "-P1Sj9znjNpBGBDRB3Xi"}, "cid": {"telefono": "-P2GcJmVRH1eYk7lXRBz", "correo": "-P2GcKZJtp4UvhrNe0nL", "compra": "-P1Sj9zb82eeyywWvIsW", "ultima": "-P1Sj9zcU1DIkJe9TjN9", "ritmo": "-P1Sj9zd4ovZbQ_395c6", "gasto": "-P1Sj9zeLw3wdhr3iESg", "nota": "-P1Sj9zgu9n2sKnOB7pE", "rut": "-P1Sj9zhcG9LjIRlCfgi"}, "est": {"por": "clientes_por_contactar", "cont": "clientes_contactado", "cot": "clientes_cotizando", "rec": "clientes_compro", "no": "clientes_sin_interes", "ya": "clientes_ya_es_cliente", "sin": "clientes_dato_invalido"}, "asignados": {}};
 PEDC.codigo = Object.fromEntries(Object.entries(PEDC.est).map(([c,id])=>[id,c]));
 PEDC.listaSeg = Object.fromEntries(Object.entries(PEDC.listas).map(([k,id])=>[id,k]));
 const CLI_RO = () => !PED.activo;   // sin Control de producción a mano, el seguimiento no se edita
@@ -718,7 +718,7 @@ const ESTADOS = [['por','Por contactar'],['cont','Contactado'],['cot','Cotizando
 const FIN = new Set(['rec','no','ya','sin']);
 
 // ---------- state ----------
-const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'semana', seg:'R', enlaces:{}, ped:{}, pan:null, detAsignar:false, verHechas:false};
+const state = {hecho:{}, delegado:{}, cli:{}, week:0, view:'calendario', seg:'R', enlaces:{}, ped:{}, pan:null, detAsignar:false, verHechas:false};
 let soloLectura=false; const RO=()=>soloLectura?' disabled':'';   // quien solo puede mirar no ve controles activos
 let db=null, tareasListo=false, guardando=false;
 const LS='rutaTago';
