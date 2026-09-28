@@ -263,6 +263,9 @@ const ASUME = {tago:"TAGO", cliente:"Cliente"};
 const PROD_DE_TIPO = {"DTF Textil":"dtf_textil","DTF UV":"dtf_uv","DTF Flúor":"dtf_fluor","Stickers UV":"stickers","Pendón Roller":"pendon",
   "Insignias / Parches":"insignias","Pines":"pines","Medallas":"medallas","Imanes":"imanes","Llaveros":"llaveros","Kit Corporativo":"kit","Otro":"otro"};
 
+/* Productos agregados desde la app pueden decir a qué tipo de producto de Pedidos corresponden (tipoPedido). */
+const prodDeTipo = tipo => { const c=Object.entries(state.prodCfg||{}).find(([,d])=>d && d.tipoPedido===tipo); return c ? c[0] : PROD_DE_TIPO[tipo]; };
+
 /* Mismas personas que Pedidos. Admin = configura productos y costos e importa el historial
    (control visual; la seguridad real está en las reglas de tago_merma/config). */
 const PERSONAS = [
@@ -354,7 +357,7 @@ function mesesConDatos(){
    no la medida real en máquina: producción la confirma o la corrige. */
 function sugeridoImpreso(prodId, fecha){
   if(!state.pedidos) return null;
-  const ps = state.pedidos.filter(p=>PROD_DE_TIPO[p.tipo]===prodId && p.impresionAt && new Date(p.impresionAt).toLocaleDateString("sv-SE")===fecha);
+  const ps = state.pedidos.filter(p=>prodDeTipo(p.tipo)===prodId && p.impresionAt && new Date(p.impresionAt).toLocaleDateString("sv-SE")===fecha);
   if(!ps.length) return null;
   return {metros: Math.round(ps.reduce((s,p)=>s+(+p.cantidad||0),0)*100)/100, n: ps.length};
 }
@@ -515,7 +518,7 @@ function actualizarResponsable(){
 function elegirPedido(p){
   state.pedidoSel=p; $("#rPedido").value=p.id; $("#rSug").hidden=true;
   $("#rPedidoInfo").textContent = `${p.cliente} · ${p.tipo}${p.cantidad!=null?` · ${p.cantidad} ${p.unidad}`:""}${p.shopify?` · Shopify #${p.shopify}`:""}`;
-  const m=PROD_DE_TIPO[p.tipo]; if(m && productos().some(x=>x.id===m)){ $("#rProd").value=m; actualizarCantidad(); }
+  const m=prodDeTipo(p.tipo); if(m && productos().some(x=>x.id===m)){ $("#rProd").value=m; actualizarCantidad(); }
   actualizarResponsable();
 }
 function guardarReimp(){
@@ -642,6 +645,17 @@ function renderProd(){
       <p class="small muted" style="margin-bottom:10px">Costo = material + tinta por unidad de medida. Con él se valoriza la merma. ${ed?"":"Solo gerencia puede editarlo."}</p>
       <table class="t"><thead><tr><th>Producto</th><th>Unidad</th><th class="n">Costo</th><th>Dato</th><th>Estado</th>${ed?"<th></th>":""}</tr></thead><tbody>${filas}</tbody></table>
     </div>
+    <div class="card" style="margin-bottom:12px">
+      <h3 style="margin-bottom:6px">Agregar producto</h3>
+      <p class="small muted" style="margin-bottom:10px">Los productos no se borran (para no perder su historial): si uno deja de usarse, desmarca «activa».</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end">
+        <label class="campo">Nombre<input class="inp" id="npNombre" placeholder="Ej: Vinilo de corte"></label>
+        <label class="campo">Unidad<select class="inp" id="npUnidad">${Object.entries(UNIDADES).map(([k,v])=>`<option value="${k}" ${k==="u"?"selected":""}>${v}</option>`).join("")}</select></label>
+        <label class="campo">Costo por unidad<input class="inp num" id="npCosto" inputmode="numeric" placeholder="por confirmar"></label>
+        <label class="campo">Nombre en Pedidos (opcional)<input class="inp" id="npTipo" list="tiposPedidos" placeholder="Si existe como tipo en Pedidos"><datalist id="tiposPedidos">${Object.keys(PROD_DE_TIPO).map(k=>`<option value="${esc(k)}">`).join("")}</datalist></label>
+        <button type="button" class="btn" id="agregarProducto">+ Agregar producto</button>
+      </div>
+    </div>
     ${ed?`<div class="card"><h3 style="margin-bottom:6px">Historial del Excel</h3>
       ${imp?`<p class="small muted">Importado el ${new Date(imp.ts).toLocaleString("es-CL")} por ${esc(imp.por)}: ${imp.n} registros (nov-2025 a sep-2026).</p>`
         :`<p class="small muted" style="margin-bottom:10px">Carga los ${HISTORICO.length} registros diarios del Excel «Control de merma» (noviembre 2025 a septiembre 2026) como línea base (solo DTF Textil y DTF UV: las demás columnas del Excel eran por máquina, no por producto). No reemplaza días que ya tengan datos en la app.</p><button type="button" class="btn" id="importar">Importar historial</button>`}</div>`:""}`;
@@ -652,7 +666,22 @@ function guardarCfg(id){
   const costo=num(g("costo").value);
   if(costo!=null && costo<0){ toast("El costo no puede ser negativo."); return; }
   const rec={nombre, unidad:g("unidad").value, costo:costo, porConfirmar:g("porConfirmar").checked, activa:g("activa").checked, orden:prod(id).orden||99, por:nombreYo(), ts:Date.now()};
+  if(prod(id).tipoPedido) rec.tipoPedido=prod(id).tipoPedido;
   firebase.database().ref(`tago_merma/config/productos/${id}`).set(rec).then(()=>toast("Producto guardado")).catch(e=>toast("No se pudo guardar: "+(e.message||e)));
+}
+function agregarProducto(){
+  if(!esAdmin()) return;
+  const nombre=$("#npNombre").value.trim(), costo=num($("#npCosto").value), tipo=$("#npTipo").value.trim();
+  if(!nombre){ toast("Escribe el nombre del producto."); return; }
+  if(costo!=null && costo<0){ toast("El costo no puede ser negativo."); return; }
+  const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+  if(productos().some(x=>norm(x.nombre)===norm(nombre))){ toast("Ya existe un producto con ese nombre."); return; }
+  if(tipo && productos().some(x=>x.tipoPedido===tipo)){ toast("Ese tipo de Pedidos ya está asignado a otro producto."); return; }
+  let id=norm(nombre).replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,30)||"producto";
+  const base=id; let i=2; while(productos().some(x=>x.id===id)) id=base+"_"+(i++);
+  const rec={nombre, unidad:$("#npUnidad").value, costo, porConfirmar:costo==null, activa:true, orden:Math.max(0,...productos().map(x=>x.orden||0))+1, por:nombreYo(), ts:Date.now()};
+  if(tipo) rec.tipoPedido=tipo;
+  firebase.database().ref(`tago_merma/config/productos/${id}`).set(rec).then(()=>toast(`Producto agregado: ${nombre}`)).catch(e=>toast("No se pudo agregar: "+(e.message||e)));
 }
 function importarHistorico(){
   if(!confirm(`Se cargarán ${HISTORICO.length} registros del Excel. ¿Continuar?`)) return;
@@ -687,6 +716,7 @@ document.addEventListener("click", e=>{
   else if(b.dataset.pedido){ const p=(state.pedidos||[]).find(x=>x.id===b.dataset.pedido); if(p) elegirPedido(p); }
   else if(b.dataset.usar){ const i=document.querySelector(`#view-dia [data-prod="${b.dataset.usar}"] [data-k="impreso"]`); if(i){ i.value=b.dataset.valor; (state.borrador[b.dataset.usar] ||= {}).impreso=b.dataset.valor; i.focus(); } }
   else if(b.id==="importar") importarHistorico();
+  else if(b.id==="agregarProducto") agregarProducto();
   else if(b.id==="irHoy"){ state.fecha=hoy(); state.borrador={}; renderDia(); }
   else if(b.id==="rCancelar") $("#dlgReimp").close();
 });
