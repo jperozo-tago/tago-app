@@ -2201,7 +2201,6 @@ let categoriasCustom={},categoriaSeleccionada="impresiones";
 var reimpresiones={};
 const MERMA_ORIGEN={cliente:"Cliente: fuera de lo que revisamos",no_detectado:"Cliente: no detectado en pre-prensa",ventas:"Ventas: producto o medida",preprensa:"Pre-prensa: diagramación",maquina:"Máquina",material:"Material o insumo",operacion:"Operación"};
 const MERMA_UNIDAD={dtf_textil:"m",dtf_uv:"m",dtf_fluor:"m"};   // el resto de los productos va en unidades
-const MERMA_EDITORES=["j.perozo@tago.cl","a.rodriguez@tago.cl","c.oviedo@tago.cl","produccion.tago@gmail.com","producciondtf.tago@gmail.com"];   // registran en Merma; el resto solo ve
 var packs={}, packFichaId=null, packNuevo=false, packDraft=null, packPendiente=false, fichaPackBuscando=false, fichaPackRechazados=new Set(), packsFiltro="abiertos", packsTipo=null; // Packs DTF
 var tareaFichaId=null, tareaFichaPendiente=false, tareaFichaAsigAbierto=false, tareaSubNueva=false, ttSubNuevo=null, tareaPadrePreset=null; // ficha de tarea y subtareas
 var ttSubPlegadas=new Set(); try{ const v=JSON.parse(localStorage.getItem("tago_tareas_sub_plegadas")||"null"); if(Array.isArray(v)) ttSubPlegadas=new Set(v); }catch(e){}
@@ -2457,7 +2456,9 @@ function renderNotifPanel(){
   document.getElementById("notif-list").innerHTML=entries.length?entries.map(([nid,n])=>{
     const j=jobs[n.pedidoId], esTarea=!!n.tareaId, tituloN=esTarea?(tareas[n.tareaId]?.nombre||n.nombre||"Tarea"):(j?.cliente||n.cliente||n.pedidoId);
     const icono=n.tipo==="mencion"?ic("message-circle"):ic("bell");
-    const desc=n.tipo==="mencion"
+    const desc=n.tipo==="merma_eliminar"
+      ?`${esc(n.autor?.nombre||"Alguien")} pide eliminar una reimpresión: "${esc(n.texto||"")}" (revísala en Merma)`
+      :n.tipo==="mencion"
       ?`${esc(n.autor?.nombre||"Alguien")} te mencionó${esTarea?" en la tarea":""}: "${esc(n.texto||"")}"`
       :`${esc(n.autor?.nombre||"Alguien")} te asignó ${esTarea?"esta tarea":"a este pedido"}`;
     return`
@@ -5045,6 +5046,13 @@ function renderBandeja(){
   cont.innerHTML=lista.length?lista.map(i=>i.tipo==="correos"?bandejaCorreo(i):bandejaNotif(i)).join(""):`<div class="empty">${bandejaVerLeidos?"Nada en la bandeja":"Todo al día · no tienes pendientes"}</div>`;
 }
 function bandejaNotif({id,n,leido}){
+  if(n.tipo==="merma_eliminar"){   // solicitud de eliminación de una reimpresión (app Merma): la revisa gerencia
+    return `<div class="bj-item${leido?" leido":""}"><div class="bj-ico">${ic("trash")}</div><div class="bj-cuerpo">
+    <div class="bj-titulo">Reimpresión ${esc(n.pedidoId||"")}${n.cliente?` · ${esc(n.cliente)}`:""}${!leido?`<span class="bj-nuevo">Nuevo</span>`:""}</div>
+    <div class="bj-desc">${esc(n.autor?.nombre||"Alguien")} pide eliminar una reimpresión: "${esc(n.texto||"")}"</div>
+    <div class="bj-meta">${timeAgo(new Date(n.ts).toISOString())}</div></div>
+    <div class="bj-acciones"><a class="btn btn-edit" style="text-decoration:none" href="/merma?revisar=${encodeURIComponent(n.reimpresionId||"")}" target="_blank" rel="noopener" onclick="if(notifRef)notifRef.child('${id}').update({leido:true})">Revisar en Merma</a></div></div>`;
+  }
   const j=jobs[n.pedidoId], esTarea=!!n.tareaId, t=esTarea?tareas[n.tareaId]:null;
   const icono=n.tipo==="mencion"?ic("message-circle"):ic("bell");
   const desc=n.tipo==="mencion"?`${esc(n.autor?.nombre||"Alguien")} te mencionó${esTarea?" en la tarea":""}: "${esc(n.texto||"")}"`:`${esc(n.autor?.nombre||"Alguien")} te asignó ${esTarea?"esta tarea":"a este pedido"}`;
@@ -6241,9 +6249,9 @@ function renderFicha(forzar){
     const filasR=misReimp.map(r=>{
       const f=String(r.fecha||"").split("-"), dia=f.length===3?`${+f[2]} ${MESES_CORTO[+f[1]-1]}`:"—";
       const cliente=r.asume==="cliente";
-      return `<div class="fi-tarea" title="${esc(r.nota||"")}"><span class="tarea-grupo-pill" style="background:${cliente?"rgba(73,206,171,.18)":"rgba(192,38,28,.10)"};color:${cliente?"#1C7A63":"#C0261C"}">asume ${cliente?"cliente":"TAGO"}</span><span class="fi-tarea-nombre">${esc(MERMA_ORIGEN[r.origen]||r.origen||"")} · ${esc(r.motivo||"")}${r.responsable?` · ${esc(r.responsable)}`:""}</span><span class="fi-tarea-fecha">${String(r.cantidad).replace(".",",")} ${MERMA_UNIDAD[r.producto]||"u."} · ${dia}</span></div>`;
+      return `<div class="fi-tarea" title="${esc(r.nota||"")}"><span class="tarea-grupo-pill" style="background:${cliente?"rgba(73,206,171,.18)":"rgba(192,38,28,.10)"};color:${cliente?"#1C7A63":"#C0261C"}">asume ${cliente?"cliente":"TAGO"}</span><span class="fi-tarea-nombre">${esc(MERMA_ORIGEN[r.origen]||r.origen||"")} · ${esc(r.motivo||"")}${r.responsable?` · ${esc(r.responsable)}`:""}${r.eliminacion?` · <b>eliminación pendiente</b>`:""}</span><span class="fi-tarea-fecha">${String(r.cantidad).replace(".",",")} ${MERMA_UNIDAD[r.producto]||"u."} · ${dia}</span></div>`;
     }).join("");
-    html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("refresh-cw")} Reimpresiones <span class="fi-tareas-n">${misReimp.length}</span></div>${filasR||`<div class="fi-muted">Sin reimpresiones</div>`}${MERMA_EDITORES.includes(currentUser.email)?`<a class="btn btn-secondary fi-tarea-add" href="/merma?pedido=${encodeURIComponent(fichaId)}" target="_blank" rel="noopener" style="text-decoration:none">+ Registrar reimpresión</a>`:""}</div>`;
+    html+=`<div class="fi-tareas"><div class="fi-sec-title">${ic("refresh-cw")} Reimpresiones <span class="fi-tareas-n">${misReimp.length}</span></div>${filasR||`<div class="fi-muted">Sin reimpresiones</div>`}<a class="btn btn-secondary fi-tarea-add" href="/merma?pedido=${encodeURIComponent(fichaId)}" target="_blank" rel="noopener" style="text-decoration:none">+ Registrar reimpresión</a></div>`;
   }
   html+=`<div class="fi-notas"><div class="fi-sec-title">Notas</div><textarea class="fi fi-area" rows="2" placeholder="Observaciones del pedido..." onchange="fichaCampo('notas',this.value)">${esc(j.notas)}</textarea></div>`;
   if(fichaNuevo){

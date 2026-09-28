@@ -282,8 +282,9 @@ const PERSONAS = [
 const EQUIPO = Object.fromEntries(PERSONAS.map(x=>[x.email, x.nombre]));
 const AREAS = {preprensa:"Pre-prensa", ventas:"Ventas", produccion:"Producción", gerencia:"Gerencia", contenido:"Contenido", externo:"Externo"};
 const ADMINS = ["j.perozo@tago.cl","a.rodriguez@tago.cl","c.oviedo@tago.cl"];
-/* Todo el equipo puede ver Merma; registrar (cierre del día y reimpresiones) solo gerencia y producción.
-   Control visual: la seguridad real está en las reglas de tago_merma/diario y reimpresiones. */
+/* Todo el equipo ve Merma y registra reimpresiones (las vendedoras suelen enterarse primero, por el cliente).
+   El cierre del día solo lo registran gerencia y producción. Control visual: la seguridad real está en
+   las reglas de tago_merma/diario y reimpresiones. */
 const EDITORES = [...ADMINS, "produccion.tago@gmail.com", "producciondtf.tago@gmail.com"];
 
 /* Historial del Excel «Calendario_Merma_TAGO con graficos v1» (nov-2025 a sep-2026).
@@ -393,7 +394,7 @@ function renderDia(){
     <div class="fila entre" style="margin-bottom:14px">
       <div class="fila"><label class="campo" style="flex-direction:row;align-items:center;gap:10px">Día <input type="date" class="inp" id="fechaDia" value="${f}" max="${hoy()}" style="width:auto"></label>
       ${f!==hoy()?`<button type="button" class="link" id="irHoy">Ir a hoy</button>`:""}</div>
-      ${puedeEditar()?`<button type="button" class="btn sec" data-nueva-reimp="1">+ Registrar reimpresión</button>`:`<span class="pill">Solo lectura: registran gerencia y producción</span>`}
+      <div class="fila">${puedeEditar()?"":`<span class="pill">El cierre del día lo registran gerencia y producción</span>`}<button type="button" class="btn sec" data-nueva-reimp="1">+ Registrar reimpresión</button></div>
     </div>
     <p class="aviso info small" style="margin-bottom:14px"><b>Merma total</b> es todo lo que se botó ese día en ese producto, reimpresiones incluidas. <b>Merma técnica</b> es la parte de esa merma que no se puede evitar: purgas, test de inyectores, arranque y cambio de rollo. Cada reimpresión se registra aparte, con su causa, en «Registrar reimpresión». Lo que no es técnico ni reimpresión queda como «sin explicar» en el Panel.</p>
     <div class="grid g-prod">${cards}</div>`;
@@ -421,7 +422,10 @@ function renderReimp(){
     .sort((a,b)=> (b.fecha||"").localeCompare(a.fecha||"") || (b.ts||0)-(a.ts||0));
   const filas = lista.map(r=>{
     const m=prod(r.producto), o=ORIGENES.find(x=>x.id===r.origen);
-    const puede = esAdmin() || (puedeEditar() && r.porEmail===sesion.email);
+    const pend = r.eliminacion;
+    const accion = esAdmin()
+      ? `<button type="button" class="link rojo" data-borrar-reimp="${esc(r.id)}">eliminar</button>`
+      : (pend ? "" : `<button type="button" class="link rojo" data-pedir-borrar="${esc(r.id)}">solicitar eliminación</button>`);
     return `<tr>
       <td class="num">${fmtFecha(r.fecha)}</td>
       <td>${r.pedidoId?`<b>${esc(r.pedidoId)}</b>`:'<span class="faint">sin pedido</span>'}${r.cliente?`<div class="small muted">${esc(r.cliente)}</div>`:""}</td>
@@ -431,14 +435,22 @@ function renderReimp(){
       <td><span class="pill ${r.asume==="cliente"?"ok":"mal"}">${ASUME[r.asume]||"—"}</span></td>
       <td class="n">${fmt$(costoDe(m,r.cantidad))}</td>
       <td>${r.foto?`<a href="${esc(r.foto)}" target="_blank" rel="noopener">foto</a> `:""}${r.nota?`<span class="small muted">${esc(r.nota)}</span>`:""}<div class="small faint">${esc(r.por||"")}</div>
-        ${puede?`<button type="button" class="link rojo" data-borrar-reimp="${esc(r.id)}">eliminar</button>`:""}</td>
+        ${pend?`<div><span class="pill warn">eliminación pendiente</span><div class="small muted">${esc(pend.por||"")}: «${esc(pend.motivo||"")}»</div></div>`:""}${accion}</td>
     </tr>`;
   }).join("");
   const tot = lista.reduce((s,r)=>s+(costoDe(prod(r.producto),r.cantidad)||0),0);
-  $("#view-reimp").innerHTML = `
+  const pendientes = Object.entries(state.reimp).map(([id,r])=>({...r,id})).filter(r=>r.eliminacion).sort((a,b)=>(a.eliminacion.ts||0)-(b.eliminacion.ts||0));
+  const cajaPend = esAdmin() && pendientes.length ? `<div class="card" style="margin-bottom:12px;border-color:var(--ambar)">
+      <h3 style="margin-bottom:8px">Solicitudes de eliminación (${pendientes.length})</h3>
+      ${pendientes.map(r=>{ const m=prod(r.producto); return `<div class="fila entre" style="padding:8px 0;border-top:1px solid var(--linea)">
+        <div><b>${esc(r.pedidoId||"sin pedido")}</b> · ${esc(m.nombre)} · ${fmtN(r.cantidad,2)} ${UCORTA[m.unidad]||""} · ${fmtFecha(r.fecha)} · registró ${esc(r.por||"")}
+          <div class="small muted">${esc(r.eliminacion.por||"")} pide eliminarla: «${esc(r.eliminacion.motivo||"")}»</div></div>
+        <div class="fila"><button type="button" class="btn sec chico" data-rechazar-borrar="${esc(r.id)}">Rechazar</button><button type="button" class="btn chico" data-aprobar-borrar="${esc(r.id)}">Aprobar y eliminar</button></div>
+      </div>`; }).join("")}</div>` : "";
+  $("#view-reimp").innerHTML = cajaPend + `
     <div class="fila entre" style="margin-bottom:14px">
       <label class="campo" style="flex-direction:row;align-items:center;gap:10px">Mes <select class="inp" id="mesReimp" style="width:auto">${meses.map(m=>`<option value="${m}" ${m===state.mesReimp?"selected":""}>${nomMes(m)}</option>`).join("")}</select></label>
-      ${puedeEditar()?`<button type="button" class="btn" data-nueva-reimp="1">+ Registrar reimpresión</button>`:`<span class="pill">Solo lectura</span>`}
+      <button type="button" class="btn" data-nueva-reimp="1">+ Registrar reimpresión</button>
     </div>
     <div class="card scroll">${lista.length?`<table class="t"><thead><tr><th>Fecha</th><th>Pedido</th><th>Producto</th><th class="n">Perdido</th><th>Origen y motivo</th><th>Asume</th><th class="n">Costo</th><th></th></tr></thead><tbody>${filas}</tbody></table>
       <p class="small muted" style="margin-top:10px">${lista.length} reimpresiones · ${fmt$(tot)} en material (solo productos con costo definido)</p>`
@@ -446,7 +458,6 @@ function renderReimp(){
 }
 
 function abrirReimp(pedidoId){
-  if(!puedeEditar()){ toast("Solo gerencia y producción registran reimpresiones."); return; }
   state.pedidoSel = null;
   const opt = (arr,sel,f) => arr.map(x=>`<option value="${esc(f(x)[0])}" ${f(x)[0]===sel?"selected":""}>${esc(f(x)[1])}</option>`).join("");
   $("#formReimp").innerHTML = `
@@ -541,6 +552,24 @@ function guardarReimp(){
   firebase.database().ref("tago_merma/reimpresiones").push(rec)
     .then(()=>{ $("#dlgReimp").close(); toast("Reimpresión registrada"); if(!p && txt) toast("Ojo: no encontré ese pedido; quedó como texto."); })
     .catch(e=>toast("No se pudo guardar: "+(e.message||e)));
+}
+
+/* Nadie del equipo elimina: pide la eliminación con un motivo, la reimpresión sigue contando y
+   José, Andreina y Carol reciben el aviso en la Bandeja de Pedidos (tago_notificaciones). */
+function pedirEliminacion(id){
+  const r=state.reimp[id]; if(!r) return;
+  const motivo=(prompt("¿Por qué hay que eliminar esta reimpresión? (lo verá gerencia)")||"").trim();
+  if(!motivo){ toast("Sin motivo no se envía la solicitud."); return; }
+  const yo=PERSONAS.find(x=>x.email===sesion.email)||{id:"", nombre:nombreYo()};
+  const up={};
+  up[`tago_merma/reimpresiones/${id}/eliminacion`]={por:nombreYo(), porEmail:sesion.email, motivo:motivo.slice(0,300), ts:Date.now()};
+  for(const email of ADMINS){
+    if(email===sesion.email) continue;
+    const k=firebase.database().ref("tago_notificaciones").push().key;
+    up[`tago_notificaciones/${email.replace(/\./g,"_")}/${k}`]={tipo:"merma_eliminar", pedidoId:r.pedidoId||null, tareaId:null, cliente:r.cliente||"", nombre:"",
+      texto:motivo.slice(0,300), autor:{id:yo.id, nombre:yo.nombre}, reimpresionId:id, ts:Date.now(), leido:false};
+  }
+  firebase.database().ref().update(up).then(()=>toast("Solicitud enviada a gerencia")).catch(e=>toast("No se pudo enviar: "+(e.message||e)));
 }
 
 /* ───────────── Vista: Panel ───────────── */
@@ -711,6 +740,9 @@ document.addEventListener("click", e=>{
   if(b.dataset.view) showView(b.dataset.view);
   else if(b.dataset.guardar) guardarDia(b.dataset.guardar);
   else if(b.dataset.nuevaReimp) abrirReimp();
+  else if(b.dataset.pedirBorrar) pedirEliminacion(b.dataset.pedirBorrar);
+  else if(b.dataset.aprobarBorrar){ if(esAdmin() && confirm("¿Eliminar definitivamente esta reimpresión?")) firebase.database().ref("tago_merma/reimpresiones/"+b.dataset.aprobarBorrar).remove().then(()=>toast("Reimpresión eliminada")).catch(er=>toast("No se pudo eliminar: "+(er.message||er))); }
+  else if(b.dataset.rechazarBorrar){ if(esAdmin()) firebase.database().ref("tago_merma/reimpresiones/"+b.dataset.rechazarBorrar).update({eliminacion:null, eliminacionRechazada:{por:nombreYo(), ts:Date.now()}}).then(()=>toast("Solicitud rechazada: la reimpresión se mantiene")).catch(er=>toast("No se pudo: "+(er.message||er))); }
   else if(b.dataset.borrarReimp){ if(confirm("¿Eliminar esta reimpresión?")) firebase.database().ref("tago_merma/reimpresiones/"+b.dataset.borrarReimp).remove().catch(er=>toast("No se pudo eliminar: "+(er.message||er))); }
   else if(b.dataset.guardarCfg) guardarCfg(b.dataset.guardarCfg);
   else if(b.dataset.pedido){ const p=(state.pedidos||[]).find(x=>x.id===b.dataset.pedido); if(p) elegirPedido(p); }
@@ -778,6 +810,7 @@ function entra(){
     escucha("tago_merma/meta", s=>{ state.meta=s.val()||{}; if(state.view==="prod") renderProd(); });
     render();
     cargarPedidos().then(()=>{ if(state.view==="dia") renderDia(); });
+    if(new URLSearchParams(location.search).get("revisar")) showView("reimp");
     const ped = new URLSearchParams(location.search).get("pedido");
     if(ped){ showView("reimp"); abrirReimp(ped); }
   }).catch(e=>{
