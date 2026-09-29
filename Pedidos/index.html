@@ -2246,7 +2246,7 @@ const ADMINS_FINANCIEROS=['j.perozo@tago.cl','a.rodriguez@tago.cl','c.oviedo@tag
 // Admin financiero = rol «gerencia» + rol «subgerente». Si alguien entra o sale, se cambia en tago_roles.
 var rolesTago=null;
 function emailsDeRol(r){ const v=rolesTago&&rolesTago[r]; return v?Object.values(v).filter(x=>typeof x==="string"):null; }
-function adminsFinancieros(){ const g=emailsDeRol("gerencia"), s=emailsDeRol("subgerente"); return (g||s)?[...(g||[]),...(s||[])]:ADMINS_FINANCIEROS; }
+function adminsFinancieros(){ if(!rolesTago) return ADMINS_FINANCIEROS; return [...(emailsDeRol("gerencia")||[]),...(emailsDeRol("subgerente")||[])]; }   // respaldo solo si la base no respondió
 const ADMINS_ELIMINAR_CATEGORIA=['j.perozo@tago.cl','a.rodriguez@tago.cl'];
 function esAdminFinanciero(){ return adminsFinancieros().includes(currentUser?.email); }
 function esAdminPedidos(){ return esAdminFinanciero(); }

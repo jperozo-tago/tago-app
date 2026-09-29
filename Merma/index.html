@@ -291,7 +291,8 @@ const ROLES_DEF = {
   ventas:     ["m.perez@tago.cl","a.querales@tago.cl"],
   preprensa:  ["allysonalvarez.tago@gmail.com"],
 };
-const rol = r => { const v = state.roles && state.roles[r]; return v ? Object.values(v).filter(x=>typeof x==="string") : (ROLES_DEF[r]||[]); };
+const rol = r => { if(!state.roles) return ROLES_DEF[r]||[];   // respaldo solo si la base no respondió; un rol vacío es un rol vacío
+  return Object.values(state.roles[r]||{}).filter(x=>typeof x==="string"); };
 const admins = () => [...new Set([...rol("gerencia"), ...rol("subgerente")])];     // productos, costos, eliminar, monitor por persona
 const editores = () => [...new Set([...admins(), ...rol("produccion")])];          // cierre del día
 const areaDe = email => ["preprensa","ventas","produccion"].find(r=>rol(r).includes(email)) || (admins().includes(email) ? "gerencia" : ((PERSONAS.find(x=>x.email===email)||{}).area||"contenido"));
