@@ -281,11 +281,24 @@ const PERSONAS = [
 ];
 const EQUIPO = Object.fromEntries(PERSONAS.map(x=>[x.email, x.nombre]));
 const AREAS = {preprensa:"Pre-prensa", ventas:"Ventas", produccion:"Producción", gerencia:"Gerencia", contenido:"Contenido", externo:"Externo"};
-const ADMINS = ["j.perozo@tago.cl","a.rodriguez@tago.cl","c.oviedo@tago.cl"];
+/* Roles: se leen de tago_roles ({rol: {emailKey: email}}), un solo lugar para todas las apps.
+   Si alguien entra o sale del equipo, se cambia ahí y no en el código. ROLES_DEF es solo el
+   respaldo mientras la base no responde o si el nodo no existe. */
+const ROLES_DEF = {
+  gerencia:   ["j.perozo@tago.cl","a.rodriguez@tago.cl"],
+  subgerente: ["c.oviedo@tago.cl"],
+  produccion: ["produccion.tago@gmail.com","producciondtf.tago@gmail.com"],
+  ventas:     ["m.perez@tago.cl","a.querales@tago.cl"],
+  preprensa:  ["allysonalvarez.tago@gmail.com"],
+};
+const rol = r => { const v = state.roles && state.roles[r]; return v ? Object.values(v).filter(x=>typeof x==="string") : (ROLES_DEF[r]||[]); };
+const admins = () => [...new Set([...rol("gerencia"), ...rol("subgerente")])];     // productos, costos, eliminar, monitor por persona
+const editores = () => [...new Set([...admins(), ...rol("produccion")])];          // cierre del día
+const areaDe = email => ["preprensa","ventas","produccion"].find(r=>rol(r).includes(email)) || (admins().includes(email) ? "gerencia" : ((PERSONAS.find(x=>x.email===email)||{}).area||"contenido"));
 /* Todo el equipo ve Merma y registra reimpresiones (las vendedoras suelen enterarse primero, por el cliente).
    El cierre del día solo lo registran gerencia y producción. Control visual: la seguridad real está en
    las reglas de tago_merma/diario y reimpresiones. */
-const EDITORES = [...ADMINS, "produccion.tago@gmail.com", "producciondtf.tago@gmail.com"];
+
 
 /* Historial del Excel «Calendario_Merma_TAGO con graficos v1» (nov-2025 a sep-2026).
    f fecha · m producto · i impreso · x merma total · r rollo nuevo · o operador · n observación */
@@ -306,10 +319,10 @@ const claveEmail = e => String(e).replace(/\./g,"_");
 function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const d=document.createElement("div"); d.className="toast"; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2600); }
 
 /* ───────────── Estado ───────────── */
-const state = { view:"dia", fecha:hoy(), borrador:{}, mesPanel:null, mesReimp:null, prodCfg:{}, diario:{}, reimp:{}, meta:{}, pedidos:null, pedidoSel:null };
+const state = { roles:null, view:"dia", fecha:hoy(), borrador:{}, mesPanel:null, mesReimp:null, prodCfg:{}, diario:{}, reimp:{}, meta:{}, pedidos:null, pedidoSel:null };
 let sesion = null, escuchas = [];
-const esAdmin = () => !!sesion && ADMINS.includes(sesion.email);
-const puedeEditar = () => !!sesion && EDITORES.includes(sesion.email);
+const esAdmin = () => !!sesion && admins().includes(sesion.email);
+const puedeEditar = () => !!sesion && editores().includes(sesion.email);
 const nombreYo = () => sesion ? (EQUIPO[sesion.email] || sesion.email) : "";
 
 function productos(){
@@ -516,7 +529,7 @@ function actualizarResponsable(){
   campo.hidden=false;
   if(o.area==="externo"){ sel.innerHTML=`<option value="externo:${o.externo}">${o.externo} (externo)</option>`; sel.disabled=true; $("#rRespAyuda").textContent="No se atribuye a nadie del equipo."; return; }
   sel.disabled=false;
-  const delArea=PERSONAS.filter(x=>x.area===o.area), otros=PERSONAS.filter(x=>x.area!==o.area);
+  const delArea=PERSONAS.filter(x=>areaDe(x.email)===o.area), otros=PERSONAS.filter(x=>areaDe(x.email)!==o.area);
   const p=state.pedidoSel, idDe=id=>(PERSONAS.find(x=>x.id===id)||{}).email;
   let sug=null;
   if(delArea.length===1) sug=delArea[0].email;
@@ -563,7 +576,7 @@ function pedirEliminacion(id){
   const yo=PERSONAS.find(x=>x.email===sesion.email)||{id:"", nombre:nombreYo()};
   const up={};
   up[`tago_merma/reimpresiones/${id}/eliminacion`]={por:nombreYo(), porEmail:sesion.email, motivo:motivo.slice(0,300), ts:Date.now()};
-  for(const email of ADMINS){
+  for(const email of admins()){
     if(email===sesion.email) continue;
     const k=firebase.database().ref("tago_notificaciones").push().key;
     up[`tago_notificaciones/${email.replace(/\./g,"_")}/${k}`]={tipo:"merma_eliminar", pedidoId:r.pedidoId||null, tareaId:null, cliente:r.cliente||"", nombre:"",
@@ -639,7 +652,7 @@ function monitorPersonas(reimps){
     const o=ORIGENES.find(x=>x.id===r.origen)||{};
     const per=PERSONAS.find(x=>x.email===r.responsableEmail);
     const k = per ? per.email : (r.responsable ? "ext:"+r.responsable : "sin");
-    const b = g[k] || (g[k] = {nombre: per?per.nombre:(r.responsable||"Sin atribuir"), area: per?AREAS[per.area]:(r.responsable?"Externo":"—"), n:0, costo:0, costoTago:0, cant:{}, externo:!per});
+    const b = g[k] || (g[k] = {nombre: per?per.nombre:(r.responsable||"Sin atribuir"), area: per?AREAS[areaDe(per.email)]:(r.responsable?"Externo":"—"), n:0, costo:0, costoTago:0, cant:{}, externo:!per});
     const pr=prod(r.producto), c=costoDe(pr,r.cantidad)||0, u=UCORTA[pr.unidad]||"";
     b.n++; b.costo+=c; if(r.asume!=="cliente") b.costoTago+=c; b.cant[u]=(b.cant[u]||0)+(r.cantidad||0);
   }
@@ -804,6 +817,7 @@ function entra(){
     $("#entrada").hidden=true; $("#app").hidden=false;
     document.querySelector('nav.tabs [data-view="prod"]').hidden = !esAdmin();
     if(state.view==="prod" && !esAdmin()) state.view="dia";
+    escucha("tago_roles", s=>{ state.roles=s.val(); document.querySelector('nav.tabs [data-view="prod"]').hidden = !esAdmin(); if(state.view==="prod" && !esAdmin()) showView("dia"); else render(); });
     escucha("tago_merma/config/productos", s=>{ state.prodCfg=s.val()||{}; render(); });
     escucha("tago_merma/diario", s=>{ state.diario=s.val()||{}; render(); });
     escucha("tago_merma/reimpresiones", s=>{ state.reimp=s.val()||{}; render(); });

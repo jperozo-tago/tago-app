@@ -272,6 +272,18 @@ Firestore).
   Solo el producto pack: Andreina aclaró que facturar 20/50/100 metros
   sueltos era un error de las vendedoras.
 
+**Roles (`tago_roles`, desde el 28-09-2026):** quién cumple cada rol vive en
+un solo nodo: `tago_roles/<rol>/<emailKey> = "<email>"`, con los roles
+`gerencia`, `subgerente`, `produccion`, `ventas` y `preprensa`. Lo leen todos
+los permitidos y lo escriben solo los `tago_admins` (o la consola/CLI). Lo usan:
+Pedidos (admin financiero = gerencia + subgerente, `adminsFinancieros()`),
+Merma (`admins()`, `editores()`, `areaDe()`) y las reglas de `tago_merma` y de
+crear categorías. **Cuando alguien entra o sale del equipo, se cambia aquí, no
+en el código.** Cada app trae una lista de respaldo (`ADMINS_FINANCIEROS`,
+`ROLES_DEF`) solo para cuando la base no responde. Todavía con nombres escritos
+a mano: `AUTORIZADOS_PEDIDOS` (Pedidos), `AUTORIZADOS` (Home), `CORREOS_AVISO`
+(Opinion, página pública sin acceso a la base) y los «dueños» José y Andreina.
+
 **Permisos:** el login es con Google, y solo entra alguien si su email (con
 los puntos reemplazados por `_`) existe en `tago_permitidos`. Los roles de
 admin financiero (`ADMINS_FINANCIEROS` en el JS: José, Andreina, Carol) y de

@@ -43,8 +43,12 @@
     "tago_categorias_custom": {
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
       "$catId": {
-        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')) || (!newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl')))"
+        ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((newData.exists() && (root.child('tago_roles/gerencia').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/subgerente').child(auth.token.email.replace('.', '_')).exists())) || (!newData.exists() && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl')))"
       }
+    },
+    "tago_roles": {
+      ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      ".write": "auth != null && root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists()"
     },
     "tago_notificaciones": {
       "$emailKey": {
@@ -228,23 +232,23 @@
     "tago_merma": {
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
       "config": {
-        ".write": "auth != null && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')"
+        ".write": "auth != null && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/gerencia').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/subgerente').child(auth.token.email.replace('.', '_')).exists())"
       },
       "meta": {
-        ".write": "auth != null && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')"
+        ".write": "auth != null && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/gerencia').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/subgerente').child(auth.token.email.replace('.', '_')).exists())"
       },
       "diario": {
         "$fecha": {
           ".validate": "$fecha.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
           "$producto": {
-            ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl' || auth.token.email == 'produccion.tago@gmail.com' || auth.token.email == 'producciondtf.tago@gmail.com')",
+            ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && (root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/gerencia').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/subgerente').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/produccion').child(auth.token.email.replace('.', '_')).exists())",
             ".validate": "newData.hasChildren(['impreso', 'merma']) && newData.child('impreso').isNumber() && newData.child('merma').isNumber() && newData.child('impreso').val() >= 0 && newData.child('merma').val() >= 0"
           }
         }
       },
       "reimpresiones": {
         "$id": {
-          ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((!data.exists() && newData.exists() && newData.child('porEmail').val() == auth.token.email) || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl' || auth.token.email == 'c.oviedo@tago.cl')",
+          ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && ((!data.exists() && newData.exists() && newData.child('porEmail').val() == auth.token.email) || root.child('tago_admins').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/gerencia').child(auth.token.email.replace('.', '_')).exists() || root.child('tago_roles/subgerente').child(auth.token.email.replace('.', '_')).exists())",
           "eliminacion": {
             ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists() && !data.exists() && newData.exists() && newData.child('porEmail').val() == auth.token.email && newData.child('motivo').isString()"
           },

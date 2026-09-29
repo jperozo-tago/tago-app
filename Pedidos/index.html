@@ -2211,7 +2211,7 @@ function todasLasCategorias(){
 function categoriaPred(j){ return categoriaSeleccionada==="todos"||categoriaDePedido(j)===categoriaSeleccionada; }
 function setCategoria(key){ categoriaSeleccionada=key; render(); }
 function agregarCategoria(){
-  if(!esAdminPedidos()){ toast("Solo José, Andreina o Carol pueden crear categorías","error"); return; }
+  if(!esAdminPedidos()){ toast("Solo gerencia puede crear categorías","error"); return; }
   const nombre=prompt("Nombre de la nueva categoría (ej: Pruebas/Muestras):");
   if(!nombre||!nombre.trim())return;
   const icono=prompt("Un emoji para representarla (opcional):","");
@@ -2241,9 +2241,14 @@ let pedidosGruposColapsados=new Set();
 let categoriasColapsadas=new Set();
 let envioCostosAbierto=false;
 function toggleEnvioCostos(){ envioCostosAbierto=!envioCostosAbierto; renderStatsView(); }
-const ADMINS_FINANCIEROS=['j.perozo@tago.cl','a.rodriguez@tago.cl','c.oviedo@tago.cl'];
+const ADMINS_FINANCIEROS=['j.perozo@tago.cl','a.rodriguez@tago.cl','c.oviedo@tago.cl'];   // respaldo si tago_roles no responde
+// Roles del equipo (tago_roles = {rol:{emailKey:email}}): un solo lugar para Pedidos, Merma y las reglas.
+// Admin financiero = rol «gerencia» + rol «subgerente». Si alguien entra o sale, se cambia en tago_roles.
+var rolesTago=null;
+function emailsDeRol(r){ const v=rolesTago&&rolesTago[r]; return v?Object.values(v).filter(x=>typeof x==="string"):null; }
+function adminsFinancieros(){ const g=emailsDeRol("gerencia"), s=emailsDeRol("subgerente"); return (g||s)?[...(g||[]),...(s||[])]:ADMINS_FINANCIEROS; }
 const ADMINS_ELIMINAR_CATEGORIA=['j.perozo@tago.cl','a.rodriguez@tago.cl'];
-function esAdminFinanciero(){ return ADMINS_FINANCIEROS.includes(currentUser?.email); }
+function esAdminFinanciero(){ return adminsFinancieros().includes(currentUser?.email); }
 function esAdminPedidos(){ return esAdminFinanciero(); }
 let selectedPersonas=[],selectedTintas=[];
 let currentTab="pedidos";
@@ -3778,6 +3783,10 @@ function initFirebaseData(){
     firebase.database().ref("tago_packs").on("value",
       snap=>{ packs=snap.val()||{}; if(currentTab==="packs")renderPacks(); if(packFichaId)renderPack(); if(fichaId)renderFicha(); renderSidebar(); },
       err=>{ console.error(err); toast("No se pudieron cargar los packs DTF: "+err.message,"error"); }
+    );
+    firebase.database().ref("tago_roles").on("value",
+      snap=>{ rolesTago=snap.val(); renderSidebar(); if(currentTab==="stats")renderStatsView(); },
+      err=>console.warn("Roles: no se pudieron leer (se usa la lista de respaldo)",err)
     );
     firebase.database().ref("tago_merma/reimpresiones").on("value",
       snap=>{ reimpresiones=snap.val()||{}; if(fichaId&&!fichaNuevo)renderFicha(); },
