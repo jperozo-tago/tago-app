@@ -382,6 +382,15 @@ se editan únicamente desde la consola de Firebase). `./deploy.sh --preview`
 sube el sitio a un canal de vista previa y `./deploy.sh --solo-reglas` publica
 solo las reglas.
 
+**Selección múltiple en Tareas (desde el 30-09-2026):** en la vista Lista cada
+fila tiene una casilla (aparece al pasar el mouse; siempre en el celular), el
+encabezado de cada grupo selecciona todo el grupo y Shift+clic selecciona un
+rango. Con selección aparece una barra flotante abajo (`#tt-sel-barra`,
+funciones `ttSel*`) con Estado, Persona, Prioridad, Fecha límite, Mover a
+lista y Eliminar; cada acción escribe una sola actualización multi-ruta con
+las mismas reglas y el mismo historial que la edición de a una. Eliminar
+respeta `puedeBorrarCreacion` por tarea y salta las ajenas avisando.
+
 **Quién puede borrar (desde el 24-09-2026):** cada persona puede eliminar lo
 que creó (espacios, listas, carpetas, documentos/paneles/pizarras/formularios
 y tareas con sus subtareas). Lo que crearon José o Andreina (`DUENOS_EMAILS`

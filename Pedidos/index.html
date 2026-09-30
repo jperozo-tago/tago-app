@@ -1606,6 +1606,24 @@
     .chat-pendiente .chat-arch-ico{width:32px;height:32px;font-size:16px}
     .chat-pendiente-txt b{font-family:'DM Sans',sans-serif;font-weight:600;color:var(--text)}
     @media(max-width:700px){.chat-m:has(.chat-m-archivo) .chat-m-cuerpo{max-width:100%;width:100%}.chat-m-archivo{max-width:100%;min-width:0;width:100%;gap:8px;padding:7px 8px}.chat-arch-nombre{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}.chat-arch-meta{white-space:nowrap}.chat-arch-acc button{width:28px;height:28px}}
+    /* ══ SELECCIÓN MÚLTIPLE de tareas ══ */
+    .tt-sel-box{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer;opacity:0;flex-shrink:0;font-size:16px;transition:opacity .12s,color .12s;margin-right:2px}
+    .tt-sel-box:hover{color:var(--azul)}
+    .tt-sel-box.on{color:var(--azul);opacity:1}
+    .tt-row:hover .tt-sel-box,.tt-seleccionando .tt-sel-box,.tarea-grupo-header:hover .tt-sel-box{opacity:1}
+    .tt-sel-grupo{opacity:0}
+    .tarea-grupo:has(.tt-seleccionando) .tt-sel-grupo,.tt-sel-grupo.on{opacity:1}
+    .tt-row.tt-selected,.tt-row.tt-selected .tt-cell{background:rgba(64,99,249,.07)}
+    .tt-sel-barra{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--azul-oscuro);color:#fff;border-radius:14px;padding:8px 10px 8px 16px;display:flex;align-items:center;gap:6px;z-index:150;box-shadow:0 12px 32px rgba(11,20,71,.35);font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;flex-wrap:wrap;max-width:calc(100vw - 32px);justify-content:center}
+    .tt-sel-n{color:var(--claro);margin-right:6px;white-space:nowrap}
+    .tt-sel-barra button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:9px;padding:7px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:inherit;white-space:nowrap}
+    .tt-sel-barra button:hover{background:rgba(255,255,255,.22)}
+    .tt-sel-barra button.peligro:hover{background:var(--danger-c);border-color:var(--danger-c)}
+    .tt-sel-barra .tt-sel-x{padding:7px 9px;background:none;border-color:transparent}
+    .tt-sel-pop{z-index:190}
+    .tt-sel-pop .persona-chip{cursor:pointer}
+    .tt-sel-pop .celda-pop-hint a{color:var(--azul)}
+    @media(max-width:700px){.tt-sel-box{opacity:1}.tt-sel-barra{left:12px;right:12px;transform:none;bottom:78px;padding:8px 10px;gap:5px;font-size:12.5px}.tt-sel-barra button{padding:6px 9px}}
   </style>
 </head>
 <body>
@@ -3039,14 +3057,16 @@ function renderTareas(){
     const tareasDelEstado=ttArbolGrupo(est._huerfano?huerfanas:visibles.filter(([,t])=>t.estado===estId),visibles);
     const filasGrupo=ttAplanar(tareasDelEstado);
     const abierto=!ttPlegados.has(estId);
+    const idsGrupo=filasGrupo.map(([id])=>id); ttSelGrupos[estId]=idsGrupo; const grupoSel=idsGrupo.length>0&&idsGrupo.every(id=>ttSel.has(id));
     const espNombre=est.lista&&tareaFiltro.tipo!=="lista"?(listas[est.lista]?` · ${esc(listas[est.lista].nombre)}`:""):(mezcla&&est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:"");
     return`<div class="tarea-grupo">
       <div class="tarea-grupo-header" onclick="ttPlegar('${estId}')" title="${abierto?"Plegar":"Desplegar"}">
         <span class="tt-caret">${abierto?"▾":"▸"}</span>
+        ${idsGrupo.length?`<span class="tt-sel-box tt-sel-grupo${grupoSel?" on":""}" title="${grupoSel?"Quitar la selección del grupo":"Seleccionar todo el grupo"}" onclick="ttSelGrupo(event,'${estId}')">${ic(grupoSel?"square-check-big":"square")}</span>`:""}
         <span class="tarea-grupo-pill" style="background:${est.color}22;color:${est.color}">${est._huerfano?"":ttDot(est,estId,est.lista?estadosPropiosLista(est.lista):estadosDe(est.espacio||null))}${esc(est.nombre)}${espNombre}</span>
         <span class="tarea-grupo-count">${filasGrupo.length}</span>
       </div>
-      ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
+      ${abierto?`<div class="tarea-tabla-wrap"><div class="tarea-tabla${ttSel.size?" tt-seleccionando":""}" style="--tt-cols:${plantilla};--tt-cols-m:${plantillaM}">
         ${head}
         ${tareasDelEstado.map(([id,t,m])=>renderTareaRow(id,t,cols,m)+(m&&m.hijas.length&&!m.plegada?m.hijas.map(([hid,ht])=>renderTareaRow(hid,ht,cols,{hija:true})).join(""):"")+(ttSubNuevo===id?ttFilaNuevaSub(id):"")).join("")}
         ${est._huerfano||(tareaFiltro.tipo==="mias"&&est.espacio)?"":ttFilaNueva(estId)}
@@ -3058,6 +3078,7 @@ function renderTareas(){
   ttColaFinal();
 }
 function ttColaFinal(){ // lo que depende de las tareas y se repinta con ellas
+  ttSelRenderBarra();
   if(typeof fichaId!=="undefined"&&fichaId&&!fichaNuevo) renderFicha();
   if(currentTab==="elemento"&&["panel","formulario"].includes(elementos[elementoActual]?.tipo)) renderElemento();
   if(typeof renderSidebar==="function") renderSidebar();
@@ -3243,6 +3264,132 @@ function ttArbolGrupo(filas,visibles){
 function ttAplanar(arbol){ const out=[]; arbol.forEach(([id,t,m])=>{ out.push([id,t]); if(m&&m.hijas) m.hijas.forEach(h=>out.push(h)); }); return out; }
 function ttSubPlegar(ev,id){ ev.stopPropagation(); ttSubPlegadas.has(id)?ttSubPlegadas.delete(id):ttSubPlegadas.add(id); try{ localStorage.setItem("tago_tareas_sub_plegadas",JSON.stringify([...ttSubPlegadas])); }catch(e){} renderTareas(); }
 function ttHijasDe(id){ return Object.entries(tareas).filter(([hid,h])=>h&&h.padre===id&&idSeguro(hid)&&puedeVerTarea(h)); }
+// ══ SELECCIÓN MÚLTIPLE de tareas (referencia: barra de acciones de ClickUp) ══
+var ttSel=new Set(), ttSelUltimo=null, ttSelGrupos={}, ttSelPopEl=null;
+function ttSelToggle(ev,id){
+  ev.stopPropagation(); ev.preventDefault();
+  if(ev.shiftKey&&ttSelUltimo&&ttSelUltimo!==id){
+    const orden=[...document.querySelectorAll(".tt-row[data-id]")].map(r=>r.dataset.id);
+    const a=orden.indexOf(ttSelUltimo), b=orden.indexOf(id);
+    if(a>=0&&b>=0){ orden.slice(Math.min(a,b),Math.max(a,b)+1).forEach(x=>ttSel.add(x)); ttSelUltimo=id; renderTareas(); return; }
+  }
+  ttSel.has(id)?ttSel.delete(id):ttSel.add(id); ttSelUltimo=id; renderTareas();
+}
+function ttSelGrupo(ev,estId){
+  ev.stopPropagation(); ev.preventDefault();
+  const ids=ttSelGrupos[estId]||[]; const todo=ids.length&&ids.every(id=>ttSel.has(id));
+  ids.forEach(id=>todo?ttSel.delete(id):ttSel.add(id)); renderTareas();
+}
+function ttSelLimpiar(){ ttSel.clear(); ttSelUltimo=null; ttSelCerrarPop(); renderTareas(); }
+function ttSelIds(){ [...ttSel].forEach(id=>{ if(!tareas[id]) ttSel.delete(id); }); return [...ttSel]; }
+function ttSelRenderBarra(){
+  let b=document.getElementById("tt-sel-barra");
+  const n=ttSelIds().length;
+  if(!n||currentTab!=="tareas"||ttVistaActual()!=="lista"){ if(b) b.remove(); ttSelCerrarPop(); return; }
+  if(!b){ b=document.createElement("div"); b.id="tt-sel-barra"; b.className="tt-sel-barra"; document.body.appendChild(b); }
+  const puedenBorrar=ttSelIds().filter(id=>ttSelPuedeBorrar(id)).length;
+  b.innerHTML=`<span class="tt-sel-n">${n} seleccionada${n===1?"":"s"}</span>
+    <button type="button" onclick="ttSelAccion(event,'estado')" title="Cambiar el estado">${ic("kanban")} Estado</button>
+    <button type="button" onclick="ttSelAccion(event,'persona')" title="Asignar a alguien">${ic("users")} Persona</button>
+    <button type="button" onclick="ttSelAccion(event,'prioridad')" title="Cambiar la prioridad">${ic("flag")} Prioridad</button>
+    <button type="button" onclick="ttSelAccion(event,'fecha')" title="Poner fecha límite">${ic("calendar")} Fecha límite</button>
+    <button type="button" onclick="ttSelAccion(event,'mover')" title="Mover a otra lista">${ic("list")} Mover</button>
+    <button type="button" class="peligro" onclick="ttSelEliminar()" title="${puedenBorrar?`Eliminar ${puedenBorrar} tarea${puedenBorrar===1?"":"s"}`:"No puedes eliminar ninguna de las seleccionadas"}">${ic("trash")} Eliminar${puedenBorrar&&puedenBorrar<n?` (${puedenBorrar})`:""}</button>
+    <button type="button" class="tt-sel-x" onclick="ttSelLimpiar()" title="Quitar la selección (Esc)">${ic("x")}</button>`;
+}
+function ttSelCerrarPop(){ if(ttSelPopEl){ ttSelPopEl.remove(); ttSelPopEl=null; } }
+function ttSelPop(btn,html){
+  ttSelCerrarPop(); cerrarCeldaPop();
+  const pop=document.createElement("div"); pop.className="celda-popover tt-sel-pop"; pop.innerHTML=html; document.body.appendChild(pop); ttSelPopEl=pop;
+  const r=btn.getBoundingClientRect(); pop.style.position="fixed"; pop.style.bottom=(window.innerHeight-r.top+8)+"px";
+  pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-pop.offsetWidth-8))+"px";
+  return pop;
+}
+document.addEventListener("pointerdown",e=>{ if(ttSelPopEl&&!ttSelPopEl.contains(e.target)&&!e.target.closest("#tt-sel-barra")) ttSelCerrarPop(); });
+document.addEventListener("keydown",e=>{ if(e.key!=="Escape")return; if(ttSelPopEl){ ttSelCerrarPop(); return; } const tag=document.activeElement?.tagName; if(ttSel.size&&!["INPUT","TEXTAREA","SELECT"].includes(tag)&&!celdaPop) ttSelLimpiar(); });
+function ttSelAccion(ev,que){
+  ev.stopPropagation(); const btn=ev.currentTarget, ids=ttSelIds(); if(!ids.length)return;
+  if(que==="estado"){
+    let comunes=null;
+    ids.forEach(id=>{ const set=new Set(estadosParaTarea(tareas[id]).map(([e])=>e)); comunes=comunes?new Set([...comunes].filter(x=>set.has(x))):set; });
+    const ops=[...(comunes||[])].filter(e=>tareaEstados[e]).map(e=>({v:e,l:tareaEstados[e].nombre,dot:tareaEstados[e].color}));
+    if(!ops.length){ toast("Las tareas seleccionadas no comparten estados: cámbialas por separado","error"); return; }
+    const pop=ttSelPop(btn,`<div class="celda-pop-label">Estado para ${ids.length}</div>${ttMenu(ops,null)}<div class="celda-pop-hint">Un clic aplica a todas · Esc cancela</div>`);
+    ttEnlazarMenu(pop,v=>{ ttSelGuardarCampo("estado",v); ttSelCerrarPop(); }); return;
+  }
+  if(que==="prioridad"){
+    const pop=ttSelPop(btn,`<div class="celda-pop-label">Prioridad para ${ids.length}</div>${ttMenu(Object.entries(PRIO).map(([v,p])=>({v,l:p.label,dot:p.color})),null)}<div class="celda-pop-hint">Un clic aplica a todas · Esc cancela</div>`);
+    ttEnlazarMenu(pop,v=>{ ttSelGuardarCampo("prioridad",v); ttSelCerrarPop(); }); return;
+  }
+  if(que==="fecha"){
+    const pop=ttSelPop(btn,`<div class="celda-pop-label">Fecha límite para ${ids.length}</div><input class="celda-input" type="date"/><div class="celda-pop-hint">Se aplica al elegir · <a href="#" onclick="event.preventDefault();ttSelGuardarCampo('fechaLimite','');ttSelCerrarPop()">quitar la fecha</a> · Esc cancela</div>`);
+    const inp=pop.querySelector("input"); inp.addEventListener("input",()=>{ if(inp.value){ ttSelGuardarCampo("fechaLimite",inp.value); ttSelCerrarPop(); } }); inp.focus(); return;
+  }
+  if(que==="persona"){
+    const pop=ttSelPop(btn,`<div class="celda-pop-label">Asignar a ${ids.length} tarea${ids.length===1?"":"s"}</div><div class="persona-grid">${EQUIPO.map(p=>`<div class="persona-chip" data-pid="${p.id}"><div class="chip-av ${p.avClass}">${p.id}</div>${esc(p.nombre.split(" ")[0])}</div>`).join("")}</div><div class="celda-pop-hint">Un clic agrega a esa persona en todas · <a href="#" onclick="event.preventDefault();ttSelAsignar(null)">quitar a todos</a></div>`);
+    pop.querySelectorAll(".persona-chip").forEach(ch=>ch.addEventListener("click",()=>ttSelAsignar(ch.dataset.pid))); return;
+  }
+  if(que==="mover"){
+    const ops=Object.entries(listas).filter(([lid,l])=>l&&l.espacio!=="tareas"||l&&l.espacio==="tareas").sort((a,b)=>((espacios[a[1].espacio]?.nombre||"")+a[1].nombre).localeCompare((espacios[b[1].espacio]?.nombre||"")+b[1].nombre,"es")).map(([lid,l])=>({v:lid,l:`${espacios[l.espacio]?.nombre||(l.espacio==="tareas"?"Tareas":"")} / ${l.nombre}`}));
+    if(!ops.length){ toast("No hay listas disponibles","error"); return; }
+    const pop=ttSelPop(btn,`<div class="celda-pop-label">Mover ${ids.length} tarea${ids.length===1?"":"s"} a</div>${ttMenu(ops,null)}<div class="celda-pop-hint">Las subtareas se van con su tarea · Esc cancela</div>`);
+    ttEnlazarMenu(pop,lid=>{ ttSelCerrarPop(); ttSelMover(lid); }); return;
+  }
+}
+function ttSelGuardarCampo(k,v){
+  const ids=ttSelIds(), updates={}, antes={}, now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre}; let n=0;
+  ids.forEach(id=>{
+    const t=tareas[id]; if(!t)return; const base="tago_tareas/"+id+"/";
+    if(k==="estado"){ if(!estadosParaTarea(t).some(([e])=>e===v))return; if(t.estado===v)return; updates[base+"estado"]=v; }
+    else if(k==="prioridad"){ const p=PRIO[v]?v:"normal"; if((t.prioridad||"normal")===p)return; updates[base+"prioridad"]=p; }
+    else if(k==="fechaLimite"){ if((t.fechaLimite||"")===(v||""))return; updates[base+"fechaLimite"]=v||""; }
+    else return;
+    updates[base+"updatedAt"]=now; updates[base+"updatedBy"]=quien; antes[id]=t; n++;
+  });
+  if(!n){ toast("Ya estaban así","ok"); return; }
+  firebase.database().ref().update(updates).then(()=>{ toast(`Guardado en ${n} tarea${n===1?"":"s"}`,"ok"); Object.entries(antes).forEach(([id,t])=>tareaLogDesdeUpdates(id,t,updates)); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+}
+function ttSelAsignar(pid){ // pid = agrega a esa persona en todas; null = quita a todos
+  const ids=ttSelIds(), updates={}, antes={}, nuevosPor={}, now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre}; let n=0;
+  ids.forEach(id=>{
+    const t=tareas[id]; if(!t)return;
+    const set=new Set(Object.keys(t.asignados||{})); if(pid){ if(set.has(pid))return; set.add(pid); } else { if(!set.size)return; set.clear(); }
+    const asignados={}, asignadosEmails={}; set.forEach(x=>{ asignados[x]=true; const em=idToEmail(x); if(em) asignadosEmails[sanitizeEmailKey(em)]=true; });
+    const creadorKey=t.creadoPorEmail?sanitizeEmailKey(t.creadoPorEmail):sanitizeEmailKey(currentUser.email);
+    const oldVis=new Set([creadorKey,...Object.keys(t.asignadosEmails||{})]), newVis=new Set([creadorKey,...Object.keys(asignadosEmails)]);
+    const base="tago_tareas/"+id+"/";
+    updates[base+"asignados"]=asignados; updates[base+"asignadosEmails"]=asignadosEmails; updates[base+"updatedAt"]=now; updates[base+"updatedBy"]=quien;
+    newVis.forEach(ek=>{ if(!oldVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+id]=true; });
+    oldVis.forEach(ek=>{ if(!newVis.has(ek)) updates["tago_tareas_visibilidad/"+ek+"/"+id]=null; });
+    antes[id]=t; if(pid) nuevosPor[id]=[pid]; n++;
+  });
+  if(!n){ toast(pid?"Ya estaba asignada en todas":"No había asignaciones","ok"); ttSelCerrarPop(); return; }
+  firebase.database().ref().update(updates).then(()=>{ toast(`${pid?"Asignada":"Asignaciones quitadas"} en ${n} tarea${n===1?"":"s"}`,"ok"); Object.entries(antes).forEach(([id,t])=>{ tareaLogDesdeUpdates(id,t,updates); if(nuevosPor[id]) notificarAsignadosTarea(id,t.nombre,nuevosPor[id]); }); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
+  ttSelCerrarPop();
+}
+function ttSelMover(lid){
+  const ids=ttSelIds(); const madres=ids.filter(id=>tareas[id]&&!(tareas[id].padre&&ids.includes(tareas[id].padre))); // las hijas cuya madre también va, van con ella
+  let n=0; madres.forEach(id=>{ const t=tareas[id]; if(!t||t.lista===lid)return; tareaCambiarLista(id,lid); n++; });
+  toast(n?`Moviendo ${n} tarea${n===1?"":"s"}…`:"Ya estaban en esa lista","ok"); ttSel.clear(); ttSelUltimo=null; renderTareas();
+}
+function ttSelPuedeBorrar(id){ const t=tareas[id]; if(!t||!puedeBorrarCreacion(t))return false; return ttHijasDe(id).every(([,h])=>puedeBorrarCreacion(h)); }
+function ttSelEliminar(){
+  const ids=ttSelIds(), ok=ids.filter(ttSelPuedeBorrar), no=ids.length-ok.length;
+  if(!ok.length){ toast(MSG_NO_BORRAR,"error"); return; }
+  const todas=new Set(); ok.forEach(id=>{ todas.add(id); ttHijasDe(id).forEach(([hid])=>todas.add(hid)); });
+  const msg=`¿Eliminar ${ok.length} tarea${ok.length===1?"":"s"}${todas.size>ok.length?` y ${todas.size-ok.length} subtarea${todas.size-ok.length===1?"":"s"}`:""}?${no?` (${no} no se pueden eliminar: las creó otra persona)`:""}`;
+  if(!confirm(msg))return;
+  const updates={};
+  todas.forEach(tid=>{
+    const t=tareas[tid]||{};
+    const vis=new Set([...(t.creadoPorEmail?[sanitizeEmailKey(t.creadoPorEmail)]:[]),...Object.keys(t.asignadosEmails||{})]);
+    updates["tago_tareas/"+tid]=null; updates["tago_tareas_historial/"+tid]=null; updates["tago_tareas_comentarios/"+tid]=null;
+    vis.forEach(ek=>{ updates["tago_tareas_visibilidad/"+ek+"/"+tid]=null; });
+  });
+  if(tareaFichaId&&todas.has(tareaFichaId)) cerrarTarea();
+  ttSel.clear(); ttSelUltimo=null; ttSelCerrarPop();
+  firebase.database().ref().update(updates).then(()=>toast(`Eliminada${todas.size===1?"":"s"} ${todas.size}`,"ok")).catch(err=>toast("No se pudo eliminar: "+err.message,"error"));
+}
 function renderTareaRow(id,t,cols,m){
   cols=cols||ttColumnas(); m=m||{};
   const celdas=cols.map(col=>{ const ed=ttEditable(t,col); return `<div class="tt-cell${ed?" tt-edit":""}"${ed?` onclick="ttEditar(event,'${id}','${col.k}')" title="Clic para editar"`:""}>${ttValor(id,t,col)}</div>`; }).join("");
@@ -3250,8 +3397,8 @@ function renderTareaRow(id,t,cols,m){
   const caret=hijas.length?`<span class="tt-sub-caret" title="${m.plegada?"Mostrar":"Ocultar"} subtareas" onclick="ttSubPlegar(event,'${id}')">${m.plegada?"▸":"▾"}</span>`:"";
   const contador=todas.length?`<span class="tt-sub-n" title="Subtareas hechas / total${todas.length>hijas.length?" · aquí solo se ven "+(hijas.length||"ninguna")+" de ellas":""}">${hechas}/${todas.length}</span>`:"";
   const madreRef=m.madreRef?`<span class="tt-madre-ref" title="Subtarea de ${esc(tareas[m.madreRef].nombre)}">↳ ${esc(tareas[m.madreRef].nombre)}</span>`:"";
-  return`<div class="tt-row${m.hija?" tt-hija":""}" data-id="${id}">
-    <div class="tt-cell tt-nombre" onclick="abrirTarea('${id}')" title="Abrir la tarea">${caret}<span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,estadosParaTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span>${contador}${madreRef}</div>
+  return`<div class="tt-row${m.hija?" tt-hija":""}${ttSel.has(id)?" tt-selected":""}" data-id="${id}">
+    <div class="tt-cell tt-nombre" onclick="abrirTarea('${id}')" title="Abrir la tarea"><span class="tt-sel-box${ttSel.has(id)?" on":""}" title="Seleccionar (Shift+clic selecciona un rango)" onclick="ttSelToggle(event,'${id}')">${ic(ttSel.has(id)?"square-check-big":"square")}</span>${caret}<span title="Cambiar estado" onclick="ttEditar(event,'${id}','estado')" style="display:inline-flex">${ttDot(tareaEstados[t.estado],t.estado,estadosParaTarea(t))}</span><span class="tt-nombre-txt">${esc(t.nombre)}</span>${contador}${madreRef}</div>
     ${celdas}
     <div class="tt-cell tt-acc">${!t.padre&&!m.hija?`<button class="tt-sub-add" title="Agregar subtarea" onclick="event.stopPropagation();ttSubAgregar('${id}')">${ic("plus")}</button>`:""}${currentUser&&currentUser.isAdmin?`<button class="tt-del" title="Eliminar tarea" onclick="event.stopPropagation();delTarea('${id}')">✕</button>`:""}</div>
   </div>`;
