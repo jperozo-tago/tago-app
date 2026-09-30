@@ -3019,7 +3019,7 @@ function renderTareas(){
   document.querySelectorAll("#tareas-vistas button").forEach(b=>b.classList.toggle("active",b.dataset.v===ttVistaActual()));
   if(ttVistaActual()!=="lista"){ renderTareasAlt(estadosOrdenados); ttColaFinal(); return; }
   // Si se estaba escribiendo el nombre de una tarea nueva, el repintado no se lo lleva
-  const escribiendo=document.getElementById("tt-add-input"), textoNuevo=escribiendo?escribiendo.value:null;
+  const escribiendo=(ttNuevo!==null||ttSubNuevo!==null)?document.getElementById("tt-add-input"):null, textoNuevo=escribiendo?escribiendo.value:null, escribiendoConFoco=!!escribiendo&&document.activeElement===escribiendo;
   const cols=ttColumnas(), enLista=tareaFiltro.tipo==="lista", admin=!!(currentUser&&currentUser.isAdmin);
   ttColsActuales=cols;
   const {plantilla,plantillaM}=ttPlantilla(cols);
@@ -3054,7 +3054,7 @@ function renderTareas(){
       </div></div>`:""}
     </div>`;
   }).join("");
-  if(textoNuevo!==null){ const inp=document.getElementById("tt-add-input"); if(inp){ inp.value=textoNuevo; inp.focus(); } }
+  if(textoNuevo!==null&&(ttNuevo!==null||ttSubNuevo!==null)){ const inp=document.getElementById("tt-add-input"); if(inp){ inp.value=textoNuevo; if(escribiendoConFoco) inp.focus(); } }
   ttColaFinal();
 }
 function ttColaFinal(){ // lo que depende de las tareas y se repinta con ellas
@@ -3371,9 +3371,15 @@ function ttNuevaTecla(ev,estId){
   if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value; ev.target.value=""; ttCrear(estId,v); }
   if(ev.key==="Escape"){ ev.preventDefault(); ev.target.value=""; ttNuevo=null; renderTareas(); }
 }
-function ttNuevaBlur(estId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(v.trim()) ttCrear(estId,v); ttNuevo=null; setTimeout(renderTareas,0); }
+function ttNuevaBlur(estId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(inp) inp.value=""; ttNuevo=null; if(v.trim()) ttCrear(estId,v); setTimeout(renderTareas,0); }
+var ttCreacionesRecientes=[]; // [{clave, ts}] para frenar duplicados y ráfagas (bug del 24/25-09-2026 en Facturas por cobrar)
 function ttCrear(estId,nombre,padreId){
   nombre=(nombre||"").trim(); if(!nombre)return;
+  const ahora=Date.now(), clave=nombre.toLowerCase()+"|"+(tareaFiltro.tipo==="lista"?tareaFiltro.id:"")+"|"+(padreId||"");
+  ttCreacionesRecientes=ttCreacionesRecientes.filter(c=>ahora-c.ts<20000);
+  if(ttCreacionesRecientes.some(c=>c.clave===clave)){ toast(`«${nombre}» ya se creó hace un momento`,"error"); return; }
+  if(ttCreacionesRecientes.filter(c=>ahora-c.ts<3000).length>=6){ toast("Se frenó una creación repetida de tareas. Si era a propósito, espera unos segundos.","error"); ttNuevo=null; ttSubNuevo=null; return; }
+  ttCreacionesRecientes.push({clave,ts:ahora});
   const now=new Date().toISOString(), quien={id:currentUser.id,nombre:currentUser.nombre};
   const asignados={}, asignadosEmails={};
   const madre=padreId&&tareas[padreId]; if(padreId&&!madre){ toast("La tarea madre ya no existe","error"); return; }
@@ -3397,7 +3403,7 @@ function ttSubTecla(ev,padreId){
   if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value; ev.target.value=""; ttCrear(null,v,padreId); }
   if(ev.key==="Escape"){ ev.preventDefault(); ev.target.value=""; ttSubNuevo=null; renderTareas(); }
 }
-function ttSubBlur(padreId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(v.trim()) ttCrear(null,v,padreId); ttSubNuevo=null; setTimeout(renderTareas,0); }
+function ttSubBlur(padreId){ const inp=document.getElementById("tt-add-input"); const v=inp?inp.value:""; if(inp) inp.value=""; ttSubNuevo=null; if(v.trim()) ttCrear(null,v,padreId); setTimeout(renderTareas,0); }
 // Edición en la celda de las propiedades integradas (los campos personalizados usan cpEditarEnFila)
 function ttMenu(ops,actual){ return `<div class="celda-menu" role="listbox">${ops.map(o=>`<div class="celda-opcion${String(o.v)===String(actual??"")?" actual":""}" role="option" tabindex="0" data-v="${esc(o.v)}">${o.dot?`<span class="celda-dot" style="background:${o.dot}"></span>`:""}${o.av?`<span class="avatar ${o.av}" style="width:20px;height:20px;font-size:9px">${esc(o.v)}</span>`:""}${esc(o.l)}</div>`).join("")}</div>`; }
 function ttAbrirPop(cel,id,campo){
@@ -6613,7 +6619,7 @@ function tareaFichaToggleAsig(){ tareaFichaAsigAbierto=!tareaFichaAsigAbierto; r
 function tareaFichaTogglePersona(pid){ const t=tareas[tareaFichaId]; if(!t)return; const s=new Set(Object.keys(t.asignados||{})); s.has(pid)?s.delete(pid):s.add(pid); tareaGuardarAsignados(tareaFichaId,[...s]); }
 function ftSubAgregar(id){ const m=tareas[id]; if(!m)return; if(m.lista&&cpConfig(m.lista).personalizados.some(c=>c.requerido)){ openTareaModal(null,null,null,id); return; } tareaSubNueva=true; renderTarea(true); }
 function ftSubTecla(ev,id){
-  if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value.trim(); if(v){ ttCrear(null,v,id); ev.target.value=""; } }
+  if(ev.key==="Enter"){ ev.preventDefault(); const v=ev.target.value.trim(); ev.target.value=""; if(v) ttCrear(null,v,id); }
   if(ev.key==="Escape"){ ev.preventDefault(); tareaSubNueva=false; renderTarea(true); }
 }
 function renderTarea(forzar){
