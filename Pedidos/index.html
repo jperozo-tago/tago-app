@@ -2687,6 +2687,7 @@ function renderComentarioImagenPreview(id){
 const TAB_TITLES={pedidos:"Pedidos",stats:"Estadísticas",tareas:"Tareas",chat:"Chat",bandeja:"Bandeja",packs:"Packs DTF"};
 const TAB_ICONS={pedidos:"clipboard-list",stats:"chart-column",tareas:"square-check-big",chat:"message-circle",bandeja:"inbox",packs:"package"};
 function switchTab(tab){
+  if(typeof ttSelReset==="function"&&tab!=="tareas") ttSelReset();
   currentTab=tab;
   if(tab==="chat") chatPideAvisos();
   if(tab!=="pedidos"&&typeof cerrarFicha==="function")cerrarFicha();
@@ -3087,7 +3088,7 @@ function ttColaFinal(){ // lo que depende de las tareas y se repinta con ellas
 var ttVistas={}; try{ ttVistas=JSON.parse(localStorage.getItem("tago_tareas_vista")||"{}")||{}; }catch(e){}
 var ttCalMes=(()=>{ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),1); })(), ttArrastre=null;
 function ttVistaActual(){ return ttVistas[ttAnchoKey()]||"lista"; }
-function ttVista(v){ ttVistas[ttAnchoKey()]=v; try{ localStorage.setItem("tago_tareas_vista",JSON.stringify(ttVistas)); }catch(e){} cerrarCeldaPop(); ttNuevo=null; renderTareas(); }
+function ttVista(v){ if(typeof ttSelReset==="function") ttSelReset(); ttVistas[ttAnchoKey()]=v; try{ localStorage.setItem("tago_tareas_vista",JSON.stringify(ttVistas)); }catch(e){} cerrarCeldaPop(); ttNuevo=null; renderTareas(); }
 function ttSufijoGrupo(est){ if(est.lista&&tareaFiltro.tipo!=="lista") return listas[est.lista]?` · ${esc(listas[est.lista].nombre)}`:""; if(tareaFiltro.tipo==="todas"||tareaFiltro.tipo==="mias") return est.espacio&&espacios[est.espacio]?` · ${esc(espacios[est.espacio].nombre)}`:""; return ""; }
 function ttCard(id,t,mezcla){
   const est=tareaEstados[t.estado], p=PRIO[t.prioridad]||PRIO.normal, l=t.lista&&listas[t.lista];
@@ -3280,7 +3281,10 @@ function ttSelGrupo(ev,estId){
   const ids=ttSelGrupos[estId]||[]; const todo=ids.length&&ids.every(id=>ttSel.has(id));
   ids.forEach(id=>todo?ttSel.delete(id):ttSel.add(id)); renderTareas();
 }
-function ttSelLimpiar(){ ttSel.clear(); ttSelUltimo=null; ttSelCerrarPop(); renderTareas(); }
+function ttSelReset(){ ttSel.clear(); ttSelUltimo=null; ttSelCerrarPop(); const b=document.getElementById("tt-sel-barra"); if(b) b.remove(); }
+function ttSelLimpiar(){ ttSelReset(); renderTareas(); }
+// Un clic fuera de las filas, la barra o sus ventanas quita la selección (pedido de Andreina, 30-09-2026)
+document.addEventListener("pointerdown",e=>{ if(!ttSel.size)return; if(e.target.closest(".tt-row,.tarea-grupo-header,#tt-sel-barra,.tt-sel-pop,.celda-popover,#ficha-tarea,.modal-overlay,.modal,.toast"))return; ttSelLimpiar(); });
 function ttSelIds(){ [...ttSel].forEach(id=>{ if(!tareas[id]) ttSel.delete(id); }); return [...ttSel]; }
 function ttSelRenderBarra(){
   let b=document.getElementById("tt-sel-barra");
@@ -5814,7 +5818,7 @@ function aplicarSidebar(){
 }
 function sbToggleEspacio(id){ sbAbiertos.has(id)?sbAbiertos.delete(id):sbAbiertos.add(id); try{ localStorage.setItem("tago_sb_abiertos_v2",JSON.stringify([...sbAbiertos])); }catch(e){} renderSidebar(); }
 function irAPedidosLista(key){ if(currentTab!=="pedidos") switchTab("pedidos"); categoriaSeleccionada=key; render(); closeSidebar(); }
-function irATareas(filtro){ tareaFiltro=filtro; if(currentTab!=="tareas") switchTab("tareas"); else renderTareas(); actualizarTituloTareas(); renderSidebar(); closeSidebar(); }
+function irATareas(filtro){ if(typeof ttSelReset==="function") ttSelReset(); tareaFiltro=filtro; if(currentTab!=="tareas") switchTab("tareas"); else renderTareas(); actualizarTituloTareas(); renderSidebar(); closeSidebar(); }
 function actualizarTituloTareas(){
   if(currentTab!=="tareas")return;
   let ctx="";
