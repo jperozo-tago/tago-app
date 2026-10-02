@@ -293,8 +293,19 @@ de datos (no se puede saltar desde la consola del navegador) es: eliminar una
 categoría personalizada, restringido a `j.perozo@tago.cl` en
 `database.rules.json`.
 
-**Estados de un pedido:** Por revisar → Enviado a Producción → Enviado a
-Impresión → Listo → Entregado (ver objeto `ST` en el JS). Cambiar de estado
+**Estados de un pedido:** Pedidos Shopify → Por revisar → Enviado a Producción →
+Enviado a Impresión → Listo → Entregado (ver objeto `ST` en el JS). «Pedidos
+Shopify» (`pedidos_shopify`, desde el 01-oct-2026) es la bandeja de entrada de los
+pedidos web: los crea el robot del tablero (`tago-tablero/pipeline/shopify_importar.py`,
+cada 30 min) con `origen:"shopify"`, `importado{orderId, name, numero, at, pedidoAt,
+tecnica, lineas, hermanos}` y `createdBy {id:"SH", nombre:"Shopify"}`, uno por
+técnica; una persona los revisa y los pasa a Por revisar («→ Revisar»). En
+`ORDEN_ESTADOS` ocupa la posición 0, por eso `moverEstado` resta 1 para los hitos
+(Pedidos Shopify y Por revisar son la misma etapa, antes de producción). Si el
+pedido se cancela o reembolsa en Shopify, el robot deja `shopifyAlerta {tipo,
+detalle, at, numero}` y la fila, la tarjeta y la ficha lo muestran en rojo. La fila
+lleva la pastilla «Shopify» y la ficha «desde Shopify · comprado el …» y la línea
+«Creado desde Shopify» en el historial. Cambiar de estado
 guarda automáticamente fechas hito (`enviadoProdAt`, `impresionAt`,
 `listaAt`) la primera vez que se alcanza cada una — esas fechas alimentan las
 métricas de tiempo en Estadísticas.

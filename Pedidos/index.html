@@ -51,6 +51,7 @@
       --danger-c:#DC2626;--danger-bg:rgba(220,38,38,0.08); --danger-bd:rgba(220,38,38,0.2);
       --orange-c:#EA580C;--orange-bg:rgba(234,88,12,0.08); --orange-bd:rgba(234,88,12,0.2);
       --stale-c:#5A63C4;--stale-bg:rgba(143,155,255,0.14); --stale-bd:rgba(143,155,255,0.35);
+      --shop-c:#5A63C4;  --shop-bg:rgba(143,155,255,0.16); --shop-bd:rgba(143,155,255,0.45);   /* Pedidos Shopify: lavanda oscurecida */
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{background:var(--bg);min-height:100vh}
@@ -183,7 +184,7 @@
 
     /* Kanban */
     #kanban-contenedor{overflow-x:auto}
-    .kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:start;min-width:1020px}
+    .kanban{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:start;min-width:1220px}
     .kcol{background:var(--panel);border-radius:12px;padding:10px;min-height:140px;transition:background .1s}
     .kcol.dragover{background:var(--teal-glow)}
     .kcol-head{display:flex;align-items:center;gap:7px;padding:2px 4px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-sec)}
@@ -253,6 +254,8 @@
 
     /* Badges */
     .badge{display:inline-block;border-radius:6px;font-size:11px;font-weight:600;padding:3px 8px;white-space:nowrap}
+    .badge-pedidos_shopify{color:var(--shop-c);background:var(--shop-bg);border:1px solid var(--shop-bd)}
+    .job-sub.job-shop{color:var(--shop-c);font-weight:600}
     .badge-recibido{color:var(--grey-c);background:var(--grey-bg);border:1px solid var(--grey-bd)}
     .badge-enviado_produccion{color:var(--blue-c);background:var(--blue-bg);border:1px solid var(--blue-bd)}
     .badge-en_produccion{color:var(--amber-c);background:var(--amber-bg);border:1px solid var(--amber-bd)}
@@ -800,7 +803,7 @@
     .cal-celda.hoy .cal-dia{color:var(--azul)}
     .cal-chip{font-size:12px;font-weight:600;padding:2px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
     .cal-chip-cli{font-weight:400;opacity:.8}
-    .cal-recibido{background:var(--grey-bg);color:var(--grey-c)}.cal-enviado_produccion{background:var(--blue-bg);color:var(--blue-c)}.cal-en_produccion{background:var(--amber-bg);color:var(--amber-c)}.cal-listo{background:var(--green-bg);color:var(--green-c)}.cal-entregado{background:var(--violet-bg);color:var(--violet-c);opacity:.7}
+    .cal-pedidos_shopify{background:var(--shop-bg);color:var(--shop-c)}.cal-recibido{background:var(--grey-bg);color:var(--grey-c)}.cal-enviado_produccion{background:var(--blue-bg);color:var(--blue-c)}.cal-en_produccion{background:var(--amber-bg);color:var(--amber-c)}.cal-listo{background:var(--green-bg);color:var(--green-c)}.cal-entregado{background:var(--violet-bg);color:var(--violet-c);opacity:.7}
     .cal-chip.ov,.carga-chip.ov{border-color:var(--danger-bd);box-shadow:inset 3px 0 0 var(--danger-c)}
     .cal-mas{font-size:12px;color:var(--text-muted)}
     .carga-head{font-size:11px;color:var(--text-muted);margin-bottom:8px}
@@ -930,6 +933,7 @@
       --amber-c:#0B1447;--amber-bg:rgba(11,20,71,.08);--amber-bd:rgba(11,20,71,.25);
       --green-c:#1C7A63;--green-bg:rgba(73,206,171,.18);--green-bd:rgba(73,206,171,.5);
       --violet-c:#858AA3;--violet-bg:#F6F6F6;--violet-bd:#E7E8ED;
+      --shop-c:#5A63C4;--shop-bg:rgba(143,155,255,.16);--shop-bd:rgba(143,155,255,.45);   /* Pedidos Shopify */
       --orange-c:#0B1447;--orange-bg:rgba(11,20,71,.08);--orange-bd:rgba(11,20,71,.25);
       --stale-c:#4063F9;--stale-bg:rgba(64,99,249,.10);--stale-bd:rgba(64,99,249,.3);
     }
@@ -1112,12 +1116,14 @@
       --green-c:#49CEAB; --green-bg:rgba(73,206,171,.18);  --green-bd:rgba(73,206,171,.5);    /* Listo: Verde Tago */
       --violet-c:#545B7E;--violet-bg:rgba(84,91,126,.12);  --violet-bd:rgba(84,91,126,.35);   /* Entregado: gris azulado del sistema */
     }
+    .badge-pedidos_shopify{background:var(--shop-c);color:#fff;border-color:var(--shop-c)}
     .badge-recibido{background:var(--grey-c);color:#fff;border-color:var(--grey-c)}
     .badge-enviado_produccion{background:var(--blue-c);color:#fff;border-color:var(--blue-c)}
     .badge-en_produccion{background:var(--amber-c);color:#fff;border-color:var(--amber-c)}
     .badge-listo{background:var(--green-c);color:#fff;border-color:var(--green-c)}
     .badge-entregado{background:var(--violet-c);color:#fff;border-color:var(--violet-c)}
-    .badge-recibido,.badge-enviado_produccion,.badge-en_produccion,.badge-listo,.badge-entregado{border-radius:999px;padding:4px 10px;letter-spacing:0}
+    .badge-pedidos_shopify,.badge-recibido,.badge-enviado_produccion,.badge-en_produccion,.badge-listo,.badge-entregado{border-radius:999px;padding:4px 10px;letter-spacing:0}
+    .table-row.estado-pedidos_shopify{box-shadow:inset 4px 0 0 var(--shop-c)}
     .table-row.estado-recibido{box-shadow:inset 4px 0 0 var(--grey-c)}
     .table-row.estado-enviado_produccion{box-shadow:inset 4px 0 0 var(--blue-c)}
     .table-row.estado-en_produccion{box-shadow:inset 4px 0 0 var(--amber-c)}
@@ -2102,7 +2108,7 @@
       </div>
 
       <div class="form-row f-3">
-        <div><label>Estado</label><select id="f-estado"><option value="recibido">Por revisar</option><option value="enviado_produccion">Enviado a Producción</option><option value="en_produccion">Enviado a Impresión</option><option value="listo">Listo ✓</option><option value="entregado">Entregado</option></select></div>
+        <div><label>Estado</label><select id="f-estado"><option value="pedidos_shopify">Pedidos Shopify</option><option value="recibido">Por revisar</option><option value="enviado_produccion">Enviado a Producción</option><option value="en_produccion">Enviado a Impresión</option><option value="listo">Listo ✓</option><option value="entregado">Entregado</option></select></div>
         <div><label>Prioridad</label><select id="f-prioridad"><option value="normal">Normal</option><option value="urgente">Urgente</option></select></div>
         <div><label>Fecha límite</label><input id="f-fechaLimite" type="date"/></div>
       </div>
@@ -2170,6 +2176,7 @@ const AUTORIZADOS_PEDIDOS={
 };
 
 const ST={
+  pedidos_shopify:    {label:"Pedidos Shopify",      next:"recibido",          nextLabel:"→ Revisar"}, // los crea el robot del tablero desde Shopify (shopify_importar.py); una persona los revisa y los pasa a Por revisar
   recibido:           {label:"Por revisar",          next:"enviado_produccion",nextLabel:"→ Enviar a Prod."},
   enviado_produccion: {label:"Enviado a Producción", next:"en_produccion",    nextLabel:"→ Iniciar"},
   en_produccion:      {label:"Enviado a Impresión",  next:"listo",            nextLabel:"→ Marcar Listo"},
@@ -2177,6 +2184,7 @@ const ST={
   entregado:          {label:"Entregado",            next:null,               nextLabel:null},
 };
 const STAT_DEFS=[
+  {key:"pedidos_shopify",    label:"Pedidos Shopify",       color:"var(--shop-c)"},
   {key:"recibido",           label:"Por revisar",           color:"var(--grey-c)"},
   {key:"enviado_produccion", label:"Enviado a Producción",  color:"var(--blue-c)"},
   {key:"en_produccion",      label:"Enviado a Impresión",   color:"var(--amber-c)"},
@@ -2276,7 +2284,7 @@ let comentariosListeners={},comentariosData={},imagenesPendientesComentario={};
 let alertaActiva=null;
 let vistaPedidos="tabla";
 function hoyMedianoche(){ const t=new Date(); t.setHours(0,0,0,0); return t; }
-function esEstancado(j){ return j.estado==="recibido"&&j.createdAt&&(Date.now()-new Date(j.createdAt).getTime())/86400000>2; }
+function esEstancado(j){ return (j.estado==="recibido"||j.estado==="pedidos_shopify")&&j.createdAt&&(Date.now()-new Date(j.createdAt).getTime())/86400000>2; }
 function inDateRange(j){
   const desde=gv("f-desde"),hasta=gv("f-hasta");
   if(!desde&&!hasta)return true;
@@ -4182,18 +4190,19 @@ function advance(id){
   const j=jobs[id]; if(!j||!ST[j.estado]?.next)return;
   moverEstado(id,ST[j.estado].next);
 }
-const ORDEN_ESTADOS=["recibido","enviado_produccion","en_produccion","listo","entregado"];
+const ORDEN_ESTADOS=["pedidos_shopify","recibido","enviado_produccion","en_produccion","listo","entregado"];
 function moverEstado(id,nuevoEstado){
   const j=jobs[id]; if(!j||j.estado===nuevoEstado||!ST[nuevoEstado])return;
   const now=new Date().toISOString();
   const upd={estado:nuevoEstado,updatedAt:now,updatedBy:{id:currentUser.id,nombre:currentUser.nombre}};
-  const idx=ORDEN_ESTADOS.indexOf(nuevoEstado);
+  const pos=ORDEN_ESTADOS.indexOf(nuevoEstado);
+  const idx=Math.max(0,pos-1); // etapa para los hitos: «Pedidos Shopify» y «Por revisar» son la 0, antes de producción
   // Estos hitos se asignan SOLO la primera vez que el pedido alcanza (o supera) esa etapa
   if(idx>=1&&!j.enviadoProdAt){ upd.enviadoProdAt=now; upd.enviadoProdBy={id:currentUser.id,nombre:currentUser.nombre}; }
   if(idx>=2&&!j.impresionAt){ upd.impresionAt=now; upd.impresionBy={id:currentUser.id,nombre:currentUser.nombre}; }
   if(idx>=3&&!j.listaAt){ upd.listaAt=now; upd.listaBy={id:currentUser.id,nombre:currentUser.nombre}; }
   // Retroceder: las etapas que se dejan atrás pierden su hito (al volver a avanzar se toma la fecha nueva)
-  const atras=idx<ORDEN_ESTADOS.indexOf(j.estado);
+  const atras=pos<ORDEN_ESTADOS.indexOf(j.estado);
   if(atras){
     if(idx<1){ upd.enviadoProdAt=null; upd.enviadoProdBy=null; }
     if(idx<2){ upd.impresionAt=null; upd.impresionBy=null; }
@@ -4351,7 +4360,7 @@ function setVistaPedidos(v,sinRender){
   if(!sinRender) render();
 }
 function diasEnEtapaActual(j){
-  const ts=j.estado==="recibido"?j.createdAt
+  const ts=(j.estado==="recibido"||j.estado==="pedidos_shopify")?j.createdAt
     :j.estado==="enviado_produccion"?(j.enviadoProdAt||j.createdAt)
     :j.estado==="en_produccion"?(j.impresionAt||j.enviadoProdAt||j.createdAt)
     :j.estado==="listo"?(j.listaAt||j.createdAt)
@@ -4372,7 +4381,7 @@ function renderKcard(id,j){
   const ov=overdue(j.fechaLimite,j.estado,j.tipoEntrega);
   const delIcon=j.tipoEntrega==="OTS"?ic("truck"):j.tipoEntrega==="Bluexpress"?ic("package"):j.tipoEntrega==="Chilexpress"?ic("truck"):ic("store");
   return`<div class="kcard" draggable="true" ondragstart="onKanbanDragStart(event,'${id}')" ondragend="this.classList.remove('dragging')" onclick="openModal('${id}')">
-    <div class="kcard-top"><span class="kcard-num">${esc(j.pedido)||id}</span><span>${j.prioridad==="urgente"?ic("zap"):""}${esEstancado(j)?`<span class="stale-flag">${ic("hourglass")}</span>`:""}</span></div>
+    <div class="kcard-top"><span class="kcard-num">${esc(j.pedido)||id}</span><span>${j.prioridad==="urgente"?ic("zap"):""}${esEstancado(j)?`<span class="stale-flag">${ic("hourglass")}</span>`:""}${j.shopifyAlerta?`<span class="stale-flag" style="color:var(--danger-c)" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")}</span>`:""}</span></div>
     <div class="kcard-client">${esc(j.cliente)}</div>
     <div class="kcard-meta"><span class="job-type-pill" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span><span>${j.cantidad?j.cantidad+(j.unidad==="metros"?"m":"u"):"—"}</span><span class="${ov?"overdue":""}">${delIcon}${j.fechaLimite?" "+fmtDate(j.fechaLimite):""}${ov?" "+ic("triangle-alert"):""}</span></div>
     <div class="kcard-foot">${ST[j.estado]?.next?`<button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${ST[j.estado].nextLabel}</button>`:`<span class="badge badge-${j.estado}" style="font-size:9.5px">${ST[j.estado]?.label||""}</span>`}<span class="kcard-age">${ic("timer")} ${diasEnEtapaActual(j)}</span></div>
@@ -4523,7 +4532,7 @@ function renderRow(id,j){
   if(j.accesorio){ const a=j.accesorio; ext+=`<div class="exp-section"><div class="exp-section-title">Accesorio</div><div class="exp-section-grid"><div><div class="exp-label">Tamaño${a.disenos&&a.disenos.length>1?` (${a.disenos.length} diseños)`:""}</div><div class="exp-val">${fmtDisenos(a)}</div></div>${a.material?`<div><div class="exp-label">Material</div><div class="exp-val">${esc(a.material)}</div></div>`:""} ${a.color?`<div><div class="exp-label">Color</div><div class="exp-val">${esc(a.color)}</div></div>`:""} ${a.logo?`<div class="exp-full"><div class="exp-label">Logo del cliente</div><div class="exp-val"><a href="${esc(safeUrl(a.logo))}" target="_blank" style="color:var(--azul)">${esc(a.logo)}</a></div></div>`:""} ${a.textura?`<div class="exp-full"><div class="exp-label">Textura</div><div class="exp-val"><a href="${esc(safeUrl(a.textura))}" target="_blank" style="color:var(--azul)">${esc(a.textura)}</a></div></div>`:""} ${a.archivoProduccion?`<div class="exp-full"><div class="exp-label">Archivo para producción</div><div class="exp-val"><a href="${esc(safeUrl(a.archivoProduccion))}" target="_blank" style="color:var(--azul)">${esc(a.archivoProduccion)}</a></div></div>`:""} ${j.tipoDtf==="Pines"?`<div><div class="exp-label">Packaging</div><div class="exp-val">${a.packaging?"Sí":"No"}</div></div>`:""} ${a.packaging&&a.packagingLink?`<div class="exp-full"><div class="exp-label">Link packaging</div><div class="exp-val"><a href="${esc(safeUrl(a.packagingLink))}" target="_blank" style="color:var(--azul)">${esc(a.packagingLink)}</a></div></div>`:""}</div></div>`; }
   if(j.envio&&j.tipoEntrega!=="Retiro"){ const e=j.envio; ext+=`<div class="exp-section"><div class="exp-section-title">${j.tipoEntrega==="OTS"?"OTS":j.tipoEntrega==="Bluexpress"?"Bluexpress":"Chilexpress"}</div><div class="exp-section-grid"><div><div class="exp-label">Destinatario</div><div class="exp-val">${esc(e.nombre)||"—"}</div></div><div><div class="exp-label">RUT</div><div class="exp-val">${esc(e.rut)||"—"}</div></div><div><div class="exp-label">Teléfono</div><div class="exp-val">${esc(e.tel)||"—"}</div></div><div><div class="exp-label">Correo</div><div class="exp-val">${esc(e.correo)||"—"}</div></div><div><div class="exp-label">Costo de envío</div><div class="exp-val">${e.costo?fmtCLP(e.costo):"—"}</div></div><div class="exp-full"><div class="exp-label">Dirección</div><div class="exp-val">${esc(e.dir)||"—"}</div></div></div></div>`; }
   return`<div class="table-row row-clickable estado-${esc(j.estado||"recibido")}" onclick="abrirFicha('${id}')">
-    <div><div class="job-num celda-edit" onclick="editarCelda(event,'${id}','pedido')" title="Clic para editar el número">${esc(j.pedido)||"—"}</div>${j.prioridad==="urgente"?`<div class="job-urg">${ic("zap")} URG</div>`:""}</div>
+    <div><div class="job-num celda-edit" onclick="editarCelda(event,'${id}','pedido')" title="Clic para editar el número">${esc(j.pedido)||"—"}</div>${j.prioridad==="urgente"?`<div class="job-urg">${ic("zap")} URG</div>`:""}${j.origen==="shopify"?`<div class="job-sub job-shop" title="Lo creó el robot desde el pedido de Shopify${j.importado&&j.importado.at?" · "+esc(fmtFull(j.importado.at)):""}">${ic("shopping-cart")} Shopify</div>`:""}${j.shopifyAlerta?`<div class="job-urg" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")} ${esc((j.shopifyAlerta.tipo||"").toUpperCase())}</div>`:""}</div>
     <div class="job-client celda-edit" onclick="editarCelda(event,'${id}','cliente')" title="Clic para editar el cliente">${esc(j.cliente)}</div>
     <div><span class="job-type-pill celda-edit" onclick="editarCelda(event,'${id}','tipoDtf')" title="Clic para cambiar el tipo" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span></div>
     <div><div class="creator-badge"><div class="creator-dot ${cAvClass}" style="${cLight?'color:#fff':'color:var(--azul-oscuro)'}">${j.createdBy?.id||"?"}</div><span>${esc(j.createdBy?.nombre||"—")}</span></div><div class="job-sub">${timeAgo(j.createdAt)}</div></div>
@@ -6336,8 +6345,10 @@ function renderFicha(forzar){
     <div class="fh-meta">
       <span class="fh-meta-item" title="Número del pedido de Shopify">${ic("hash")}<input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="Pedido de Shopify (ej: 8584)" onchange="fichaCampo('pedido',this.value)"/></span>
       <span class="fh-meta-item" title="Lo escribe quien crea el pedido. Retiro: se le avisa al pasar a Listo. Envío: al pasar a Entregado">${ic("mail")}<input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle)" onchange="fichaCampo('correo',this.value)"/></span>
+      ${j.origen==="shopify"?`<span class="fh-meta-item fi-ro" title="Lo creó el robot del tablero desde el pedido de Shopify">${ic("shopping-cart")} desde Shopify${j.importado&&j.importado.pedidoAt?" · comprado el "+esc(fmtFull(j.importado.pedidoAt)):""}</span>`:""}
     </div>
     ${hint?`<div class="fi-hint">${hint}</div>`:""}
+    ${j.shopifyAlerta?`<div class="fi-hint" style="color:var(--danger-c)">${ic("triangle-alert")} En Shopify este pedido está ${esc(j.shopifyAlerta.tipo||"")}: ${esc(j.shopifyAlerta.detalle||"")}. Revisar si se produce.</div>`:""}
   </div>
   <div class="fh-pills">
     <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}
@@ -6443,6 +6454,7 @@ function renderFicha(forzar){
     html+=fichaSeccion("historial",ic("clock")+" Historial del pedido",`creado ${dia(j.createdAt)} · actualizado ${timeAgo(j.updatedAt)}`,
       fiFila("Creado",fiRO(`${fmtFull(j.createdAt)}${quien(j.createdBy)}`))+
       fiFila("Última actualización",fiRO(`${timeAgo(j.updatedAt)}${quien(j.updatedBy)}`))+
+      (j.importado&&j.importado.at?fiFila("Creado desde Shopify",fiRO(`${fmtFull(j.importado.at)} · ${esc(j.importado.name||"")}`)):"")+
       (j.enviadoProdAt?fiFila("Enviado a producción",fiRO(`${fmtFull(j.enviadoProdAt)}${quien(j.enviadoProdBy)}`)):"")+
       (j.impresionAt?fiFila("Enviado a impresión",fiRO(`${fmtFull(j.impresionAt)}${quien(j.impresionBy)}`)):"")+
       (j.listaAt?fiFila("Listo",fiRO(`${fmtFull(j.listaAt)}${quien(j.listaBy)}`)):""),"fi-sec-meta");
