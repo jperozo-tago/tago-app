@@ -1072,6 +1072,7 @@
     .table-row>div,.table-head>div{min-width:0;overflow:hidden}
     .table-row>div{text-overflow:ellipsis}
     .job-type-pill,.badge,.creator-badge,.job-client,.job-num,.advance-btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-sizing:border-box}
+    .job-type-pill{white-space:normal;overflow:visible;text-overflow:clip} /* excepción: el tipo se lee entero, en dos líneas si hace falta (Andreina, 01-10-2026) */
     .creator-badge{display:flex;align-items:center;gap:5px;min-width:0}
     .creator-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .table-row .row-actions{overflow:visible}
