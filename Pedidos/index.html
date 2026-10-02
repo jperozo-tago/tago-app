@@ -2335,7 +2335,7 @@ function toggleAlerta(tipo){
 }
 let filasAbiertas=new Set(),borradoresComentario={};
 let historialListeners={},historialData={};
-const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF",correo:"Correo del cliente"};
+const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF",correo:"Correo del cliente",tambienTexto:"También compró"};
 let chatRef=null,chatsMeta={},currentChatId=null,chatMessagesRef=null,chatMessages={},chatInitialized=false,selectedGrupoMiembros=[];
 let tareasRef=null,tareas={},tareasEstadosRef=null,tareaEstados={},tareasInitialized=false,editTareaId=null,selectedTareaAsignados=[];
 let tareasVisIndexRef=null,tareaChildListeners={},tareasPersonales={},tareasPorLista={},tareasListaListeners={};
@@ -4120,7 +4120,8 @@ function saveJob(){
 function numeroShopify(j){ const m=String((j&&j.pedido)||"").match(/(?:^|[^\w-])#?(\d{4,6})(?![\w-])/); return m?m[1]:null; }
 const SHOPIFY_ADMIN="https://admin.shopify.com/store/tago-cl"; // enlace al pedido en el administrador (Andreina, 01-10-2026: «debajo del link de Google, el link de Shopify»)
 function archivosDe(j){ const a=j&&j.archivos; return !a?[]:Array.isArray(a)?a.filter(Boolean):Object.values(a).filter(Boolean); } // enlaces de los archivos que subió el cliente en Shopify (los deja el robot en `archivos`)
-function tambienDe(j){ const a=j&&j.tambienCompro, l=!a?[]:Array.isArray(a)?a:Object.values(a); return l.filter(t=>t&&t.texto); } // los demás productos del mismo pedido de Shopify (los deja el robot); Andreina: «MUY visible»
+function tambienDe(j){ const a=j&&j.tambienCompro, l=!a?[]:Array.isArray(a)?a:Object.values(a), out=l.filter(t=>t&&t.texto); const txt=String(j&&j.tambienTexto||"").trim(); if(txt) txt.split(/\n|\s\/\s/).map(x=>x.trim()).filter(Boolean).forEach(x=>out.push({texto:x,pedido:""})); return out; } // lo que deja el robot (tambienCompro) más lo que escribe la persona en la ficha (tambienTexto)
+function tambienItemHtml(t){ let h=esc(t.texto).replace(/TG-\d{4}/g,m=>jobs[m]?`<a class="fi-tambien-link" onclick="abrirFicha('${m}')" title="Abrir ${m}">${m}</a>`:m); if(t.pedido) h+=` <a class="fi-tambien-link" onclick="abrirFicha('${esc(t.pedido)}')" title="Abrir ${esc(t.pedido)}">${esc(t.pedido)}</a>`; return h; } // los demás productos del mismo pedido de Shopify (los deja el robot); Andreina: «MUY visible»
 function shopifyUrl(j){ const gid=j&&j.importado&&j.importado.orderId, m=gid?String(gid).match(/(\d+)$/):null; if(m) return SHOPIFY_ADMIN+"/orders/"+m[1]; const n=numeroShopify(j); return n?SHOPIFY_ADMIN+"/orders?query="+encodeURIComponent(n):null; }
 function marcarCierreShopify(upd,j,now){
   const n=numeroShopify(j); if(!n)return false;
@@ -6365,7 +6366,7 @@ function renderFicha(forzar){
     </div>
     ${hint?`<div class="fi-hint">${hint}</div>`:""}
     ${j.shopifyAlerta?`<div class="fi-hint" style="color:var(--danger-c)">${ic("triangle-alert")} En Shopify este pedido está ${esc(j.shopifyAlerta.tipo||"")}: ${esc(j.shopifyAlerta.detalle||"")}. Revisar si se produce.</div>`:""}
-    ${tambienDe(j).length?`<div class="fi-tambien">${ic("shopping-cart")} <strong>También compró:</strong> ${tambienDe(j).map(t=>`${esc(t.texto)}${t.pedido?` <a class="fi-tambien-link" onclick="abrirFicha('${esc(t.pedido)}')" title="Abrir ${esc(t.pedido)}">${esc(t.pedido)}</a>`:""}`).join(" · ")}</div>`:""}
+    ${tambienDe(j).length?`<div class="fi-tambien">${ic("shopping-cart")} <strong>También compró:</strong> ${tambienDe(j).map(tambienItemHtml).join(" · ")}</div>`:""}
   </div>
   <div class="fh-pills">
     <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}
@@ -6381,6 +6382,7 @@ function renderFicha(forzar){
   ${fichaSeccion("producto",ic("printer")+" Producto",[tipo,j.cantidad?`${j.cantidad} ${unidad}`:"",j.precio?fmtCLP(j.precio):""].filter(Boolean).join(" · "),
     fiFila("Tipo de producto",`<select class="fi fi-sel" onchange="fichaCampo('tipoDtf',this.value)">${tipoOpts}</select>`)+
     fiFila("Categoría",fiSelect("categoria",categoriaDePedido(j),todasLasCategorias().map(c=>[c.key,c.label])))+
+    fiFila(ic("shopping-cart")+" También compró",fiText("tambienTexto",j.tambienTexto,"¿Compró algo más en el mismo pedido? Anótalo (ej: 2 × pines · TG-0612)"),true)+
     fiFila(`Cantidad (${unidad}) *`,fiNum("cantidad",j.cantidad,unidad==="metros"?"0.01":"1",unidad==="metros"?"ej: 1.5":"ej: 100"))+
     fiFila(ic("banknote")+" Precio (CLP, con IVA)",fiNum("precio",j.precio,"1","ej: 45220")+(j.precio?`<span class="fi-neto">${fmtCLPNeto(j.precio)} neto</span>`:""))+
     fichaPackHtml(j)+
