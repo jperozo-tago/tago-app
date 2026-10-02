@@ -313,7 +313,9 @@ llegan en `archivos` (lista de URLs; `archivosDe(j)` tolera objeto o lista): fil
 `tambienCompro` (lista de `{texto, pedido}`, `tambienDe(j)`) son los demás productos
 del mismo pedido de Shopify: franja naranja `.job-tambien` (último hijo de la fila,
 `grid-column:1/-1`), `.kcard-tambien` y `.fi-tambien` con el TG clickeable. Tipos
-«DTF Textil (Lámina prediseñada)» y «DTF UV (Lámina prediseñada)» (01-oct-2026): en
+«DTF Textil (Lámina prediseñada)», «DTF UV (Lámina prediseñada)» y «DTF Flúor (Lámina
+prediseñada)» (01-oct-2026; la pastilla `.job-type-pill` parte en dos líneas y la
+columna Tipo mide 150 px en `COLS_DEF` para que se lean enteros): en
 `UNIT`, `TIPO_COLOR`, `CATEGORIAS_PRODUCTO`, `FICHA_TIPOS`, el modal, `calcStats` (suman
 a textil/uv) y `TIPOS_STATS`; `packTipoDePedido` los deja fuera de los packs; Merma los
 traduce en `PROD_DE_TIPO`. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
