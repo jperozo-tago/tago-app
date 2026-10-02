@@ -2086,7 +2086,7 @@
       <div class="form-row f-3">
         <div><label>Boleta / Factura</label><select id="f-documento"><option value="NO">✗ No emitida</option><option value="SI">✓ Emitida</option><option value="NA">➖ No aplica (muestra gratis)</option></select></div>
         <div><label>Tipo de entrega</label><select id="f-tipoEntrega" onchange="onEntregaChange()"><option value="Retiro">Retiro en tienda</option><option value="OTS">OTS (RM)</option><option value="Bluexpress">Bluexpress (Regiones)</option><option value="Chilexpress">Chilexpress (Regiones)</option></select></div>
-        <div><label>Responsable</label><select id="f-responsable"><option value="">— Sin asignar —</option><option>Miguel Gonzalez</option><option>Carol Oviedo</option><option>Andreina Rodriguez</option><option>José Perozo</option></select></div>
+        <div><label>Responsable</label><select id="f-responsable"><option value="">— Sin asignar —</option><option>Allyson</option><option>Miguel Gonzalez</option><option>Carol Oviedo</option><option>Andreina Rodriguez</option><option>José Perozo</option></select></div>
       </div>
 
       <div class="form-section" id="sec-envio">
@@ -6179,7 +6179,7 @@ var fichaSecCerradas=new Set();
 const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF UV","DTF Flúor","Stickers UV","Pendón Roller"]],["── Productos Personalizados",["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]],["── Otros",["Otro"]]];
 const FICHA_ENTREGAS=[["Retiro","Retiro en tienda"],["OTS","OTS (RM)"],["Bluexpress","Bluexpress (Regiones)"],["Chilexpress","Chilexpress (Regiones)"]];
 const FICHA_DOCS=[["NO","✗ No emitida"],["SI","✓ Emitida"],["NA","➖ No aplica (muestra gratis)"]];
-const FICHA_RESPONSABLES=["Miguel Gonzalez","Carol Oviedo","Andreina Rodriguez","José Perozo"];
+const FICHA_RESPONSABLES=["Allyson","Miguel Gonzalez","Carol Oviedo","Andreina Rodriguez","José Perozo"]; // Allyson: responsable por defecto de los pedidos que crea el robot desde Shopify (Andreina, 01-10-2026)
 const FICHA_ESTRUCTURAL=new Set(["tipoDtf","tipoEntrega","estado","prioridad","documento","categoria","fechaLimite","precio","accesorio.material","accesorio.packaging","packId"]);
 const fiVal=v=>(v===undefined||v===null)?"":String(v);
 
