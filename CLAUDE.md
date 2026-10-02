@@ -312,7 +312,11 @@ llegan en `archivos` (lista de URLs; `archivosDe(j)` tolera objeto o lista): fil
 «Archivo del cliente» bajo Drive en la ficha y clip junto a la carpeta en la lista.
 `tambienCompro` (lista de `{texto, pedido}`, `tambienDe(j)`) son los demás productos
 del mismo pedido de Shopify: franja naranja `.job-tambien` (último hijo de la fila,
-`grid-column:1/-1`), `.kcard-tambien` y `.fi-tambien` con el TG clickeable. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
+`grid-column:1/-1`), `.kcard-tambien` y `.fi-tambien` con el TG clickeable. Tipos
+«DTF Textil (Lámina prediseñada)» y «DTF UV (Lámina prediseñada)» (01-oct-2026): en
+`UNIT`, `TIPO_COLOR`, `CATEGORIAS_PRODUCTO`, `FICHA_TIPOS`, el modal, `calcStats` (suman
+a textil/uv) y `TIPOS_STATS`; `packTipoDePedido` los deja fuera de los packs; Merma los
+traduce en `PROD_DE_TIPO`. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
 defecto de los importados. Cambiar de estado
 guarda automáticamente fechas hito (`enviadoProdAt`, `impresionAt`,
 `listaAt`) la primera vez que se alcanza cada una — esas fechas alimentan las
