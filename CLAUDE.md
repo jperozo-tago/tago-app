@@ -310,8 +310,11 @@ el administrador (directo con `importado.orderId`, por búsqueda con el número 
 «# Pedido»): fila «Pedido en Shopify» en la ficha. Los archivos que subió el cliente
 llegan en `archivos` (lista de URLs; `archivosDe(j)` tolera objeto o lista): fila
 «Archivo del cliente» bajo Drive en la ficha y clip junto a la carpeta en la lista.
-`tambienCompro` (lista de `{texto, pedido}`, `tambienDe(j)`) son los demás productos
-del mismo pedido de Shopify: franja naranja `.job-tambien` (último hijo de la fila,
+`tambienCompro` (lista de `{texto, pedido}`) son los demás productos del mismo pedido
+de Shopify, y `tambienTexto` (texto libre, fila «También compró» de la ficha bajo
+Categoría) lo que anota la persona; `tambienDe(j)` junta los dos y `tambienItemHtml`
+hace clickeables los TG-xxxx. El robot pone `tambienRevisadoAt` a los abiertos que ya
+miró. Franja Verde Tago `.job-tambien` (último hijo de la fila,
 `grid-column:1/-1`), `.kcard-tambien` y `.fi-tambien` con el TG clickeable. Tipos
 «DTF Textil (Lámina prediseñada)», «DTF UV (Lámina prediseñada)» y «DTF Flúor (Lámina
 prediseñada)» (01-oct-2026; la pastilla `.job-type-pill` parte en dos líneas y la
