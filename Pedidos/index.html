@@ -257,6 +257,11 @@
     .badge-pedidos_shopify{color:var(--shop-c);background:var(--shop-bg);border:1px solid var(--shop-bd)}
     .job-sub.job-shop{color:var(--shop-c);font-weight:600}
     .drive-link.adj-link{margin-left:6px;color:var(--shop-c)}
+    /* «También compró»: el pedido de Shopify traía más productos (otro TG o algo que no se carga). Naranja sólido para que no se pase. */
+    .table-row>.job-tambien{grid-column:1/-1;overflow:visible;white-space:normal;background:var(--orange-c);color:#fff;font-weight:700;font-size:12px;line-height:1.35;padding:6px 10px;border-radius:8px;margin-top:2px}
+    .kcard-tambien{background:var(--orange-c);color:#fff;font-weight:700;font-size:11px;line-height:1.3;padding:4px 8px;border-radius:6px;margin:0 0 6px}
+    .ficha .fi-tambien{margin:10px 0 0;padding:10px 12px;border-radius:8px;background:var(--orange-c);color:#fff;font-size:13px;line-height:1.45}
+    .ficha .fi-tambien-link{color:#fff;text-decoration:underline;cursor:pointer;font-weight:700}
     .badge-recibido{color:var(--grey-c);background:var(--grey-bg);border:1px solid var(--grey-bd)}
     .badge-enviado_produccion{color:var(--blue-c);background:var(--blue-bg);border:1px solid var(--blue-bd)}
     .badge-en_produccion{color:var(--amber-c);background:var(--amber-bg);border:1px solid var(--amber-bd)}
@@ -4114,6 +4119,7 @@ function saveJob(){
 function numeroShopify(j){ const m=String((j&&j.pedido)||"").match(/(?:^|[^\w-])#?(\d{4,6})(?![\w-])/); return m?m[1]:null; }
 const SHOPIFY_ADMIN="https://admin.shopify.com/store/tago-cl"; // enlace al pedido en el administrador (Andreina, 01-10-2026: «debajo del link de Google, el link de Shopify»)
 function archivosDe(j){ const a=j&&j.archivos; return !a?[]:Array.isArray(a)?a.filter(Boolean):Object.values(a).filter(Boolean); } // enlaces de los archivos que subió el cliente en Shopify (los deja el robot en `archivos`)
+function tambienDe(j){ const a=j&&j.tambienCompro, l=!a?[]:Array.isArray(a)?a:Object.values(a); return l.filter(t=>t&&t.texto); } // los demás productos del mismo pedido de Shopify (los deja el robot); Andreina: «MUY visible»
 function shopifyUrl(j){ const gid=j&&j.importado&&j.importado.orderId, m=gid?String(gid).match(/(\d+)$/):null; if(m) return SHOPIFY_ADMIN+"/orders/"+m[1]; const n=numeroShopify(j); return n?SHOPIFY_ADMIN+"/orders?query="+encodeURIComponent(n):null; }
 function marcarCierreShopify(upd,j,now){
   const n=numeroShopify(j); if(!n)return false;
@@ -4387,6 +4393,7 @@ function renderKcard(id,j){
   return`<div class="kcard" draggable="true" ondragstart="onKanbanDragStart(event,'${id}')" ondragend="this.classList.remove('dragging')" onclick="openModal('${id}')">
     <div class="kcard-top"><span class="kcard-num">${esc(j.pedido)||id}</span><span>${j.prioridad==="urgente"?ic("zap"):""}${esEstancado(j)?`<span class="stale-flag">${ic("hourglass")}</span>`:""}${j.shopifyAlerta?`<span class="stale-flag" style="color:var(--danger-c)" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")}</span>`:""}</span></div>
     <div class="kcard-client">${esc(j.cliente)}</div>
+    ${tambienDe(j).length?`<div class="kcard-tambien">${ic("shopping-cart")} También compró: ${esc(tambienDe(j).map(t=>t.texto+(t.pedido?" ("+t.pedido+")":"")).join(" · "))}</div>`:""}
     <div class="kcard-meta"><span class="job-type-pill" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span><span>${j.cantidad?j.cantidad+(j.unidad==="metros"?"m":"u"):"—"}</span><span class="${ov?"overdue":""}">${delIcon}${j.fechaLimite?" "+fmtDate(j.fechaLimite):""}${ov?" "+ic("triangle-alert"):""}</span></div>
     <div class="kcard-foot">${ST[j.estado]?.next?`<button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${ST[j.estado].nextLabel}</button>`:`<span class="badge badge-${j.estado}" style="font-size:9.5px">${ST[j.estado]?.label||""}</span>`}<span class="kcard-age">${ic("timer")} ${diasEnEtapaActual(j)}</span></div>
   </div>`;
@@ -4524,7 +4531,7 @@ function render(){
 }
 
 function renderRow(id,j){
-  const st=ST[j.estado]||ST.recibido,ov=overdue(j.fechaLimite,j.estado,j.tipoEntrega),af=archivosDe(j);
+  const st=ST[j.estado]||ST.recibido,ov=overdue(j.fechaLimite,j.estado,j.tipoEntrega),af=archivosDe(j),tb=tambienDe(j);
   const delCls=j.tipoEntrega==="OTS"?"del-ots":j.tipoEntrega==="Bluexpress"?"del-blue":j.tipoEntrega==="Chilexpress"?"del-chilex":"del-retiro";
   const delIcon=j.tipoEntrega==="OTS"?ic("truck")+" OTS":j.tipoEntrega==="Bluexpress"?ic("package")+" Bluex.":j.tipoEntrega==="Chilexpress"?ic("truck")+" Chilex.":ic("store")+" Retiro";
   const qty=j.cantidad?(j.cantidad+(j.unidad==="metros"?" m":" u")):"—";
@@ -4546,6 +4553,7 @@ function renderRow(id,j){
     <div><span class="badge badge-${j.estado} celda-edit" onclick="editarCelda(event,'${id}','estado')" title="Clic para cambiar el estado (también hacia atrás)">${st.label}</span>${j.shopify&&j.shopify.cerradoAt?`<span class="job-pack" title="Cerrado en Shopify · ${esc(fmtFull(j.shopify.cerradoAt))}">${ic("shopping-cart")}</span>`:j.shopify&&j.shopify.error?`<span class="job-pack" style="color:var(--danger-c)" title="${esc(j.shopify.error)}">${ic("triangle-alert")}</span>`:""}${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
     <div><div class="${delCls} celda-edit" onclick="editarCelda(event,'${id}','tipoEntrega')" title="Clic para cambiar el tipo de entrega">${delIcon}</div><div class="job-sub celda-edit ${ov?"overdue":""}" onclick="editarCelda(event,'${id}','fechaLimite')" title="Clic para cambiar la fecha límite">${fmtDate(j.fechaLimite)}${ov?" "+ic("triangle-alert"):""}</div></div>
     <div class="row-actions"><button class="btn btn-edit" onclick="event.stopPropagation();abrirFicha('${id}')">Editar</button><button class="btn btn-danger" onclick="event.stopPropagation();del('${id}')">✕</button></div>
+    ${tb.length?`<div class="job-tambien">${ic("shopping-cart")} También compró: ${esc(tb.map(t=>t.texto+(t.pedido?" ("+t.pedido+")":"")).join(" · "))}</div>`:""}
   </div>`;
 }
 
@@ -6353,6 +6361,7 @@ function renderFicha(forzar){
     </div>
     ${hint?`<div class="fi-hint">${hint}</div>`:""}
     ${j.shopifyAlerta?`<div class="fi-hint" style="color:var(--danger-c)">${ic("triangle-alert")} En Shopify este pedido está ${esc(j.shopifyAlerta.tipo||"")}: ${esc(j.shopifyAlerta.detalle||"")}. Revisar si se produce.</div>`:""}
+    ${tambienDe(j).length?`<div class="fi-tambien">${ic("shopping-cart")} <strong>También compró:</strong> ${tambienDe(j).map(t=>`${esc(t.texto)}${t.pedido?` <a class="fi-tambien-link" onclick="abrirFicha('${esc(t.pedido)}')" title="Abrir ${esc(t.pedido)}">${esc(t.pedido)}</a>`:""}`).join(" · ")}</div>`:""}
   </div>
   <div class="fh-pills">
     <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}
