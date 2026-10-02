@@ -2033,7 +2033,7 @@
         <div>
           <label>Tipo de producto</label>
           <select id="f-tipoDtf" onchange="onProductChange()">
-            <optgroup label="── Impresiones"><option value="DTF Textil">DTF Textil</option><option value="DTF UV">DTF UV</option><option value="DTF Flúor">DTF Flúor</option><option value="Stickers UV">Stickers UV</option><option value="Pendón Roller">Pendón Roller</option></optgroup>
+            <optgroup label="── Impresiones"><option value="DTF Textil">DTF Textil</option><option value="DTF Textil (Lámina prediseñada)">DTF Textil (Lámina prediseñada)</option><option value="DTF UV">DTF UV</option><option value="DTF UV (Lámina prediseñada)">DTF UV (Lámina prediseñada)</option><option value="DTF Flúor">DTF Flúor</option><option value="Stickers UV">Stickers UV</option><option value="Pendón Roller">Pendón Roller</option></optgroup>
             <optgroup label="── Productos Personalizados"><option value="Insignias / Parches">Insignias / Parches</option><option value="Pines">Pines</option><option value="Medallas">Medallas</option><option value="Imanes">Imanes</option><option value="Llaveros">Llaveros</option><option value="Kit Corporativo">Kit Corporativo</option></optgroup>
             <optgroup label="── Otros"><option value="Otro">Otro</option></optgroup>
           </select>
@@ -2213,17 +2213,17 @@ const ROL_LABEL={prod:"Producción",dis:"Diseño",vend:"Vendedoras",sup:"Supervi
 // así se distingue quién habla sin leer el nombre. Todos legibles sobre blanco.
 const COLOR_PERSONA={MG:"#1C7A63",IP:"#0E7C86",AL:"#4063F9",EM:"#6B4FD8",MR:"#C2417D",AQ:"#B4532A",CO:"#9A6B00",AR:"#0B1447",JP:"#2B6CB0"};
 const colorPersona=id=>COLOR_PERSONA[id]||"#545B7E";
-const UNIT={"DTF Textil":"metros","DTF UV":"metros","DTF Flúor":"metros"};
+const UNIT={"DTF Textil":"metros","DTF UV":"metros","DTF Flúor":"metros","DTF Textil (Lámina prediseñada)":"metros","DTF UV (Lámina prediseñada)":"metros"}; // las láminas prediseñadas son tipo propio desde el 01-10-2026 (Andreina): mismo DTF, otro flujo (el archivo ya existe, se nombra como el SKU)
 const getUnit=t=>UNIT[t]||"unidades";
 // Licencia aprobada por Andreina (2026-09-10): cada tipo de producto lleva un color propio para reconocerlo rápido.
-const TIPO_COLOR={"DTF Textil":"#4063F9","DTF UV":"#1C7A63","DTF Flúor":"#C026D3","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#D4537E","Otro":"#858AA3"};
+const TIPO_COLOR={"DTF Textil":"#4063F9","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV":"#1C7A63","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor":"#C026D3","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#D4537E","Otro":"#858AA3"};
 const tipoColor=t=>TIPO_COLOR[t]||"var(--grey-c)";
 const ES_STICKER=t=>t==="Stickers UV";
 const ES_ACC=t=>["Insignias / Parches","Pines","Medallas","Imanes","Llaveros"].includes(t);
 const CON_COLOR=t=>["Pines","Medallas","Imanes","Llaveros"].includes(t);
 const CON_MAT=t=>t==="Llaveros";
 const CATEGORIAS_PRODUCTO=[
-  {key:"impresiones",label:"Impresiones",tipos:["DTF Textil","DTF UV","DTF Flúor","Stickers UV","Pendón Roller"]},
+  {key:"impresiones",label:"Impresiones",tipos:["DTF Textil","DTF Textil (Lámina prediseñada)","DTF UV","DTF UV (Lámina prediseñada)","DTF Flúor","Stickers UV","Pendón Roller"]},
   {key:"personalizados",label:"Productos Personalizados",tipos:["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]},
 ];
 const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||"impresiones";
@@ -4572,8 +4572,8 @@ function calcStats(filterFn,fechaFn){
     result.total++;
     result.jobs.push({id,...j});
     switch(j.tipoDtf){
-      case"DTF Textil":          result.textil+=qty; break;
-      case"DTF UV":              result.uv+=qty; break;
+      case"DTF Textil": case"DTF Textil (Lámina prediseñada)": result.textil+=qty; break;
+      case"DTF UV": case"DTF UV (Lámina prediseñada)":     result.uv+=qty; break;
       case"DTF Flúor":           result.fluor+=qty; break;
       case"Stickers UV":         result.stickers+=qty; break;
       case"Insignias / Parches":
@@ -4589,6 +4589,8 @@ function calcStats(filterFn,fechaFn){
 const TIPOS_STATS=[
   {key:"DTF Textil",unit:"metros",icon:ic("printer"),color:"#49CEAB",cat:"impresiones"},
   {key:"DTF UV",unit:"metros",icon:ic("droplets"),color:"#4063F9",cat:"impresiones"},
+  {key:"DTF Textil (Lámina prediseñada)",unit:"metros",icon:ic("image"),color:"#6F8CFF",cat:"impresiones",label:"Lámina textil"},
+  {key:"DTF UV (Lámina prediseñada)",unit:"metros",icon:ic("image"),color:"#2DA88C",cat:"impresiones",label:"Lámina UV"},
   {key:"DTF Flúor",unit:"metros",icon:ic("sparkles"),color:"#F5A623",cat:"impresiones"},
   {key:"Stickers UV",unit:"unidades",icon:ic("tag"),color:"#F472B6",cat:"impresiones"},
   {key:"Pendón Roller",unit:"unidades",icon:ic("flag"),color:"#8F9BFF",cat:"impresiones"},
@@ -6188,7 +6190,7 @@ function renderCarga(entries){
 // ══ FICHA DE PEDIDO (propuesta, copia local): un solo panel para ver y editar ══
 var fichaId=null, fichaNuevo=false, fichaDraft=null, fichaPendiente=false, fichaAsigAbierto=false;
 var fichaSecCerradas=new Set();
-const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF UV","DTF Flúor","Stickers UV","Pendón Roller"]],["── Productos Personalizados",["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]],["── Otros",["Otro"]]];
+const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF Textil (Lámina prediseñada)","DTF UV","DTF UV (Lámina prediseñada)","DTF Flúor","Stickers UV","Pendón Roller"]],["── Productos Personalizados",["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]],["── Otros",["Otro"]]];
 const FICHA_ENTREGAS=[["Retiro","Retiro en tienda"],["OTS","OTS (RM)"],["Bluexpress","Bluexpress (Regiones)"],["Chilexpress","Chilexpress (Regiones)"]];
 const FICHA_DOCS=[["NO","✗ No emitida"],["SI","✓ Emitida"],["NA","➖ No aplica (muestra gratis)"]];
 const FICHA_RESPONSABLES=["Allyson","Miguel Gonzalez","Carol Oviedo","Andreina Rodriguez","José Perozo"]; // Allyson: responsable por defecto de los pedidos que crea el robot desde Shopify (Andreina, 01-10-2026)
