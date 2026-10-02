@@ -307,8 +307,9 @@ detalle, at, numero}` y la fila, la tarjeta y la ficha lo muestran en rojo. La f
 lleva la pastilla «Shopify» y la ficha «desde Shopify · comprado el …» y la línea
 «Creado desde Shopify» en el historial. `shopifyUrl(j)` arma el enlace al pedido en
 el administrador (directo con `importado.orderId`, por búsqueda con el número de
-«# Pedido»): fila «Pedido en Shopify» bajo Drive en la ficha y carrito junto a la
-carpeta en la lista. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
+«# Pedido»): fila «Pedido en Shopify» en la ficha. Los archivos que subió el cliente
+llegan en `archivos` (lista de URLs; `archivosDe(j)` tolera objeto o lista): fila
+«Archivo del cliente» bajo Drive en la ficha y clip junto a la carpeta en la lista. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
 defecto de los importados. Cambiar de estado
 guarda automáticamente fechas hito (`enviadoProdAt`, `impresionAt`,
 `listaAt`) la primera vez que se alcanza cada una — esas fechas alimentan las
