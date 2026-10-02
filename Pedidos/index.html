@@ -215,8 +215,8 @@
 
     /* Table */
     .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow-x:auto;overflow-y:hidden;box-shadow:0 2px 8px rgba(11,20,71,0.06)}
-    .table-head{display:grid;grid-template-columns:96px minmax(120px,1fr) 116px 112px 76px 44px 48px 180px 92px 108px;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border-soft);font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;background:var(--panel);min-width:1060px}
-    .table-row{display:grid;grid-template-columns:96px minmax(120px,1fr) 116px 112px 76px 44px 48px 180px 92px 108px;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border-soft);align-items:center;transition:background .1s;min-width:1060px}
+    .table-head{display:grid;grid-template-columns:96px minmax(120px,1fr) 150px 112px 76px 44px 48px 180px 92px 108px;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border-soft);font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;background:var(--panel);min-width:1060px}
+    .table-row{display:grid;grid-template-columns:96px minmax(120px,1fr) 150px 112px 76px 44px 48px 180px 92px 108px;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border-soft);align-items:center;transition:background .1s;min-width:1060px}
     .pedidos-group-header{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--panel);border-bottom:1px solid var(--border-soft);cursor:pointer;user-select:none}
     .pedidos-group-header:hover{background:var(--border-soft)}
     .pedidos-group-arrow{font-size:12px;color:var(--text-muted);width:10px;display:inline-block;flex-shrink:0}
@@ -235,7 +235,7 @@
     .job-num{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:13px;color:var(--azul);font-weight:600}
     .job-client{font-weight:600;font-size:13px;color:var(--text)}
     .job-type{font-size:11px;color:var(--text-sec);margin-top:1px}
-    .job-type-pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;margin-top:3px;white-space:nowrap}
+    .job-type-pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;margin-top:3px;white-space:normal;line-height:1.25;text-align:left;max-width:100%} /* parte en dos líneas: «DTF Textil (Lámina prediseñada)» tiene que leerse entero (Andreina, 01-10-2026) */
     .job-qty{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;color:var(--text)}
     .job-unit{font-size:12px;color:var(--text-muted)}
     .creator-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text-sec)}
@@ -1058,7 +1058,7 @@
     .table-wrap.cabe{overflow:visible}
     .table-wrap.cabe .table-head{position:sticky;top:var(--tabla-sticky,0px);z-index:4;border-radius:14px 14px 0 0}
     /* columnas con ancho ajustable */
-    .table-head,.table-row{grid-template-columns:var(--cols,96px minmax(120px,1fr) 116px 112px 76px 44px 48px 180px 92px 108px);min-width:var(--tabla-min,1060px)}
+    .table-head,.table-row{grid-template-columns:var(--cols,96px minmax(120px,1fr) 150px 112px 76px 44px 48px 180px 92px 108px);min-width:var(--tabla-min,1094px)}
     .table-head>div{position:relative}
     .col-resizer{position:absolute;top:-10px;bottom:-10px;width:9px;cursor:col-resize;z-index:3;touch-action:none}
     .col-resizer-der{right:-5px}
@@ -2033,7 +2033,7 @@
         <div>
           <label>Tipo de producto</label>
           <select id="f-tipoDtf" onchange="onProductChange()">
-            <optgroup label="── Impresiones"><option value="DTF Textil">DTF Textil</option><option value="DTF Textil (Lámina prediseñada)">DTF Textil (Lámina prediseñada)</option><option value="DTF UV">DTF UV</option><option value="DTF UV (Lámina prediseñada)">DTF UV (Lámina prediseñada)</option><option value="DTF Flúor">DTF Flúor</option><option value="Stickers UV">Stickers UV</option><option value="Pendón Roller">Pendón Roller</option></optgroup>
+            <optgroup label="── Impresiones"><option value="DTF Textil">DTF Textil</option><option value="DTF Textil (Lámina prediseñada)">DTF Textil (Lámina prediseñada)</option><option value="DTF UV">DTF UV</option><option value="DTF UV (Lámina prediseñada)">DTF UV (Lámina prediseñada)</option><option value="DTF Flúor">DTF Flúor</option><option value="DTF Flúor (Lámina prediseñada)">DTF Flúor (Lámina prediseñada)</option><option value="Stickers UV">Stickers UV</option><option value="Pendón Roller">Pendón Roller</option></optgroup>
             <optgroup label="── Productos Personalizados"><option value="Insignias / Parches">Insignias / Parches</option><option value="Pines">Pines</option><option value="Medallas">Medallas</option><option value="Imanes">Imanes</option><option value="Llaveros">Llaveros</option><option value="Kit Corporativo">Kit Corporativo</option></optgroup>
             <optgroup label="── Otros"><option value="Otro">Otro</option></optgroup>
           </select>
@@ -2213,17 +2213,17 @@ const ROL_LABEL={prod:"Producción",dis:"Diseño",vend:"Vendedoras",sup:"Supervi
 // así se distingue quién habla sin leer el nombre. Todos legibles sobre blanco.
 const COLOR_PERSONA={MG:"#1C7A63",IP:"#0E7C86",AL:"#4063F9",EM:"#6B4FD8",MR:"#C2417D",AQ:"#B4532A",CO:"#9A6B00",AR:"#0B1447",JP:"#2B6CB0"};
 const colorPersona=id=>COLOR_PERSONA[id]||"#545B7E";
-const UNIT={"DTF Textil":"metros","DTF UV":"metros","DTF Flúor":"metros","DTF Textil (Lámina prediseñada)":"metros","DTF UV (Lámina prediseñada)":"metros"}; // las láminas prediseñadas son tipo propio desde el 01-10-2026 (Andreina): mismo DTF, otro flujo (el archivo ya existe, se nombra como el SKU)
+const UNIT={"DTF Textil":"metros","DTF UV":"metros","DTF Flúor":"metros","DTF Textil (Lámina prediseñada)":"metros","DTF UV (Lámina prediseñada)":"metros","DTF Flúor (Lámina prediseñada)":"metros"}; // las láminas prediseñadas son tipo propio desde el 01-10-2026 (Andreina): mismo DTF, otro flujo (el archivo ya existe, se nombra como el SKU)
 const getUnit=t=>UNIT[t]||"unidades";
 // Licencia aprobada por Andreina (2026-09-10): cada tipo de producto lleva un color propio para reconocerlo rápido.
-const TIPO_COLOR={"DTF Textil":"#4063F9","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV":"#1C7A63","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor":"#C026D3","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#D4537E","Otro":"#858AA3"};
+const TIPO_COLOR={"DTF Textil":"#4063F9","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV":"#1C7A63","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor":"#C026D3","DTF Flúor (Lámina prediseñada)":"#D946EF","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#D4537E","Otro":"#858AA3"};
 const tipoColor=t=>TIPO_COLOR[t]||"var(--grey-c)";
 const ES_STICKER=t=>t==="Stickers UV";
 const ES_ACC=t=>["Insignias / Parches","Pines","Medallas","Imanes","Llaveros"].includes(t);
 const CON_COLOR=t=>["Pines","Medallas","Imanes","Llaveros"].includes(t);
 const CON_MAT=t=>t==="Llaveros";
 const CATEGORIAS_PRODUCTO=[
-  {key:"impresiones",label:"Impresiones",tipos:["DTF Textil","DTF Textil (Lámina prediseñada)","DTF UV","DTF UV (Lámina prediseñada)","DTF Flúor","Stickers UV","Pendón Roller"]},
+  {key:"impresiones",label:"Impresiones",tipos:["DTF Textil","DTF Textil (Lámina prediseñada)","DTF UV","DTF UV (Lámina prediseñada)","DTF Flúor","DTF Flúor (Lámina prediseñada)","Stickers UV","Pendón Roller"]},
   {key:"personalizados",label:"Productos Personalizados",tipos:["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]},
 ];
 const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||"impresiones";
@@ -4574,7 +4574,7 @@ function calcStats(filterFn,fechaFn){
     switch(j.tipoDtf){
       case"DTF Textil": case"DTF Textil (Lámina prediseñada)": result.textil+=qty; break;
       case"DTF UV": case"DTF UV (Lámina prediseñada)":     result.uv+=qty; break;
-      case"DTF Flúor":           result.fluor+=qty; break;
+      case"DTF Flúor": case"DTF Flúor (Lámina prediseñada)": result.fluor+=qty; break;
       case"Stickers UV":         result.stickers+=qty; break;
       case"Insignias / Parches":
       case"Pines": case"Medallas": case"Imanes":
@@ -4592,6 +4592,7 @@ const TIPOS_STATS=[
   {key:"DTF Textil (Lámina prediseñada)",unit:"metros",icon:ic("image"),color:"#6F8CFF",cat:"impresiones",label:"Lámina textil"},
   {key:"DTF UV (Lámina prediseñada)",unit:"metros",icon:ic("image"),color:"#2DA88C",cat:"impresiones",label:"Lámina UV"},
   {key:"DTF Flúor",unit:"metros",icon:ic("sparkles"),color:"#F5A623",cat:"impresiones"},
+  {key:"DTF Flúor (Lámina prediseñada)",unit:"metros",icon:ic("image"),color:"#D946EF",cat:"impresiones",label:"Lámina flúor"},
   {key:"Stickers UV",unit:"unidades",icon:ic("tag"),color:"#F472B6",cat:"impresiones"},
   {key:"Pendón Roller",unit:"unidades",icon:ic("flag"),color:"#8F9BFF",cat:"impresiones"},
   {key:"Insignias / Parches",unit:"unidades",icon:ic("award"),color:"#6B5BD6",cat:"personalizados",label:"Insignias"},
@@ -6072,7 +6073,7 @@ function ajustarTablaSticky(){
 window.addEventListener("resize",()=>{ if(currentUser) aplicarAnchosCols(); });
 
 // ══ COLUMNAS AJUSTABLES (propuesta, copia local): arrastra el borde de cada encabezado ══
-const COLS_DEF=[100,null,120,118,80,46,50,192,96,112]; // null = Cliente flexible
+const COLS_DEF=[100,null,150,118,80,46,50,192,96,112]; // null = Cliente flexible
 const COLS_MIN=[92,110,104,108,74,46,46,174,88,104]; // lo que necesita cada columna para no montarse
 var anchosCols=COLS_DEF.slice(); try{ const v=JSON.parse(localStorage.getItem("tago_cols_ancho")||"null"); if(Array.isArray(v)&&v.length===COLS_DEF.length) anchosCols=v; }catch(e){}
 function aplicarAnchosCols(){
@@ -6190,7 +6191,7 @@ function renderCarga(entries){
 // ══ FICHA DE PEDIDO (propuesta, copia local): un solo panel para ver y editar ══
 var fichaId=null, fichaNuevo=false, fichaDraft=null, fichaPendiente=false, fichaAsigAbierto=false;
 var fichaSecCerradas=new Set();
-const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF Textil (Lámina prediseñada)","DTF UV","DTF UV (Lámina prediseñada)","DTF Flúor","Stickers UV","Pendón Roller"]],["── Productos Personalizados",["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]],["── Otros",["Otro"]]];
+const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF Textil (Lámina prediseñada)","DTF UV","DTF UV (Lámina prediseñada)","DTF Flúor","DTF Flúor (Lámina prediseñada)","Stickers UV","Pendón Roller"]],["── Productos Personalizados",["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]],["── Otros",["Otro"]]];
 const FICHA_ENTREGAS=[["Retiro","Retiro en tienda"],["OTS","OTS (RM)"],["Bluexpress","Bluexpress (Regiones)"],["Chilexpress","Chilexpress (Regiones)"]];
 const FICHA_DOCS=[["NO","✗ No emitida"],["SI","✓ Emitida"],["NA","➖ No aplica (muestra gratis)"]];
 const FICHA_RESPONSABLES=["Allyson","Miguel Gonzalez","Carol Oviedo","Andreina Rodriguez","José Perozo"]; // Allyson: responsable por defecto de los pedidos que crea el robot desde Shopify (Andreina, 01-10-2026)
