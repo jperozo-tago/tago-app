@@ -305,7 +305,11 @@ técnica; una persona los revisa y los pasa a Por revisar («→ Revisar»). En
 pedido se cancela o reembolsa en Shopify, el robot deja `shopifyAlerta {tipo,
 detalle, at, numero}` y la fila, la tarjeta y la ficha lo muestran en rojo. La fila
 lleva la pastilla «Shopify» y la ficha «desde Shopify · comprado el …» y la línea
-«Creado desde Shopify» en el historial. Cambiar de estado
+«Creado desde Shopify» en el historial. `shopifyUrl(j)` arma el enlace al pedido en
+el administrador (directo con `importado.orderId`, por búsqueda con el número de
+«# Pedido»): fila «Pedido en Shopify» bajo Drive en la ficha y carrito junto a la
+carpeta en la lista. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
+defecto de los importados. Cambiar de estado
 guarda automáticamente fechas hito (`enviadoProdAt`, `impresionAt`,
 `listaAt`) la primera vez que se alcanza cada una — esas fechas alimentan las
 métricas de tiempo en Estadísticas.
