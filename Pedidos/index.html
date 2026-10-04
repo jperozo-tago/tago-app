@@ -1637,6 +1637,14 @@
     .tt-sel-pop .persona-chip{cursor:pointer}
     .tt-sel-pop .celda-pop-hint a{color:var(--azul)}
     @media(max-width:700px){.tt-sel-box{opacity:1}.tt-sel-barra{left:12px;right:12px;transform:none;bottom:78px;padding:8px 10px;gap:5px;font-size:12.5px}.tt-sel-barra button{padding:6px 9px}}
+    /* ══ MUESTRA: etiqueta rosa (el del DTF Flúor), distinta del rojo de URG ══ */
+    .job-muestra{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;font-family:'DM Sans',sans-serif;color:#C026D3;background:rgba(192,38,211,.12);border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap}
+    .kcard-muestra{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:600;font-family:'DM Sans',sans-serif;color:#C026D3;background:rgba(192,38,211,.12);border-radius:5px;padding:1px 6px;vertical-align:middle}
+    .fi-pill.muestra{background:rgba(192,38,211,.12);border-color:rgba(192,38,211,.4);color:#C026D3;cursor:default}
+    .fi-muestra{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;color:var(--text-sec);user-select:none;flex-basis:100%;margin-top:2px}
+    .fi-muestra input{width:16px;height:16px;accent-color:#C026D3;margin:0;cursor:pointer}
+    .fi-muestra.on{color:#C026D3}
+    @media(max-width:700px){.table-row>div:nth-child(1) .job-muestra{margin-top:0}}
   </style>
 </head>
 <body>
@@ -2322,7 +2330,7 @@ function toggleSoloMios(){ soloMios=!soloMios; document.getElementById("btn-mios
 function toggleFechas(){ document.getElementById("date-range").classList.toggle("abierto"); }
 function pasaFiltros(j){
   const q=(document.getElementById("search")?.value||"").toLowerCase();
-  return (!q||[j.cliente,j.pedido,j.tipoDtf].some(x=>(x||"").toLowerCase().includes(q)))&&alertaPred(j)&&categoriaPred(j)&&inDateRange(j)&&(!soloMios||esMio(j));
+  return (!q||[j.cliente,j.pedido,j.tipoDtf,j.muestra?"muestra":""].some(x=>(x||"").toLowerCase().includes(q)))&&alertaPred(j)&&categoriaPred(j)&&inDateRange(j)&&(!soloMios||esMio(j));
 }
 function toggleAlerta(tipo){
   alertaActiva=alertaActiva===tipo?null:tipo;
@@ -2335,7 +2343,7 @@ function toggleAlerta(tipo){
 }
 let filasAbiertas=new Set(),borradoresComentario={};
 let historialListeners={},historialData={};
-const CAMPOS_TRACKEADOS={pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF",correo:"Correo del cliente",tambienTexto:"También compró"};
+const CAMPOS_TRACKEADOS={muestra:"Muestra",pedido:"# Pedido",cliente:"Cliente",tipoDtf:"Tipo de producto",categoria:"Categoría",cantidad:"Cantidad",precio:"Precio",documento:"Boleta/Factura",tipoEntrega:"Tipo de entrega",responsable:"Responsable",prioridad:"Prioridad",fechaLimite:"Fecha límite",notas:"Notas",drive:"Google Drive",estado:"Estado",packId:"Pack DTF",correo:"Correo del cliente",tambienTexto:"También compró"};
 let chatRef=null,chatsMeta={},currentChatId=null,chatMessagesRef=null,chatMessages={},chatInitialized=false,selectedGrupoMiembros=[];
 let tareasRef=null,tareas={},tareasEstadosRef=null,tareaEstados={},tareasInitialized=false,editTareaId=null,selectedTareaAsignados=[];
 let tareasVisIndexRef=null,tareaChildListeners={},tareasPersonales={},tareasPorLista={},tareasListaListeners={};
@@ -2568,6 +2576,7 @@ function renderActividad(id){
   cont.scrollTop=cont.scrollHeight;
 }
 function fmtHistValor(campo,v){
+  if(campo==="muestra") return v?"Sí":"No";
   if(campo==="estado")return ST[v]?.label||v||"—";
   if(campo==="precio")return v?fmtCLP(v):"—";
   if(campo==="categoria")return v?(todasLasCategorias().find(c=>c.key===v)?.label||v):"—";
@@ -4393,7 +4402,7 @@ function renderKcard(id,j){
   const ov=overdue(j.fechaLimite,j.estado,j.tipoEntrega);
   const delIcon=j.tipoEntrega==="OTS"?ic("truck"):j.tipoEntrega==="Bluexpress"?ic("package"):j.tipoEntrega==="Chilexpress"?ic("truck"):ic("store");
   return`<div class="kcard" draggable="true" ondragstart="onKanbanDragStart(event,'${id}')" ondragend="this.classList.remove('dragging')" onclick="openModal('${id}')">
-    <div class="kcard-top"><span class="kcard-num">${esc(j.pedido)||id}</span><span>${j.prioridad==="urgente"?ic("zap"):""}${esEstancado(j)?`<span class="stale-flag">${ic("hourglass")}</span>`:""}${j.shopifyAlerta?`<span class="stale-flag" style="color:var(--danger-c)" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")}</span>`:""}</span></div>
+    <div class="kcard-top"><span class="kcard-num">${esc(j.pedido)||id}${j.muestra?`<span class="kcard-muestra" title="Pedido marcado como muestra">Muestra</span>`:""}</span><span>${j.prioridad==="urgente"?ic("zap"):""}${esEstancado(j)?`<span class="stale-flag">${ic("hourglass")}</span>`:""}${j.shopifyAlerta?`<span class="stale-flag" style="color:var(--danger-c)" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")}</span>`:""}</span></div>
     <div class="kcard-client">${esc(j.cliente)}</div>
     ${tambienDe(j).length?`<div class="kcard-tambien">${ic("shopping-cart")} También compró: ${esc(tambienDe(j).map(t=>t.texto+(t.pedido?" ("+t.pedido+")":"")).join(" · "))}</div>`:""}
     <div class="kcard-meta"><span class="job-type-pill" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span><span>${j.cantidad?j.cantidad+(j.unidad==="metros"?"m":"u"):"—"}</span><span class="${ov?"overdue":""}">${delIcon}${j.fechaLimite?" "+fmtDate(j.fechaLimite):""}${ov?" "+ic("triangle-alert"):""}</span></div>
@@ -4545,7 +4554,7 @@ function renderRow(id,j){
   if(j.accesorio){ const a=j.accesorio; ext+=`<div class="exp-section"><div class="exp-section-title">Accesorio</div><div class="exp-section-grid"><div><div class="exp-label">Tamaño${a.disenos&&a.disenos.length>1?` (${a.disenos.length} diseños)`:""}</div><div class="exp-val">${fmtDisenos(a)}</div></div>${a.material?`<div><div class="exp-label">Material</div><div class="exp-val">${esc(a.material)}</div></div>`:""} ${a.color?`<div><div class="exp-label">Color</div><div class="exp-val">${esc(a.color)}</div></div>`:""} ${a.logo?`<div class="exp-full"><div class="exp-label">Logo del cliente</div><div class="exp-val"><a href="${esc(safeUrl(a.logo))}" target="_blank" style="color:var(--azul)">${esc(a.logo)}</a></div></div>`:""} ${a.textura?`<div class="exp-full"><div class="exp-label">Textura</div><div class="exp-val"><a href="${esc(safeUrl(a.textura))}" target="_blank" style="color:var(--azul)">${esc(a.textura)}</a></div></div>`:""} ${a.archivoProduccion?`<div class="exp-full"><div class="exp-label">Archivo para producción</div><div class="exp-val"><a href="${esc(safeUrl(a.archivoProduccion))}" target="_blank" style="color:var(--azul)">${esc(a.archivoProduccion)}</a></div></div>`:""} ${j.tipoDtf==="Pines"?`<div><div class="exp-label">Packaging</div><div class="exp-val">${a.packaging?"Sí":"No"}</div></div>`:""} ${a.packaging&&a.packagingLink?`<div class="exp-full"><div class="exp-label">Link packaging</div><div class="exp-val"><a href="${esc(safeUrl(a.packagingLink))}" target="_blank" style="color:var(--azul)">${esc(a.packagingLink)}</a></div></div>`:""}</div></div>`; }
   if(j.envio&&j.tipoEntrega!=="Retiro"){ const e=j.envio; ext+=`<div class="exp-section"><div class="exp-section-title">${j.tipoEntrega==="OTS"?"OTS":j.tipoEntrega==="Bluexpress"?"Bluexpress":"Chilexpress"}</div><div class="exp-section-grid"><div><div class="exp-label">Destinatario</div><div class="exp-val">${esc(e.nombre)||"—"}</div></div><div><div class="exp-label">RUT</div><div class="exp-val">${esc(e.rut)||"—"}</div></div><div><div class="exp-label">Teléfono</div><div class="exp-val">${esc(e.tel)||"—"}</div></div><div><div class="exp-label">Correo</div><div class="exp-val">${esc(e.correo)||"—"}</div></div><div><div class="exp-label">Costo de envío</div><div class="exp-val">${e.costo?fmtCLP(e.costo):"—"}</div></div><div class="exp-full"><div class="exp-label">Dirección</div><div class="exp-val">${esc(e.dir)||"—"}</div></div></div></div>`; }
   return`<div class="table-row row-clickable estado-${esc(j.estado||"recibido")}" onclick="abrirFicha('${id}')">
-    <div><div class="job-num celda-edit" onclick="editarCelda(event,'${id}','pedido')" title="Clic para editar el número">${esc(j.pedido)||"—"}</div>${j.prioridad==="urgente"?`<div class="job-urg">${ic("zap")} URG</div>`:""}${j.origen==="shopify"?`<div class="job-sub job-shop" title="Lo creó el robot desde el pedido de Shopify${j.importado&&j.importado.at?" · "+esc(fmtFull(j.importado.at)):""}">${ic("shopping-cart")} Shopify</div>`:""}${j.shopifyAlerta?`<div class="job-urg" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")} ${esc((j.shopifyAlerta.tipo||"").toUpperCase())}</div>`:""}</div>
+    <div><div class="job-num celda-edit" onclick="editarCelda(event,'${id}','pedido')" title="Clic para editar el número">${esc(j.pedido)||"—"}</div>${j.prioridad==="urgente"?`<div class="job-urg">${ic("zap")} URG</div>`:""}${j.muestra?`<div class="job-muestra" title="Pedido marcado como muestra">${ic("sparkles")} Muestra</div>`:""}${j.origen==="shopify"?`<div class="job-sub job-shop" title="Lo creó el robot desde el pedido de Shopify${j.importado&&j.importado.at?" · "+esc(fmtFull(j.importado.at)):""}">${ic("shopping-cart")} Shopify</div>`:""}${j.shopifyAlerta?`<div class="job-urg" title="${esc(j.shopifyAlerta.detalle||"")}">${ic("triangle-alert")} ${esc((j.shopifyAlerta.tipo||"").toUpperCase())}</div>`:""}</div>
     <div class="job-client celda-edit" onclick="editarCelda(event,'${id}','cliente')" title="Clic para editar el cliente">${esc(j.cliente)}</div>
     <div><span class="job-type-pill celda-edit" onclick="editarCelda(event,'${id}','tipoDtf')" title="Clic para cambiar el tipo" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span></div>
     <div><div class="creator-badge"><div class="creator-dot ${cAvClass}" style="${cLight?'color:#fff':'color:var(--azul-oscuro)'}">${j.createdBy?.id||"?"}</div><span>${esc(j.createdBy?.nombre||"—")}</span></div><div class="job-sub">${timeAgo(j.createdAt)}</div></div>
@@ -6197,7 +6206,7 @@ const FICHA_TIPOS=[["── Impresiones",["DTF Textil","DTF Textil (Lámina pred
 const FICHA_ENTREGAS=[["Retiro","Retiro en tienda"],["OTS","OTS (RM)"],["Bluexpress","Bluexpress (Regiones)"],["Chilexpress","Chilexpress (Regiones)"]];
 const FICHA_DOCS=[["NO","✗ No emitida"],["SI","✓ Emitida"],["NA","➖ No aplica (muestra gratis)"]];
 const FICHA_RESPONSABLES=["Allyson","Miguel Gonzalez","Carol Oviedo","Andreina Rodriguez","José Perozo"]; // Allyson: responsable por defecto de los pedidos que crea el robot desde Shopify (Andreina, 01-10-2026)
-const FICHA_ESTRUCTURAL=new Set(["tipoDtf","tipoEntrega","estado","prioridad","documento","categoria","fechaLimite","precio","accesorio.material","accesorio.packaging","packId"]);
+const FICHA_ESTRUCTURAL=new Set(["muestra","tipoDtf","tipoEntrega","estado","prioridad","documento","categoria","fechaLimite","precio","accesorio.material","accesorio.packaging","packId"]);
 const fiVal=v=>(v===undefined||v===null)?"":String(v);
 
 function openModal(id=null){ abrirFicha(id); }
@@ -6274,6 +6283,7 @@ function guardarPedido(id,nuevo,anterior){
   if(!ES_ACC(nuevo.tipoDtf)) delete nuevo.accesorio;
   if((nuevo.tipoEntrega||"Retiro")==="Retiro") delete nuevo.envio;
   if(!nuevo.packId) delete nuevo.packId;
+  if(!nuevo.muestra) delete nuevo.muestra;
   const nuevas=(nuevo.personas||[]).filter(p=>!(anterior.personas||[]).includes(p));
   if(dbRef){ dbRef.child(id).set(nuevo); registrarCambios(id,anterior,nuevo); notificarAsignados(id,nuevo.cliente,nuevas); }
   else{ jobs[id]=nuevo; saveLocal(); render(); }
@@ -6362,6 +6372,7 @@ function renderFicha(forzar){
     <div class="fh-meta">
       <span class="fh-meta-item" title="Número del pedido de Shopify">${ic("hash")}<input class="fi fi-numpedido" value="${esc(j.pedido)}" placeholder="Pedido de Shopify (ej: 8584)" onchange="fichaCampo('pedido',this.value)"/></span>
       <span class="fh-meta-item" title="Lo escribe quien crea el pedido. Retiro: se le avisa al pasar a Listo. Envío: al pasar a Entregado">${ic("mail")}<input class="fi fi-numpedido fi-correo" type="email" value="${esc(j.correo)}" placeholder="Correo del cliente (para avisarle)" onchange="fichaCampo('correo',this.value)"/></span>
+      <label class="fh-meta-item fi-muestra${j.muestra?" on":""}" title="Marca el pedido como muestra: se ve con una etiqueta rosa en la lista y el tablero"><input type="checkbox"${j.muestra?" checked":""} onchange="fichaCampo('muestra',this.checked)"/> Muestra</label>
       ${j.origen==="shopify"?`<span class="fh-meta-item fi-ro" title="Lo creó el robot del tablero desde el pedido de Shopify">${ic("shopping-cart")} desde Shopify${j.importado&&j.importado.pedidoAt?" · comprado el "+esc(fmtFull(j.importado.pedidoAt)):""}</span>`:""}
     </div>
     ${hint?`<div class="fi-hint">${hint}</div>`:""}
@@ -6375,6 +6386,7 @@ function renderFicha(forzar){
   </div>
   ${fichaAsigAbierto?`<div class="fi-asig-grid">${grid}</div>`:""}
   <div class="fh-pills fh-pills-2">
+    ${j.muestra?`<span class="fi-pill muestra" title="Pedido marcado como muestra">${ic("sparkles")} Muestra</span>`:""}
     <button class="fi-pill${urg?" urg":""}" title="Cambiar prioridad" onclick="fichaCampo('prioridad','${urg?"normal":"urgente"}')">Prioridad: ${urg?ic("zap")+" Urgente":"Normal"}</button>
     <label class="fi-pill fi-fecha${ov?" overdue":""}" title="Fecha límite">${ic("calendar")} <input type="date" value="${esc(j.fechaLimite)}" onchange="fichaCampo('fechaLimite',this.value)"/>${ov?ic("triangle-alert"):""}</label>
     <span class="fi-pill fi-docpill" title="Boleta / Factura">Boleta / Factura:<select class="fi-doc" onchange="fichaCampo('documento',this.value)">${FICHA_DOCS.map(([v,l])=>`<option value="${v}"${(j.documento||"NO")===v?" selected":""}>${l}</option>`).join("")}</select></span>

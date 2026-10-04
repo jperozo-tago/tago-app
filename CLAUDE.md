@@ -410,6 +410,15 @@ se editan únicamente desde la consola de Firebase). `./deploy.sh --preview`
 sube el sitio a un canal de vista previa y `./deploy.sh --solo-reglas` publica
 solo las reglas.
 
+**Muestra (desde el 04-10-2026):** casilla «Muestra» en la cabecera de la
+ficha, bajo el número de Shopify; guarda `muestra: true` en el pedido (al
+desmarcar se borra el campo). Se ve como etiqueta rosa (#C026D3, el del DTF
+Flúor, para no confundirla con el rojo de URG) bajo el número en la Lista
+(`.job-muestra`), como chip en la tarjeta del Tablero (`.kcard-muestra`) y
+como pastilla en la ficha; queda en el historial («Muestra: No → Sí») y
+buscar «muestra» filtra esos pedidos. No cambia nada del flujo ni de los
+avisos: es solo una marca visual.
+
 **Selección múltiple en Tareas (desde el 30-09-2026):** en la vista Lista cada
 fila tiene una casilla (aparece al pasar el mouse; siempre en el celular), el
 encabezado de cada grupo selecciona todo el grupo y Shift+clic selecciona un
