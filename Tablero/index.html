@@ -1669,7 +1669,13 @@ function sHoy() {
     }
     return [...m.values()].sort((a,b) => b.total - a.total);
   })();
-  const deAnuncio = cliAnuncio.reduce((s,c) => s + c.total, 0);
+  const deAnuncioGhl = cliAnuncio.reduce((s,c) => s + c.total, 0);
+  /* Las compras de la tienda web que trajo un anuncio, por su UTM. */
+  const webAnuncio = webSinRepetir(webAnuncioDe(H.a, H.b), cliAnuncio.map(c => c.ci));
+  const webSuma = webAnuncio.filter(p => !p.repetido);
+  const deAnuncioWeb = webSuma.reduce((s,p) => s + MONTOW(p), 0);
+  const deAnuncio = deAnuncioGhl + deAnuncioWeb;
+  const nAnuncio = cliAnuncio.length + new Set(webSuma.map(quienWeb)).size;
   const campsRango = campanasDe(H.a, H.b);
   /* Meta clasifica cada resultado. Nos quedamos con los que son un CONTACTO —una
      conversación de WhatsApp o un formulario—, no con las compras que se atribuye. */
@@ -1790,8 +1796,10 @@ function sHoy() {
       <span class="rot">Entró por publicidad</span>
       <span class="cifraHoy" style="color:var(--verde)">${clp(deAnuncio)}</span>
       <ul class="puntos">
-        <li><b>${num(cliAnuncio.length)}</b> ${cliAnuncio.length === 1 ? "cliente llegó"
+        <li><b>${num(nAnuncio)}</b> ${nAnuncio === 1 ? "cliente llegó"
           : "clientes llegaron"} por un anuncio</li>
+        ${deAnuncioWeb ? `<li><b>${clp(deAnuncioWeb)}</b> por la tienda web ·
+          <b>${clp(deAnuncioGhl)}</b> por WhatsApp</li>` : ""}
         <li><b>${vRango ? pct(deAnuncio, vRango) : "—"}</b> de lo que vendiste</li>
         <li>costó <b>${gasto ? clp(gasto) : "—"}</b> traerlo</li>
         ${metaDice ? `<li class="fuente">Meta dice que fueron ${clp(metaDice)}</li>` : ""}
@@ -1805,7 +1813,7 @@ function sHoy() {
   ${fichaAbierta !== null && !detalleCli ? fichaCliente(fichaAbierta)
     : detalleHoy === "cont" ? detalleContactos(campContacto, gastoContacto, nContactos)
     : detalleHoy === "ads" ? detalleCampanas(campsRango, gasto)
-    : detalleHoy === "pub" ? detalleClientesAnuncio(cliAnuncio) : ""}
+    : detalleHoy === "pub" ? detalleClientesAnuncio(cliAnuncio, webAnuncio) : ""}
 
   <div class="sec"><h2>Mis clientes.</h2>
     <p>cuántas veces te compró cada uno ${etPeriodoClientes()}</p></div>
@@ -1954,6 +1962,25 @@ const VIA = { formulario: "llegó por un formulario o por la web",
               whatsapp: "tocó un anuncio que abre WhatsApp" };
 const publiDe = ci => D.publi[ci] || null;
 
+/* El OTRO registro de publicidad, y el que faltaba hasta el 6 de octubre de 2026: las
+   compras de la tienda web que trajo un anuncio. GoHighLevel solo ve a quien escribe por
+   WhatsApp o deja un formulario; quien toca el anuncio y compra en la web no abre
+   conversación y paga con boleta, que va sin RUT, así que no existía para esta página.
+   Esto sale de los UTM del propio pedido de Shopify (pipeline/shopify_atribucion.py). */
+const webAnuncioDe = (a, b) => (D.publiWeb || []).filter(p => p.i >= a && p.i <= b);
+const MONTOW = p => conIva ? p.t : p.neto;
+const normNom = v => String(v || "").toLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+/* Un cliente podría estar en los dos registros (escribió por WhatsApp y además compró en la
+   web con el anuncio pegado). Si su nombre ya viene por relBase, la compra web no se suma
+   otra vez: se marca y se muestra aparte. */
+function webSinRepetir(web, cis) {
+  const ya = new Set([...cis].map(ci => normNom(D.cli[ci][0])));
+  return web.map(p => ({ ...p, repetido: ya.has(normNom(p.cli)) }));
+}
+/* Quién llevó cada compra web, para la tabla: el nombre que viene en el pedido. */
+const quienWeb = p => p.cli || ("pedido #" + p.n);
+
 /* Toda la historia de compra de un cliente, no solo la del rango: sirve para
    distinguir al que acaba de llegar del que la publicidad trajo hace meses y vuelve. */
 function historial(ci) {
@@ -1977,10 +2004,13 @@ function historial(ci) {
 }
 
 /* Quiénes compraron habiendo llegado por un anuncio, y qué se llevaron. */
-function detalleClientesAnuncio(cs) {
-  if (!cs.length) return `<div class="detalle"><div class="vacio" style="border:0">
-    Ningún cliente de este período tiene el anuncio pegado en su chat.</div></div>`;
-  const total = cs.reduce((s,c) => s + c.total, 0);
+function detalleClientesAnuncio(cs, web) {
+  web = web || [];
+  if (!cs.length && !web.length) return `<div class="detalle"><div class="vacio" style="border:0">
+    Nadie de este período llegó por un anuncio: ni con el anuncio pegado en su chat de
+    WhatsApp, ni con el UTM en el pedido de la tienda web.</div></div>`;
+  const totalGhl = cs.reduce((s,c) => s + c.total, 0);
+  const total = totalGhl + web.filter(p => !p.repetido).reduce((s,p) => s + MONTOW(p), 0);
   const conProd = cs.map(c => {
     const pr = new Map();
     for (const id of c.ids) for (const i of (LIN_DE_DOC.get(id) || [])) {
@@ -1991,9 +2021,34 @@ function detalleClientesAnuncio(cs) {
       .map(([pi]) => D.prod[pi][0]);
     return { ...c, productos: top };
   });
-  return `<div class="detalle">
+  const tablaWeb = !web.length ? "" : `
+    <h3 style="margin-top:${cs.length ? "22px" : "0"}">${web.length === 1
+      ? "La compra que llegó" : `Las ${web.length} compras que llegaron`} por un anuncio
+      a la tienda web</h3>
+    <div class="tw" style="margin-top:10px;box-shadow:none"><table><thead><tr>
+      <th>Pedido</th><th>Quién compró</th><th>Qué anuncio</th><th>Compró ahora</th>
+      </tr></thead><tbody>
+      ${web.map(p => `<tr>
+        <td class="nom"><b style="color:var(--azul)">#${esc(p.n)}</b>${p.nuevo
+          ? ' <span style="color:var(--verde);font-size:.78rem;font-weight:700">nuevo</span>'
+          : ' <span style="color:var(--azul);font-size:.78rem;font-weight:700">vuelve</span>'}</td>
+        <td class="txt">${esc(p.cli || "—")}${p.repetido
+          ? '<br><span style="color:var(--gris);font-size:.78rem">ya contado arriba por su' +
+            ' chat de WhatsApp</span>' : ""}</td>
+        <td class="txt">${esc(p.campana || "—")}<br>
+          <span style="color:var(--gris);font-size:.78rem">${p.fuente === "google"
+            ? "lo trajo un anuncio de Google" : "lo trajo un anuncio de Meta, con el UTM pegado al pedido"}</span></td>
+        <td class="num">${p.repetido ? `<span style="color:var(--gris)">${clp(MONTOW(p))}</span>`
+          : clp(MONTOW(p))}</td>
+        </tr>`).join("")}
+    </tbody><tfoot><tr><td>${web.filter(p => !p.repetido).length} ${web.filter(p => !p.repetido).length === 1
+      ? "compra" : "compras"}</td><td></td><td></td>
+      <td class="num">${clp(web.filter(p => !p.repetido).reduce((s,p) => s + MONTOW(p), 0))}</td>
+    </tr></tfoot></table></div>`;
+
+  const tablaGhl = !cs.length ? "" : `
     <h3>Los ${cs.length} ${cs.length === 1 ? "cliente que llegó" : "clientes que llegaron"}
-      por un anuncio y compraron</h3>
+      por un anuncio y te escribieron</h3>
     <div class="tw" style="margin-top:10px;box-shadow:none"><table><thead><tr>
       <th>Cliente</th><th>Cómo llegó</th><th>Primera compra</th><th>Compras en total</th>
       <th>Compró ahora</th>
@@ -2012,29 +2067,56 @@ function detalleClientesAnuncio(cs) {
           ? `<span style="color:var(--gris);font-size:.78rem"> en ${c.docs} compras</span>` : ""}</td>
         </tr>`; }).join("")}
     </tbody><tfoot><tr><td>${cs.length} clientes</td><td></td><td></td><td></td>
-      <td class="num">${clp(total)}</td></tr></tfoot></table></div>
-    <p class="bajo" style="margin-top:8px">Toca un cliente para ver su ficha completa.</p>
+      <td class="num">${clp(totalGhl)}</td></tr></tfoot></table></div>
+    <p class="bajo" style="margin-top:8px">Toca un cliente para ver su ficha completa.</p>`;
+
+  return `<div class="detalle">
+    ${tablaGhl}
+    ${tablaWeb}
     ${(() => { const c = cohorteDe(H.a, H.b);
-      if (!c.total || !c.nAntes) return "";
+      if (!c.total) return "";
       const n = H.b - H.a + 1, corto_ = n < 60;
       return `<div class="aviso" style="margin:12px 0;border-color:var(--verde-fill);
         background:var(--verde-suave)">
-        <b>De esos ${clp(c.total)}, ${c.deNuevos
-          ? `solo ${clp(c.deNuevos)} ${c.nNuevos === 1 ? "lo trajo" : "los trajo"} la publicidad
-             de este período`
-          : "nada lo trajo la publicidad de este período"}.</b>
-        ${clp(c.deAntes)} son de ${c.nAntes} ${c.nAntes === 1 ? "cliente que llegó"
-        : "clientes que llegaron"} en campañas anteriores y siguen comprando: eso es recompra.
-        ${corto_
-          ? `En una ventana de ${n} ${n === 1 ? "día" : "días"} es lo esperable: entre que alguien
-             toca un anuncio y hace su primera compra suelen pasar más de tres meses. Para ver qué
-             devolvió la publicidad, mira <b>Publicidad</b> con el año completo.`
-          : c.gasto ? `El gasto de este período devolvió
+        <b>${!c.deAntes
+          ? `Esos ${clp(c.total)} los trajo la publicidad de este período.`
+          : `De esos ${clp(c.total)}, ${c.deNuevos
+            ? `${clp(c.deNuevos)} ${c.nNuevos === 1 ? "lo trajo" : "los trajo"} la publicidad
+               de este período`
+            : "nada lo trajo la publicidad de este período"}`}</b>
+        ${c.deAntes ? `${clp(c.deAntes)} ${c.nAntes === 1 ? "es de un cliente que llegó"
+          : `son de ${c.nAntes} clientes que llegaron`} en campañas anteriores y siguen
+          comprando: eso es recompra.` : ""}
+        ${c.deNuevosWeb ? `Lo que entró ahora es de la tienda web: ${c.nNuevosWeb}
+          ${c.nNuevosWeb === 1 ? "persona tocó un anuncio y compró" : "personas tocaron un anuncio y compraron"},
+          con el UTM pegado al pedido.` : ""}
+        ${!c.deNuevos && corto_
+          ? `En una ventana de ${n} ${n === 1 ? "día" : "días"} es lo esperable para el cliente
+             que cotiza por WhatsApp: entre que alguien toca un anuncio y hace su primera compra
+             suelen pasar más de tres meses. En la tienda web pasa al revés, compran el mismo día.`
+          : c.gasto && c.deNuevos ? `El gasto de este período devolvió
              <b>${c.retorno.toFixed(1).replace(".", ",")} veces</b>, no
              ${(c.total / c.gasto).toFixed(0)}.` : ""}</div>`; })()}
-    <p class="bajo"><b>"Vuelve"</b> quiere decir que a ese cliente lo trajo la publicidad en su
-      momento, pero la compra de ahora ya no la pagó el anuncio: es recompra. Mira la columna de
-      compras en total para ver cuánto ha valido cada uno desde que llegó.</p></div>`;
+    ${avisoAtribucionVieja()}
+    ${cs.length ? `<p class="bajo"><b>"Vuelve"</b> quiere decir que a ese cliente lo trajo la
+      publicidad en su momento, pero la compra de ahora ya no la pagó el anuncio: es recompra.
+      Mira la columna de compras en total para ver cuánto ha valido cada uno desde que
+      llegó.</p>` : ""}</div>`;
+}
+
+/* La atribución de WhatsApp no se refresca sola: es un insumo que se siembra desde el Mac.
+   Si la foto quedó vieja, ningún cliente de WhatsApp puede figurar como "llegó en este
+   período" y la página lo tiene que decir en vez de hacer pasar un cero por un hallazgo. */
+function avisoAtribucionVieja() {
+  if (!D.publiHasta) return "";
+  const hasta = aDias(D.publiHasta);
+  if (hasta >= H.a) return "";
+  return `<div class="aviso" style="margin:12px 0">
+    <b>De dónde llegó cada cliente que escribe por WhatsApp está anotado hasta el
+    ${etDia(D.publiHasta)}.</b> Es una foto del CRM que se trae a mano, no se refresca sola.
+    Mientras no se vuelva a traer, nadie que haya escrito después de esa fecha puede aparecer
+    acá como traído por la publicidad, aunque lo haya sido. Las compras de la tienda web no
+    dependen de eso: esas se leen del propio pedido.</div>`;
 }
 
 /* Lo que vendieron los clientes de publicidad, partido en dos: lo que trajo el gasto
@@ -2048,13 +2130,29 @@ function cohorteDe(a, b) {
     const cr = (D.publi[ci] || {}).creado;
     return cr && cr >= desde && cr <= hasta && D.prim[ci] >= a;
   }));
-  const total = ds.reduce((s,d) => s + MONTO(d), 0);
-  const deNuevos = ds.filter(d => nuevos.has(d[1])).reduce((s,d) => s + MONTO(d), 0);
+  const totalGhl = ds.reduce((s,d) => s + MONTO(d), 0);
+  const deNuevosGhl = ds.filter(d => nuevos.has(d[1])).reduce((s,d) => s + MONTO(d), 0);
+  /* La tienda web, que es el otro registro. Acá «nuevo» no depende de ninguna foto del
+     CRM: lo dice el propio pedido (es la primera compra de esa persona en la tienda), así
+     que esta mitad no se congela nunca. */
+  const web = webSinRepetir(webAnuncioDe(a, b), todos).filter(p => !p.repetido);
+  const webNuevos = web.filter(p => p.nuevo);
+  const totalWeb = web.reduce((s,p) => s + MONTOW(p), 0);
+  const deNuevosWeb = webNuevos.reduce((s,p) => s + MONTOW(p), 0);
+  const nWeb = new Set(web.map(quienWeb)).size;
+  const nWebNuevos = new Set(webNuevos.map(quienWeb)).size;
+
+  const total = totalGhl + totalWeb;
+  const deNuevos = deNuevosGhl + deNuevosWeb;
+  const nClientes = todos.size + nWeb;
+  const nNuevos = nuevos.size + nWebNuevos;
   const gasto = suma(D.gasto.slice(a, b + 1));
   return { total, deNuevos, deAntes: total - deNuevos, gasto,
-           nClientes: todos.size, nNuevos: nuevos.size, nAntes: todos.size - nuevos.size,
-           cacReal: nuevos.size ? gasto / nuevos.size : null,
-           cacAparente: todos.size ? gasto / todos.size : null,
+           nClientes, nNuevos, nAntes: nClientes - nNuevos,
+           deNuevosWeb, nNuevosWeb: nWebNuevos, totalWeb, nWeb,
+           deNuevosGhl, totalGhl, nGhl: todos.size,
+           cacReal: nNuevos ? gasto / nNuevos : null,
+           cacAparente: nClientes ? gasto / nClientes : null,
            retorno: gasto ? deNuevos / gasto : null };
 }
 function bloqueCohorte(c, etPeriodo) {
