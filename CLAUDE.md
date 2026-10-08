@@ -410,6 +410,13 @@ se editan únicamente desde la consola de Firebase). `./deploy.sh --preview`
 sube el sitio a un canal de vista previa y `./deploy.sh --solo-reglas` publica
 solo las reglas.
 
+**Campo «Con IVA (19 %)» (desde el 08-10-2026):** tipo `iva` en `tago_campos`; se
+calcula al vuelo como el campo de dinero fuente (su id va en `opciones`) × 1,19
+redondeado al peso (`cpValorCalculado`) y NUNCA se guarda en la tarea. Solo
+lectura en la Lista (columna con suma al pie), en la ficha y en el modal; en el
+panel «Campos» se crea eligiendo el campo de dinero del mismo espacio. Nació
+para Facturas por cobrar: «Monto neto» + «Monto con IVA».
+
 **Muestra (desde el 04-10-2026):** casilla «Muestra» en la cabecera de la
 ficha, bajo el número de Shopify; guarda `muestra: true` en el pedido (al
 desmarcar se borra el campo). Se ve como etiqueta rosa (#C026D3, el del DTF

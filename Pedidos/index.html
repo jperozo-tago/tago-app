@@ -1646,6 +1646,10 @@
     .fi-muestra input{width:16px;height:16px;accent-color:#C026D3;margin:0;cursor:pointer}
     .fi-muestra.on{color:#C026D3}
     @media(max-width:700px){.table-row>div:nth-child(1) .job-muestra{margin-top:0}}
+    /* ══ CAMPO «Con IVA»: calculado, no editable ══ */
+    .tt-calc{color:var(--text-sec);font-style:normal}
+    .tt-cell:has(.tt-calc){cursor:default}
+    input.fi.ft-campo:disabled,input.ft-campo:disabled{background:var(--surface-alt);color:var(--text-sec);cursor:default;border-color:transparent}
   </style>
 </head>
 <body>
@@ -3190,7 +3194,7 @@ const TT_INT={ // columnas integradas: título y ancho
 };
 const TT_ORDEN=["estado","asignados","fechaLimite","prioridad","pedido","fechaInicio","creado","creador","actualizado","id"];
 function ttCfg(lid){ const k=lid||""; if(!ttCfgCache[k]) ttCfgCache[k]=cpConfig(listas[k]?k:null); return ttCfgCache[k]; }
-function ttAnchoCampo(c){ return c.tipo==="casilla"?"96px":(c.tipo==="parrafo"||c.tipo==="texto"||c.tipo==="url")?"minmax(170px,1.3fr)":(c.tipo==="dinero"||c.tipo==="numero"||c.tipo==="fecha"||c.tipo==="sino")?"116px":"minmax(130px,1fr)"; }
+function ttAnchoCampo(c){ return c.tipo==="casilla"?"96px":(c.tipo==="parrafo"||c.tipo==="texto"||c.tipo==="url")?"minmax(170px,1.3fr)":(c.tipo==="dinero"||c.tipo==="iva"||c.tipo==="numero"||c.tipo==="fecha"||c.tipo==="sino")?"116px":"minmax(130px,1fr)"; }
 function ttColumnas(){ // columnas de la vista: las de la lista; en «Todas» / «Todo el espacio», las de siempre + la unión de los campos de las listas presentes
   const cols=[], enLista=tareaFiltro.tipo==="lista";
   const cfg=enLista?ttCfg(tareaFiltro.id):cpConfig(null);
@@ -3249,14 +3253,17 @@ function ttMoverColumna(k,destino){ // destino = posición entre las columnas qu
 })();
 function ttEditable(t,col){
   if(col.tipo==="int") return ["estado","asignados","fechaLimite","fechaInicio","prioridad","pedido"].includes(col.k);
+  if(col.c&&col.c.tipo==="iva") return false; // se calcula, no se edita
   return !!t.lista&&ttCfg(t.lista).personalizados.some(c=>c.cid===col.cid);
 }
 function ttValor(id,t,col){ // cómo se ve cada celda
   const vacio=`<span class="tt-vacio">—</span>`;
   if(col.tipo==="campo"){
     const c=col.c, v=t.campos?t.campos[c.cid]:undefined;
+    if(c.tipo==="iva"){ if(!(!!t.lista&&ttCfg(t.lista).personalizados.some(x=>x.cid===col.cid))) return vacio; const n=cpValorCalculado(c,t); return n===null?vacio:`<span class="tt-num tt-calc" title="${esc(cpFuenteNombre(c))} × 1,19">${fmtCLP(n)}</span>`; }
     if(!ttEditable(t,col)) return vacio;
     if(c.tipo==="casilla") return `<span class="tt-check${v?" on":""}">${ic(v?"square-check-big":"square")}</span>`;
+    if(c.tipo==="iva"){ const n=cpValorCalculado(c,t); return n===null?vacio:`<span class="tt-num tt-calc" title="${esc(cpFuenteNombre(c))} × 1,19">${fmtCLP(n)}</span>`; }
     const txt=cpValorTexto(c,v); if(!txt) return vacio;
     if(c.tipo==="opcion"){ const ret=!cpOpciones(c).includes(String(v)); return `<span class="tt-opcion${ret?" retirada":""}" title="${ret?"opción retirada de la lista":esc(txt)}">${esc(txt)}</span>`; }
     if(c.tipo==="persona"){ const p=EQUIPO.find(x=>x.id===v); return p?`<span class="tt-persona"><span class="avatar ${p.avClass}">${p.id}</span>${esc(p.nombre)}</span>`:`<span class="tt-txt">${esc(txt)}</span>`; }
@@ -3473,11 +3480,11 @@ function ttCalcGuardados(){
   return ttCalcLocal[ttAnchoKey()]||{};
 }
 function ttCalcTipo(col){ // qué clase de dato hay en la columna, para ofrecer operaciones con sentido
-  if(col.tipo==="campo") return ["dinero","numero"].includes(col.c.tipo)?"numero":(col.c.tipo==="fecha"?"fecha":(col.c.tipo==="casilla"?"casilla":"texto"));
+  if(col.tipo==="campo") return ["dinero","iva","numero"].includes(col.c.tipo)?"numero":(col.c.tipo==="fecha"?"fecha":(col.c.tipo==="casilla"?"casilla":"texto"));
   return ["fechaLimite","fechaInicio","creado","actualizado"].includes(col.k)?"fecha":"texto";
 }
 function ttCalcValor(id,t,col){ // el valor crudo de una celda para calcular
-  if(col.tipo==="campo"){ const v=t.campos?t.campos[col.cid]:undefined; return (v===undefined||v===null||v==="")?null:v; }
+  if(col.tipo==="campo"){ if(col.c&&col.c.tipo==="iva") return cpValorCalculado(col.c,t); const v=t.campos?t.campos[col.cid]:undefined; return (v===undefined||v===null||v==="")?null:v; }
   switch(col.k){
     case "asignados": { const ids=Object.keys(t.asignados||{}); return ids.length?ids.map(pid=>(EQUIPO.find(x=>x.id===pid)||{}).nombre||pid).join(", "):null; }
     case "fechaLimite": return t.fechaLimite||null; case "fechaInicio": return t.fechaInicio||null;
@@ -3490,7 +3497,7 @@ function ttCalcValor(id,t,col){ // el valor crudo de una celda para calcular
 }
 function ttCalcular(op,filas,col){
   const vals=filas.map(([id,t])=>ttCalcValor(id,t,col)), llenos=vals.filter(v=>v!==null&&v!==""), tipo=ttCalcTipo(col);
-  const fmtNum=n=>col.tipo==="campo"&&col.c.tipo==="dinero"?fmtCLP(n):(Math.round(n*100)/100).toLocaleString("es-CL");
+  const fmtNum=n=>col.tipo==="campo"&&(col.c.tipo==="dinero"||col.c.tipo==="iva")?fmtCLP(n):(Math.round(n*100)/100).toLocaleString("es-CL");
   const nums=llenos.map(Number).filter(n=>!isNaN(n));
   switch(op){
     case "contar": return String(filas.length);
@@ -3806,6 +3813,7 @@ function saveTarea(){
   // Campos de la lista: los obligatorios se exigen y los valores se escriben uno por uno (nunca se pisa lo que no está a la vista)
   const cfgLista=cpConfig(gv("f-tarea-lista")||null), camposVals={};
   for(const c of cfgLista.personalizados){
+    if(c.tipo==="iva") continue; // se calcula, no se guarda
     const el=document.getElementById("f-tc-"+c.cid), v=cpNormalizar(c,cpLeerControl(el,c));
     if(c.requerido&&v===null){ toast(`Falta completar «${c.etiqueta}»`,"error"); el?.focus(); return; }
     camposVals[c.cid]=v;
@@ -5578,7 +5586,15 @@ function fmEnviar(){
 // Cada lista guarda en tago_listas/<id>/campos = {integrados:{prioridad:true,...}, personalizados:{<cid>:{orden,requerido}}}.
 // Cada tarea guarda sus valores en tago_tareas/<id>/campos/<cid>. Nada de esto es obligatorio: sin configuración, la lista se ve como siempre.
 var camposCat={}, cpListaId=null, cpTab="existente", cpBuscar="", cpAbiertas=new Set(["muestran","propiedades","entorno"]), cpNuevoTipo=null, cpEditando=null, cpConfirmar=null;
-const CP_TIPOS={texto:{n:"Texto corto",ic:"pencil",ej:"Proveedor"},parrafo:{n:"Párrafo",ic:"file-text",ej:"Observaciones"},numero:{n:"Número",ic:"hash",ej:"Cantidad de piezas"},dinero:{n:"Dinero (CLP)",ic:"banknote",ej:"Presupuesto"},fecha:{n:"Fecha",ic:"calendar",ej:"Fecha de publicación"},opcion:{n:"Opción (lista)",ic:"list",ej:"Canal"},sino:{n:"Sí / No",ic:"check",ej:"Aprobado por cliente"},casilla:{n:"Casilla",ic:"square-check-big",ej:"Revisado"},url:{n:"Enlace",ic:"link",ej:"Carpeta de Drive"},persona:{n:"Persona",ic:"user",ej:"Revisor"}};
+const CP_TIPOS={texto:{n:"Texto corto",ic:"pencil",ej:"Proveedor"},parrafo:{n:"Párrafo",ic:"file-text",ej:"Observaciones"},numero:{n:"Número",ic:"hash",ej:"Cantidad de piezas"},dinero:{n:"Dinero (CLP)",ic:"banknote",ej:"Presupuesto"},fecha:{n:"Fecha",ic:"calendar",ej:"Fecha de publicación"},opcion:{n:"Opción (lista)",ic:"list",ej:"Canal"},sino:{n:"Sí / No",ic:"check",ej:"Aprobado por cliente"},casilla:{n:"Casilla",ic:"square-check-big",ej:"Revisado"},url:{n:"Enlace",ic:"link",ej:"Carpeta de Drive"},persona:{n:"Persona",ic:"user",ej:"Revisor"},iva:{n:"Con IVA (19 %)",ic:"banknote",ej:"Monto con IVA",calc:true}};
+const IVA=0.19;
+function cpValorCalculado(c,t){ // campos que no se guardan: se calculan al vuelo. iva = campo de dinero fuente (c.opciones) × 1,19
+  if(!c||c.tipo!=="iva")return null;
+  const src=camposCat[String(c.opciones||"").trim()]; const v=t&&t.campos?t.campos[String(c.opciones||"").trim()]:undefined;
+  if(!src||v===undefined||v===null||v==="")return null;
+  const n=Number(v); return isNaN(n)?null:Math.round(n*(1+IVA));
+}
+function cpFuenteNombre(c){ const src=camposCat[String(c.opciones||"").trim()]; return src?src.etiqueta:"campo de dinero"; }
 // Propiedades integradas de la tarea. fila: se ve en la lista; modal: es un bloque del formulario; def: valor cuando la lista no dice nada.
 const CP_PROPIEDADES=[
   {k:"estado",n:"Estado",ic:"square-kanban",fila:true,modal:false,def:true,sub:"Se cambia desde la misma fila"},
@@ -5604,6 +5620,7 @@ function cpOpciones(c){ return (Array.isArray(c.opciones)?c.opciones:String(c.op
 function cpNormalizar(c,v){ // valor listo para guardar según el tipo; null = vacío
   if(v===undefined||v===null||v===false)return null;
   switch(c.tipo){
+    case "iva": return null;
     case "numero": case "dinero": { if(v==="")return null; let n=Number(v); if(isNaN(n)) n=Number(String(v).replace(/[^0-9.,-]/g,"").replace(",",".")); if(isNaN(n))return null; return c.tipo==="dinero"?Math.abs(n):n; }
     case "casilla": return (v===true||v==="true"||v==="1")?true:null;
     case "url": { v=String(v).trim(); if(!v)return null; return /^https?:\/\//i.test(v)?v:"https://"+v; }
@@ -5614,7 +5631,7 @@ function cpValorTexto(c,v){ // cómo se lee un valor guardado
   if(v===undefined||v===null||v==="")return "";
   switch(c.tipo){
     case "fecha": return fmtDate(String(v));
-    case "dinero": return fmtCLP(Number(v)||0);
+    case "dinero": case "iva": return fmtCLP(Number(v)||0);
     case "casilla": return v?"Sí":"";
     case "persona": { const p=EQUIPO.find(x=>x.id===v); return p?p.nombre:String(v); }
     case "url": return String(v).replace(/^https?:\/\//i,"").replace(/\/$/,"").slice(0,40);
@@ -5627,6 +5644,7 @@ function cpControl(id,c,v,o){ // control de edición para un campo según su tip
     case "parrafo": return `<textarea id="${id}"${cls} rows="2">${esc(v)}</textarea>`;
     case "numero": return `<input id="${id}"${cls} type="number" step="any" value="${esc(v)}"/>`;
     case "dinero": return `<input id="${id}"${cls} type="number" step="1" min="0" value="${esc(v)}" placeholder="$ sin IVA"/>`;
+    case "iva": return `<input id="${id}"${cls} type="text" value="${v===""?"":esc(fmtCLP(Number(v)||0))}" disabled title="Se calcula solo: ${esc(cpFuenteNombre(c))} × 1,19" placeholder="Se calcula: ${esc(cpFuenteNombre(c))} × 1,19"/>`;
     case "fecha": return `<input id="${id}"${cls} type="date" value="${esc(v)}"/>`;
     case "opcion": { const ops=cpOpciones(c); const extra=v&&!ops.includes(String(v))?`<option value="${esc(v)}" selected>${esc(v)} (opción retirada)</option>`:""; return `<select id="${id}"${cls}><option value="">— Elige —</option>${ops.map(x=>`<option${String(v)===x?" selected":""}>${esc(x)}</option>`).join("")}${extra}</select>`; }
     case "sino": return `<select id="${id}"${cls}><option value="">— Elige —</option><option${v==="Sí"?" selected":""}>Sí</option><option${v==="No"?" selected":""}>No</option></select>`;
@@ -5639,6 +5657,7 @@ function cpControl(id,c,v,o){ // control de edición para un campo según su tip
 function cpLeerControl(el,c){ if(!el)return null; if(c.tipo==="casilla") return el.checked?true:null; return el.value; }
 function cpGuardarValor(id,cid,v){ // un valor de una tarea, escrito solo en su clave
   const c=camposCat[cid], t=tareas[id]; if(!c||!t)return;
+  if(c.tipo==="iva")return; // se calcula, no se guarda
   const val=cpNormalizar(c,v);
   const def=cpConfig(t.lista||null).personalizados.find(x=>x.cid===cid);
   if(def&&def.requerido&&val===null){ toast(`«${c.etiqueta}» es obligatorio en esta lista`,"error"); return; }
@@ -5648,6 +5667,7 @@ function cpGuardarValor(id,cid,v){ // un valor de una tarea, escrito solo en su 
 function cpEditarEnFila(ev,id,cid){ // edición de un campo personalizado en la celda (popover de Pedidos)
   ev.stopPropagation(); ev.preventDefault();
   const t=tareas[id], c=camposCat[cid]; if(!t||!c)return;
+  if(c.tipo==="iva"){ cerrarCeldaPop(); return; }
   if(celdaPop&&celdaPop._id===id&&celdaPop._campo===cid){ cerrarCeldaPop(); return; }
   const actual=t.campos?t.campos[cid]:"";
   if(c.tipo==="casilla"){ cerrarCeldaPop(); cpGuardarValor(id,cid,actual?null:true); return; }
@@ -5698,7 +5718,7 @@ function aplicarCamposModal(listaId,valores,reiniciar){
   // Lo ya tecleado se conserva aunque cambie la lista o llegue una actualización del catálogo
   const escritos={}; cont.querySelectorAll("[data-cid]").forEach(w=>{ const c=camposCat[w.dataset.cid], el=w.querySelector("input,select,textarea"); if(c&&el) escritos[w.dataset.cid]=cpLeerControl(el,c); });
   cont.innerHTML=cfg.personalizados.map(c=>{
-    const v=escritos[c.cid]!==undefined?escritos[c.cid]:valores[c.cid];
+    const v=c.tipo==="iva"?(cpValorCalculado(c,{campos:{...valores,...escritos}})??""):(escritos[c.cid]!==undefined?escritos[c.cid]:valores[c.cid]);
     if(c.tipo==="casilla") return `<div data-cid="${c.cid}" style="align-self:end">${cpControl("f-tc-"+c.cid,c,v)}</div>`;
     return `<div data-cid="${c.cid}"><label>${esc(c.etiqueta)}${c.requerido?" *":""}</label>${cpControl("f-tc-"+c.cid,c,v)}</div>`;
   }).join("");
@@ -5772,6 +5792,7 @@ function renderCamposCrear(){
   return `<div class="cp-tipos">${tipos}</div><div class="cp-form">
     <div><label>Nombre del campo</label><input type="text" id="cpn-etq" placeholder="ej: ${esc(t.ej)}" onkeydown="if(event.key==='Enter'){event.preventDefault();cpCrearCampo()}"/></div>
     ${cpNuevoTipo==="opcion"?`<div><label>Opciones (separadas por coma)</label><input type="text" id="cpn-ops" placeholder="ej: Instagram, TikTok, Email" onkeydown="if(event.key==='Enter'){event.preventDefault();cpCrearCampo()}"/></div>`:""}
+    ${cpNuevoTipo==="iva"?(()=>{ const l=listas[cpListaId]; const fuentes=Object.entries(camposCat).filter(([,c])=>c&&!c.archivado&&c.tipo==="dinero"&&(c.espacio||null)===((l&&l.espacio)||null)); return `<div><label>Se calcula a partir de (campo de dinero del espacio)</label>${fuentes.length?`<select id="cpn-src">${fuentes.map(([cid,c])=>`<option value="${cid}">${esc(c.etiqueta)}</option>`).join("")}</select>`:`<span class="cp-sub">Primero crea un campo de tipo Dinero en este espacio.</span>`}</div><span class="cp-sub">Resultado: ese monto × 1,19, redondeado al peso. No se edita: cambia solo cuando cambia el monto.</span>`; })():""}
     <label class="fm-req"><input type="checkbox" id="cpn-req"/> Obligatorio en esta lista</label>
     <div class="cp-pie"><button class="btn btn-secondary" onclick="cpNuevoTipo=null;renderCampos()">Cancelar</button><button class="btn btn-primary" onclick="cpCrearCampo()">Crear campo</button></div>
   </div>`;
@@ -5787,6 +5808,7 @@ function renderCampoEditar(cid,c,on){
   return `<div class="cp-edit">
     <input type="text" id="cpe-etq" value="${esc(c.etiqueta)}" placeholder="Nombre del campo" onkeydown="if(event.key==='Enter'){event.preventDefault();cpGuardarEdicion('${cid}')}"/>
     ${c.tipo==="opcion"?`<input type="text" id="cpe-ops" value="${esc(cpOpciones(c).join(", "))}" placeholder="Opciones separadas por coma" onkeydown="if(event.key==='Enter'){event.preventDefault();cpGuardarEdicion('${cid}')}"/>`:""}
+    ${c.tipo==="iva"?(()=>{ const fuentes=Object.entries(camposCat).filter(([k,x])=>x&&!x.archivado&&x.tipo==="dinero"&&(x.espacio||null)===(c.espacio||null)); return `<select id="cpe-ops">${fuentes.map(([k,x])=>`<option value="${k}"${String(c.opciones||"").trim()===k?" selected":""}>${esc(x.etiqueta)}</option>`).join("")}</select><span class="cp-sub">Se calcula a partir de ese monto × 1,19.</span>`; })():""}
     ${on?`<label class="fm-req"><input type="checkbox" id="cpe-req"${c.requerido?" checked":""}/> Obligatorio en esta lista</label>`:""}
     <span class="cp-sub">Tipo: ${(CP_TIPOS[c.tipo]||CP_TIPOS.texto).n} (no se cambia). El nombre y las opciones cambian en todas las listas que lo usan.</span>
     <div class="cp-pie"><button class="btn btn-secondary" onclick="cpEditando=null;renderCampos()">Cancelar</button><button class="btn btn-primary" onclick="cpGuardarEdicion('${cid}')">Guardar</button></div>
@@ -5795,8 +5817,9 @@ function renderCampoEditar(cid,c,on){
 function cpCrearCampo(){
   const l=listas[cpListaId]; if(!l||!cpNuevoTipo)return;
   const etq=(gv("cpn-etq")||"").trim(); if(!etq){ toast("Ponle un nombre al campo","error"); document.getElementById("cpn-etq")?.focus(); return; }
-  const ops=cpNuevoTipo==="opcion"?(gv("cpn-ops")||"").split(",").map(s=>s.trim()).filter(Boolean):[];
+  const ops=cpNuevoTipo==="opcion"?(gv("cpn-ops")||"").split(",").map(s=>s.trim()).filter(Boolean):cpNuevoTipo==="iva"?[gv("cpn-src")||""].filter(Boolean):[];
   if(cpNuevoTipo==="opcion"&&!ops.length){ toast("Escribe al menos una opción","error"); document.getElementById("cpn-ops")?.focus(); return; }
+  if(cpNuevoTipo==="iva"&&!ops.length){ toast("Elige el campo de dinero del que se calcula","error"); return; }
   const dup=Object.entries(camposCat).find(([,c])=>c&&!c.archivado&&(c.espacio||null)===(l.espacio||null)&&String(c.etiqueta).trim().toLowerCase()===etq.toLowerCase());
   if(dup){ toast(`Ya existe «${dup[1].etiqueta}» en este espacio: agrégalo desde «Agregar existente»`,"error"); cpTab="existente"; cpBuscar=etq; renderCampos(); const b=document.getElementById("cp-buscar"); if(b){ b.value=etq; } return; }
   const req=!!document.getElementById("cpn-req")?.checked;
@@ -5825,6 +5848,7 @@ function cpGuardarEdicion(cid){
   if(dup){ toast(`Ya existe otro campo «${dup[1].etiqueta}» en este espacio`,"error"); return; }
   const updates={}; updates["tago_campos/"+cid+"/etiqueta"]=etq; updates["tago_campos/"+cid+"/updatedAt"]=new Date().toISOString();
   if(c.tipo==="opcion"){ const ops=(gv("cpe-ops")||"").split(",").map(s=>s.trim()).filter(Boolean); if(!ops.length){ toast("Escribe al menos una opción","error"); return; } updates["tago_campos/"+cid+"/opciones"]=ops.join(", "); }
+  if(c.tipo==="iva"){ const src=(gv("cpe-ops")||"").trim(); if(src&&camposCat[src]) updates["tago_campos/"+cid+"/opciones"]=src; }
   const req=document.getElementById("cpe-req"); if(req&&listas[cpListaId]) updates["tago_listas/"+cpListaId+"/campos/personalizados/"+cid+"/requerido"]=!!req.checked;
   firebase.database().ref().update(updates).then(()=>{ cpEditando=null; toast("Campo guardado","ok"); renderCampos(); }).catch(err=>toast("No se pudo guardar: "+err.message,"error"));
 }
@@ -6836,7 +6860,7 @@ function renderTarea(forzar){
   const estadoOpts=set.map(([sid,e])=>`<option value="${sid}"${sid===t.estado?" selected":""}>${esc(e.nombre)}</option>`).join("")+(set.some(([sid])=>sid===t.estado)?"":`<option value="${esc(t.estado||"")}" selected>${esc(est?est.nombre:"Sin estado")}</option>`);
   const grupos=Object.entries(espacios).filter(([sid])=>espacioVisible(sid)).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0));
   const listaOpts=`<option value="">— Sin lista —</option>`+grupos.map(([sid,e])=>{ const ls=Object.entries(listas).filter(([,x])=>x.espacio===sid).sort((a,b)=>(a[1].orden||0)-(b[1].orden||0)); return ls.length?`<optgroup label="${esc(e.nombre)}">${ls.map(([lid,x])=>`<option value="${lid}"${lid===t.lista?" selected":""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`:""; }).join("")+(t.lista&&!l?`<option value="${esc(t.lista)}" selected>Lista de un espacio privado</option>`:"");
-  const campoCtl=c=>{ const v=t.campos?t.campos[c.cid]:undefined; const ctl=c.tipo==="casilla"?`<input id="ft-c-${c.cid}" class="ft-campo" type="checkbox"${v&&v!=="false"?" checked":""}/>`:cpControl("ft-c-"+c.cid,c,v,{clase:"fi ft-campo"}); return `<span onchange="tareaCampoPersonalizado('${id}','${c.cid}')" style="display:contents">${ctl}</span>`; };
+  const campoCtl=c=>{ const v=c.tipo==="iva"?(cpValorCalculado(c,t)??""):(t.campos?t.campos[c.cid]:undefined); const ctl=c.tipo==="casilla"?`<input id="ft-c-${c.cid}" class="ft-campo" type="checkbox"${v&&v!=="false"?" checked":""}/>`:cpControl("ft-c-"+c.cid,c,v,{clase:"fi ft-campo"}); return `<span onchange="tareaCampoPersonalizado('${id}','${c.cid}')" style="display:contents">${ctl}</span>`; };
   let html=`
   <div class="fh-top">
     <span class="fh-crumb">${crumb}<span class="fh-sep">›</span><span class="fh-id">${t.padre?"Subtarea":"Tarea"}</span></span>
