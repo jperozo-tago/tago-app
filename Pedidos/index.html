@@ -3210,6 +3210,11 @@ function ttColumnas(){ // columnas de la vista: las de la lista; en «Todas» / 
     const ord=[...fijas,...orden], pos=k=>{ const i=ord.indexOf(k); return i<0?1e6:i; };
     cols.sort((a,b)=>pos(a.k)-pos(b.k)); // estable: las demás que no están en el orden quedan al final tal cual
   }
+  // Un campo «Con IVA» que no esté en el orden guardado se pone justo después de su campo de dinero, no al final
+  cols.filter(c=>c.tipo==="campo"&&c.c&&c.c.tipo==="iva"&&!(orden||[]).includes(c.k)).forEach(c=>{
+    const src="c:"+String(c.c.opciones||"").trim(); const i=cols.indexOf(c); const j=cols.findIndex(x=>x.k===src);
+    if(i>=0&&j>=0&&i!==j+1){ cols.splice(i,1); cols.splice(cols.findIndex(x=>x.k===src)+1,0,c); }
+  });
   return cols;
 }
 // Orden de columnas: de la lista (lo guarda un admin y lo ve todo el equipo) o de este navegador
