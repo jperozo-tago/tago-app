@@ -410,6 +410,14 @@ se editan únicamente desde la consola de Firebase). `./deploy.sh --preview`
 sube el sitio a un canal de vista previa y `./deploy.sh --solo-reglas` publica
 solo las reglas.
 
+**Filtro por nombre y por fecha en Tareas (desde el 08-10-2026):** en la barra
+de Tareas, cuadro «Buscar por nombre…» (sin distinguir acentos ni mayúsculas) y
+filtro de fecha: campo (los campos de fecha de la lista, p. ej. «Fecha pedido»,
+más Fecha límite, inicio, creado y actualizado) con desde/hasta. Vale para
+Lista, Tablero y Calendario (`ttPasaFiltro` en los `visibles`), muestra «n de m»
+y se limpia al cambiar de lista o espacio (`ttFiltroReset` en `irATareas`). No
+se guarda.
+
 **Campo «Con IVA (19 %)» (desde el 08-10-2026):** tipo `iva` en `tago_campos`; se
 calcula al vuelo como el campo de dinero fuente (su id va en `opciones`) × 1,19
 redondeado al peso (`cpValorCalculado`) y NUNCA se guarda en la tarea. Solo

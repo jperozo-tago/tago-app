@@ -1650,6 +1650,17 @@
     .tt-calc{color:var(--text-sec);font-style:normal}
     .tt-cell:has(.tt-calc){cursor:default}
     input.fi.ft-campo:disabled,input.ft-campo:disabled{background:var(--surface-alt);color:var(--text-sec);cursor:default;border-color:transparent}
+    /* ══ FILTRO por nombre y fecha en Tareas ══ */
+    .tt-filtros{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto}
+    .tt-buscar{flex:0 1 210px;min-width:150px;font-size:13px;padding:7px 12px}
+    .tt-filtros.activo .tt-buscar{border-color:var(--azul)}
+    .tt-filtro-fecha{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:2px 6px 2px 9px;color:var(--text-muted)}
+    .tt-filtro-fecha select,.tt-filtro-fecha input{background:transparent;border:none;padding:5px 4px;font-family:inherit;font-size:13px;color:var(--text);outline:none;max-width:150px}
+    .tt-filtro-fecha select{font-family:'DM Sans',sans-serif;font-weight:600;color:var(--text-sec)}
+        .tt-filtro-sep{color:var(--text-muted)}
+    .tt-filtro-n{font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;color:var(--azul);white-space:nowrap}
+    .tt-filtro-x{padding:6px 10px;font-size:12px}
+    @media(max-width:700px){.tt-filtros{margin-left:0;width:100%}.tt-buscar{flex:1 1 100%}.tt-filtro-fecha{flex-wrap:wrap}}
   </style>
 </head>
 <body>
@@ -1893,6 +1904,12 @@
       <button class="btn btn-primary" onclick="openTareaModal()">+ Nueva tarea</button>
       <button class="btn btn-secondary tareas-admin-only" style="display:none" onclick="openEstadosModal()"><svg class="ic" aria-hidden="true"><use href="#i-settings-2"/></svg><span class="btn-txt">Estados</span></button>
       <button class="btn btn-secondary" id="btn-campos-lista" style="display:none" onclick="abrirCampos()" title="Campos de esta lista"><svg class="ic" aria-hidden="true"><use href="#i-columns-3"/></svg><span class="btn-txt">Campos</span></button>
+      <div class="tt-filtros" id="tt-filtros">
+        <input class="search-input tt-buscar" id="tt-buscar" type="text" placeholder="Buscar por nombre…" autocomplete="off" oninput="ttFiltroTexto(this.value)"/>
+        <span class="tt-filtro-fecha" title="Filtrar por fecha"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg><select id="tt-fecha-campo" onchange="ttFiltroFecha()"><option value="">Fecha…</option></select><input type="date" id="tt-desde" onchange="ttFiltroFecha()" title="Desde"/><span class="tt-filtro-sep">–</span><input type="date" id="tt-hasta" onchange="ttFiltroFecha()" title="Hasta"/></span>
+        <span class="tt-filtro-n" id="tt-filtro-n"></span>
+        <button class="btn btn-secondary tt-filtro-x" id="tt-filtro-x" style="display:none" onclick="ttFiltroLimpiar()" title="Quitar filtros">✕ Limpiar</button>
+      </div>
     </div>
     <div id="tareas-list"></div>
   </div>
@@ -3073,7 +3090,7 @@ function renderTareas(){
   const {plantilla,plantillaM}=ttPlantilla(cols);
   const asa=`<span class="col-resizer col-resizer-der tt-resizer" title="Arrastra para cambiar el ancho · doble clic para restablecer"></span>`;
   const head=`<div class="tt-row tt-head"><div class="tt-cell tt-nombre" data-col="nombre"><span class="tt-txt">Nombre</span>${asa}</div>${cols.map(c=>`<div class="tt-cell" data-col="${esc(c.k)}" title="${esc(c.t)}"><span class="tt-txt">${esc(c.t)}</span>${asa}</div>`).join("")}<div class="tt-cell tt-acc">${enLista&&admin?`<button class="tt-plus" title="Agregar o quitar campos de esta lista" onclick="abrirCampos()">${ic("plus")}</button>`:""}</div></div>`;
-  const visibles=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&puedeVerTarea(t)&&tareaEnFiltro(t));
+  const visibles=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&puedeVerTarea(t)&&tareaEnFiltro(t)&&ttPasaFiltro(t));
   const idsEstados=new Set(estadosOrdenados.map(([id])=>id));
   const grupos=estadosOrdenados.slice();
   const huerfanas=visibles.filter(([,t])=>!idsEstados.has(t.estado));
@@ -3108,7 +3125,7 @@ function renderTareas(){
   ttColaFinal();
 }
 function ttColaFinal(){ // lo que depende de las tareas y se repinta con ellas
-  ttSelRenderBarra();
+  ttSelRenderBarra(); ttFiltroPintar();
   if(typeof fichaId!=="undefined"&&fichaId&&!fichaNuevo) renderFicha();
   if(currentTab==="elemento"&&["panel","formulario"].includes(elementos[elementoActual]?.tipo)) renderElemento();
   if(typeof renderSidebar==="function") renderSidebar();
@@ -3146,7 +3163,7 @@ function ttCalMover(n){ ttCalMes=new Date(ttCalMes.getFullYear(),ttCalMes.getMon
 function ttCalHoy(){ const d=new Date(); ttCalMes=new Date(d.getFullYear(),d.getMonth(),1); renderTareas(); }
 function renderTareasAlt(estados){
   const cont=document.getElementById("tareas-list"); if(!cont)return;
-  const visibles=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&puedeVerTarea(t)&&tareaEnFiltro(t));
+  const visibles=Object.entries(tareas).filter(([id,t])=>idSeguro(id)&&puedeVerTarea(t)&&tareaEnFiltro(t)&&ttPasaFiltro(t));
   const ids=new Set(estados.map(([id])=>id)), huerfanas=visibles.filter(([,t])=>!ids.has(t.estado));
   const mezcla=tareaFiltro.tipo!=="lista";
   if(ttVistaActual()==="tablero"){
@@ -5883,7 +5900,7 @@ function aplicarSidebar(){
 }
 function sbToggleEspacio(id){ sbAbiertos.has(id)?sbAbiertos.delete(id):sbAbiertos.add(id); try{ localStorage.setItem("tago_sb_abiertos_v2",JSON.stringify([...sbAbiertos])); }catch(e){} renderSidebar(); }
 function irAPedidosLista(key){ if(currentTab!=="pedidos") switchTab("pedidos"); categoriaSeleccionada=key; render(); closeSidebar(); }
-function irATareas(filtro){ if(typeof ttSelReset==="function") ttSelReset(); tareaFiltro=filtro; if(currentTab!=="tareas") switchTab("tareas"); else renderTareas(); actualizarTituloTareas(); renderSidebar(); closeSidebar(); }
+function irATareas(filtro){ if(typeof ttSelReset==="function") ttSelReset(); if(typeof ttFiltroReset==="function") ttFiltroReset(); tareaFiltro=filtro; if(currentTab!=="tareas") switchTab("tareas"); else renderTareas(); actualizarTituloTareas(); renderSidebar(); closeSidebar(); }
 function actualizarTituloTareas(){
   if(currentTab!=="tareas")return;
   let ctx="";
@@ -5894,6 +5911,44 @@ function actualizarTituloTareas(){
 }
 function tareaEsMia(t){ return !!(currentUser&&t&&t.asignados&&t.asignados[currentUser.id]); }
 function tareaPendiente(t){ const set=estadosParaTarea(t); const ultimo=set.length?set[set.length-1][0]:null; return t.estado!==ultimo; } // no está en el último estado de su lista o espacio
+// ══ FILTRO por nombre y por fecha en Tareas (Lista, Tablero y Calendario) ══
+var ttFiltro={texto:"",campo:"",desde:"",hasta:""};
+function ttNormalizar(x){ return String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
+function ttFiltroActivo(){ return !!(ttFiltro.texto.trim()||(ttFiltro.campo&&(ttFiltro.desde||ttFiltro.hasta))); }
+function ttFechaDe(t,campo){
+  if(!campo)return "";
+  if(campo==="fechaLimite"||campo==="fechaInicio") return t[campo]||"";
+  if(campo==="creado") return t.createdAt?String(t.createdAt).slice(0,10):"";
+  if(campo==="actualizado") return t.updatedAt?String(t.updatedAt).slice(0,10):"";
+  if(campo.startsWith("c:")){ const v=t.campos?t.campos[campo.slice(2)]:""; return v?String(v).slice(0,10):""; }
+  return "";
+}
+function ttPasaFiltro(t){
+  if(ttFiltro.texto.trim()){ if(!ttNormalizar(t.nombre).includes(ttNormalizar(ttFiltro.texto).trim())) return false; }
+  if(ttFiltro.campo&&(ttFiltro.desde||ttFiltro.hasta)){ const f=ttFechaDe(t,ttFiltro.campo); if(!f) return false; if(ttFiltro.desde&&f<ttFiltro.desde) return false; if(ttFiltro.hasta&&f>ttFiltro.hasta) return false; }
+  return true;
+}
+function ttFiltroTexto(v){ ttFiltro.texto=v||""; renderTareas(); }
+function ttFiltroFecha(){ ttFiltro.campo=gv("tt-fecha-campo")||""; ttFiltro.desde=gv("tt-desde")||""; ttFiltro.hasta=gv("tt-hasta")||""; renderTareas(); }
+function ttFiltroReset(){ ttFiltro={texto:"",campo:"",desde:"",hasta:""}; ["tt-buscar","tt-fecha-campo","tt-desde","tt-hasta"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; }); }
+function ttFiltroLimpiar(){ ttFiltroReset(); renderTareas(); document.getElementById("tt-buscar")?.focus(); }
+function ttFiltroCamposFecha(){ // los campos de fecha de la lista (o de las listas a la vista) y luego los integrados
+  const vistos=new Set(), custom=[];
+  const agregar=cfg=>cfg.personalizados.filter(c=>c.tipo==="fecha"&&!vistos.has(c.cid)).forEach(c=>{ vistos.add(c.cid); custom.push(["c:"+c.cid,c.etiqueta]); });
+  if(tareaFiltro.tipo==="lista") agregar(ttCfg(tareaFiltro.id));
+  else Object.values(tareas).filter(t=>t.lista&&listas[t.lista]&&puedeVerTarea(t)&&tareaEnFiltro(t)).forEach(t=>agregar(ttCfg(t.lista)));
+  return [...custom,["fechaLimite","Fecha límite"],["fechaInicio","Fecha de inicio"],["creado","Creado"],["actualizado","Actualizado"]];
+}
+function ttFiltroPintar(){ // opciones del campo de fecha según la lista, contador «n de m» y botón de limpiar
+  const sel=document.getElementById("tt-fecha-campo"); if(!sel||currentTab!=="tareas")return;
+  const ops=ttFiltroCamposFecha(), firma=JSON.stringify(ops);
+  if(sel.dataset.firma!==firma){ sel.dataset.firma=firma; const actual=sel.value; sel.innerHTML=`<option value="">Fecha…</option>`+ops.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(""); sel.value=ops.some(([v])=>v===actual)?actual:""; if(ttFiltro.campo!==sel.value) ttFiltro.campo=sel.value; }
+  const activo=ttFiltroActivo();
+  let total=0, vis=0; Object.entries(tareas).forEach(([id,t])=>{ if(!idSeguro(id)||!puedeVerTarea(t)||!tareaEnFiltro(t)||t.padre)return; total++; if(ttPasaFiltro(t)) vis++; });
+  const x=document.getElementById("tt-filtro-x"); if(x) x.style.display=activo?"":"none";
+  const n=document.getElementById("tt-filtro-n"); if(n) n.textContent=activo?`${vis} de ${total}`:"";
+  document.getElementById("tt-filtros")?.classList.toggle("activo",activo);
+}
 function tareaEnFiltro(t){
   if(tareaFiltro.tipo==="lista") return t.lista===tareaFiltro.id;
   if(tareaFiltro.tipo==="espacio") return !!t.lista&&listas[t.lista]?.espacio===tareaFiltro.id;
