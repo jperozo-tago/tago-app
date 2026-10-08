@@ -1647,8 +1647,8 @@
     .fi-muestra.on{color:#C026D3}
     @media(max-width:700px){.table-row>div:nth-child(1) .job-muestra{margin-top:0}}
     /* ══ CAMPO «Con IVA»: calculado, no editable ══ */
-    .tt-calc{color:var(--text-sec);font-style:normal}
-    .tt-cell:has(.tt-calc){cursor:default}
+    .tt-calculado{color:var(--text-sec)}
+    .tt-cell:has(.tt-calculado){cursor:default}
     input.fi.ft-campo:disabled,input.ft-campo:disabled{background:var(--surface-alt);color:var(--text-sec);cursor:default;border-color:transparent}
     /* ══ FILTRO por nombre y fecha en Tareas ══ */
     .tt-filtros{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto}
@@ -1661,6 +1661,10 @@
     .tt-filtro-n{font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;color:var(--azul);white-space:nowrap}
     .tt-filtro-x{padding:6px 10px;font-size:12px}
     @media(max-width:700px){.tt-filtros{margin-left:0;width:100%}.tt-buscar{flex:1 1 100%}.tt-filtro-fecha{flex-wrap:wrap}}
+    /* pie de cálculos cuando hay selección */
+    .tt-calc.con-sel{background:rgba(64,99,249,.07)}
+    .tt-calc.con-sel .tt-cell.tt-nombre{background:transparent}
+    .tt-calc-sel{font-size:11.5px;color:var(--azul)}
   </style>
 </head>
 <body>
@@ -3282,10 +3286,10 @@ function ttValor(id,t,col){ // cómo se ve cada celda
   const vacio=`<span class="tt-vacio">—</span>`;
   if(col.tipo==="campo"){
     const c=col.c, v=t.campos?t.campos[c.cid]:undefined;
-    if(c.tipo==="iva"){ if(!(!!t.lista&&ttCfg(t.lista).personalizados.some(x=>x.cid===col.cid))) return vacio; const n=cpValorCalculado(c,t); return n===null?vacio:`<span class="tt-num tt-calc" title="${esc(cpFuenteNombre(c))} × 1,19">${fmtCLP(n)}</span>`; }
+    if(c.tipo==="iva"){ if(!(!!t.lista&&ttCfg(t.lista).personalizados.some(x=>x.cid===col.cid))) return vacio; const n=cpValorCalculado(c,t); return n===null?vacio:`<span class="tt-num tt-calculado" title="${esc(cpFuenteNombre(c))} × 1,19">${fmtCLP(n)}</span>`; }
     if(!ttEditable(t,col)) return vacio;
     if(c.tipo==="casilla") return `<span class="tt-check${v?" on":""}">${ic(v?"square-check-big":"square")}</span>`;
-    if(c.tipo==="iva"){ const n=cpValorCalculado(c,t); return n===null?vacio:`<span class="tt-num tt-calc" title="${esc(cpFuenteNombre(c))} × 1,19">${fmtCLP(n)}</span>`; }
+    if(c.tipo==="iva"){ const n=cpValorCalculado(c,t); return n===null?vacio:`<span class="tt-num tt-calculado" title="${esc(cpFuenteNombre(c))} × 1,19">${fmtCLP(n)}</span>`; }
     const txt=cpValorTexto(c,v); if(!txt) return vacio;
     if(c.tipo==="opcion"){ const ret=!cpOpciones(c).includes(String(v)); return `<span class="tt-opcion${ret?" retirada":""}" title="${ret?"opción retirada de la lista":esc(txt)}">${esc(txt)}</span>`; }
     if(c.tipo==="persona"){ const p=EQUIPO.find(x=>x.id===v); return p?`<span class="tt-persona"><span class="avatar ${p.avClass}">${p.id}</span>${esc(p.nombre)}</span>`:`<span class="tt-txt">${esc(txt)}</span>`; }
@@ -3538,7 +3542,9 @@ function ttCalcular(op,filas,col){
 }
 function ttFilaCalc(filas,cols){
   const calc=ttCalcGuardados();
-  return `<div class="tt-row tt-calc"><div class="tt-cell tt-nombre"></div>${cols.map(col=>{ const op=calc[col.k]; return `<div class="tt-cell" onclick="ttCalcMenu(event,'${esc(col.k)}')" title="Calcular sobre esta columna">${op&&TT_CALC[op]?`${TT_CALC[op]}: <b>${esc(ttCalcular(op,filas,col))}</b>`:"Calcular"} ${ic("chevron-down")}</div>`; }).join("")}<div class="tt-cell tt-acc"></div></div>`;
+  const haySel=typeof ttSel!=="undefined"&&ttSel.size>0, base=haySel?filas.filter(([id])=>ttSel.has(id)):filas; // con selección, se calcula solo lo marcado
+  const etq=`<div class="tt-cell tt-nombre">${haySel?`<span class="tt-calc-sel" title="Los cálculos consideran solo las tareas seleccionadas en este grupo">${base.length} seleccionada${base.length===1?"":"s"}</span>`:""}</div>`;
+  return `<div class="tt-row tt-calc${haySel?" con-sel":""}">${etq}${cols.map(col=>{ const op=calc[col.k]; return `<div class="tt-cell" onclick="ttCalcMenu(event,'${esc(col.k)}')" title="${haySel?"Calculado sobre la selección":"Calcular sobre esta columna"}">${op&&TT_CALC[op]?`${TT_CALC[op]}: <b>${haySel&&!base.length?"—":esc(ttCalcular(op,base,col))}</b>`:"Calcular"} ${ic("chevron-down")}</div>`; }).join("")}<div class="tt-cell tt-acc"></div></div>`;
 }
 function ttCalcMenu(ev,k){
   ev.stopPropagation(); ev.preventDefault();
