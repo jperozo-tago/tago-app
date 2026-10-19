@@ -4164,7 +4164,11 @@ function saveJob(){
 
 // ── Cierre en Shopify: la app deja la marca; shopify_cerrar.py (corrida del Tablero) marca enviado y archiva ──
 function numeroShopify(j){ const m=String((j&&j.pedido)||"").match(/(?:^|[^\w-])#?(\d{4,6})(?![\w-])/); return m?m[1]:null; }
-const SHOPIFY_ADMIN="https://admin.shopify.com/store/tago-cl"; // enlace al pedido en el administrador (Andreina, 01-10-2026: «debajo del link de Google, el link de Shopify»)
+const SHOPIFY_ADMIN="https://admin.shopify.com/store/tago-cl";
+const ROBOT_SHOPIFY_URL="https://script.google.com/macros/s/AKfycbz_tvqNz_rQxsQ66F6HvZfN-NH3O8E3otQ1LvlCXjV5GDl2UjMm8JaLUjX2aVmnNeEFjw/exec", ROBOT_SHOPIFY_CLAVE="vuq4USQ9umf8KoUvUYlH5JbLGPGePkqD"; // receptor del «Reloj del tablero TAGO» (Apps Script de Andreina): lanza al momento la corrida liviana Shopify ↔ Pedidos. La clave solo sirve para eso y el receptor acepta una corrida cada 45 s.
+function avisarRobotShopify(id){ // tras dejar la marca shopify.pendiente: que el robot cierre en Shopify ahora y no en la corrida de cada 30 min
+  try{ fetch(ROBOT_SHOPIFY_URL+"?clave="+ROBOT_SHOPIFY_CLAVE,{method:"POST",mode:"no-cors",body:JSON.stringify({accion:"cerrar",pedido:id,quien:(currentUser&&currentUser.nombre)||""})}).catch(()=>{}); }catch(e){}
+} // enlace al pedido en el administrador (Andreina, 01-10-2026: «debajo del link de Google, el link de Shopify»)
 function archivosDe(j){ const a=j&&j.archivos; return !a?[]:Array.isArray(a)?a.filter(Boolean):Object.values(a).filter(Boolean); } // enlaces de los archivos que subió el cliente en Shopify (los deja el robot en `archivos`)
 function tambienDe(j){ const a=j&&j.tambienCompro, l=!a?[]:Array.isArray(a)?a:Object.values(a), out=l.filter(t=>t&&t.texto); const txt=String(j&&j.tambienTexto||"").trim(); if(txt) txt.split(/\n|\s\/\s/).map(x=>x.trim()).filter(Boolean).forEach(x=>out.push({texto:x,pedido:""})); return out; } // lo que deja el robot (tambienCompro) más lo que escribe la persona en la ficha (tambienTexto)
 function tambienItemHtml(t){ let h=esc(t.texto).replace(/TG-\d{4}/g,m=>jobs[m]?`<a class="fi-tambien-link" onclick="abrirFicha('${m}')" title="Abrir ${m}">${m}</a>`:m); if(t.pedido) h+=` <a class="fi-tambien-link" onclick="abrirFicha('${esc(t.pedido)}')" title="Abrir ${esc(t.pedido)}">${esc(t.pedido)}</a>`; return h; } // los demás productos del mismo pedido de Shopify (los deja el robot); Andreina: «MUY visible»
@@ -4179,13 +4183,13 @@ function pedirCierreShopify(id){
   const j=jobs[id]; if(!j)return;
   if(j.estado!=="entregado"){ toast("Primero pasa el pedido a Entregado","error"); return; }
   const upd={}; if(!marcarCierreShopify(upd,j)){ toast(j.shopify&&j.shopify.cerradoAt?"Este pedido ya está cerrado en Shopify":"Pon el número de Shopify en «# Pedido» (ej: #8584)","error"); return; }
-  dbRef.child(id).update(upd).then(()=>toast("Se cerrará en la próxima corrida del Tablero","ok")).catch(err=>toast("No se pudo: "+err.message,"error"));
+  dbRef.child(id).update(upd).then(()=>{ avisarRobotShopify(id); toast("Cerrando en Shopify, tarda un minuto","ok"); }).catch(err=>toast("No se pudo: "+err.message,"error"));
 }
 function fichaShopifyHtml(j){
   const n=numeroShopify(j), s=j.shopify||null; if(!n&&!s)return"";
   let txt="", cls="", accion="";
   if(s&&s.cerradoAt) { txt=`Cerrado ✓ ${fmtFull(s.cerradoAt)}${s.name?" · "+esc(s.name):""}${s.enviadoPorNosotros===false?" (ya estaba enviado)":""}`; cls="fi-ok"; }
-  else if(s&&s.pendiente) txt=`Se cerrará en la próxima corrida del Tablero (#${esc(s.numero||n)})`;
+  else if(s&&s.pendiente) txt=`Cerrando en Shopify, tarda un minuto (#${esc(s.numero||n)})`;
   else if(s&&s.error){ txt=esc(s.error); cls="fi-mal"; }
   else if(j.estado==="entregado") txt=n?`Sin cerrar (#${esc(n)})`:"Sin número de Shopify en «# Pedido»";
   else txt=n?`#${esc(n)} · se marcará enviado y archivado al pasar a Entregado`:"";
@@ -4267,8 +4271,8 @@ function moverEstado(id,nuevoEstado){
     if(idx<3){ upd.listaAt=null; upd.listaBy=null; }
     if(j.estado==="entregado"&&j.shopify&&!j.shopify.cerradoAt) upd.shopify=null; // aún no se cerró en Shopify: se quita la marca
   }
-  if(nuevoEstado==="entregado") marcarCierreShopify(upd,j,now); // el robot del Tablero lo marca enviado y lo archiva en Shopify
-  if(dbRef){ dbRef.child(id).update(upd); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
+  const cierraShopify=nuevoEstado==="entregado"&&marcarCierreShopify(upd,j,now); // el robot lo marca enviado y lo archiva en Shopify al momento
+  if(dbRef){ dbRef.child(id).update(upd).then(()=>{ if(cierraShopify) avisarRobotShopify(id); }); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
   else{ jobs[id]={...j,...upd}; Object.keys(upd).forEach(k=>{ if(upd[k]===null) delete jobs[id][k]; }); saveLocal(); render(); }
   toast((atras?"← ":"→ ")+ST[nuevoEstado].label,"ok");
   { const retiro=(j.tipoEntrega||"Retiro")==="Retiro", a=j.aviso||{}; // Klaviyo avisa al cliente: retiro al estar listo, envío al entregarse al courier
@@ -6411,9 +6415,9 @@ function crearDesdeFicha(){
   if(!ES_ACC(data.tipoDtf)) delete data.accesorio;
   if((data.tipoEntrega||"Retiro")==="Retiro") delete data.envio;
   packAjustarEnlace(data); if(!data.packId) delete data.packId;
-  if(data.estado==="entregado") marcarCierreShopify(data,data,now);
+  const cierraShopify=data.estado==="entregado"&&marcarCierreShopify(data,data,now);
   const listo=id=>{ toast("Pedido agregado ✓","ok"); fichaNuevo=false; fichaDraft=null; fichaId=id; renderFicha(true); cargarActividad(id); };
-  if(dbRef){ nextIdTransaction(id=>{ dbRef.child(id).set(data); if(data.packId){ registrarLog(id,"Pack DTF","—",packNombre(data.packId)); packAprender(data.packId,data.cliente); } notificarAsignados(id,data.cliente,data.personas); registrarCreacion(id); listo(id); }); }
+  if(dbRef){ nextIdTransaction(id=>{ dbRef.child(id).set(data).then(()=>{ if(cierraShopify) avisarRobotShopify(id); }); if(data.packId){ registrarLog(id,"Pack DTF","—",packNombre(data.packId)); packAprender(data.packId,data.cliente); } notificarAsignados(id,data.cliente,data.personas); registrarCreacion(id); listo(id); }); }
   else{ const id=genId(); jobs[id]=data; saveLocal(); render(); listo(id); }
 }
 
