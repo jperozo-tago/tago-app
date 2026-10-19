@@ -5260,7 +5260,7 @@ function editarCelda(ev,id,campo){
 
 // ══ BANDEJA (propuesta, copia local): notificaciones y correos en un solo lugar ══
 var bandejaFiltro="todo", bandejaVerLeidos=false;
-function setBandejaFiltro(f){ bandejaFiltro=f; renderBandeja(); }
+function setBandejaFiltro(f){ bandejaFiltro=f; renderBandeja(); if(typeof renderSidebar==="function") renderSidebar(); }
 function bandejaItems(){
   const items=[];
   Object.entries(notificaciones).forEach(([id,n])=>items.push({id,tipo:n.tipo==="mencion"?"menciones":"asignaciones",ts:n.ts||0,leido:!!n.leido,n}));
@@ -5268,6 +5268,9 @@ function bandejaItems(){
   return items.sort((a,b)=>b.ts-a.ts);
 }
 function bandejaNoLeidos(){ return currentUser?bandejaItems().filter(i=>!i.leido).length:0; }
+function bandejaContadores(){ const c={menciones:0,asignaciones:0,correos:0}; if(currentUser) bandejaItems().forEach(i=>{ if(!i.leido) c[i.tipo]=(c[i.tipo]||0)+1; }); return c; }
+const BANDEJA_GRUPOS=[["menciones","message-circle","Menciones"],["asignaciones","bell","Asignaciones"],["correos","mail","Correos de pedidos"]]; // los mismos filtros de la bandeja, en el menú lateral
+function abrirBandeja(f){ bandejaFiltro=f||"todo"; if(currentTab==="bandeja") renderBandeja(); else switchTab("bandeja"); }
 function renderBandejaBadge(){
   const b=document.getElementById("bandeja-badge-count"); if(!b||!currentUser)return;
   const n=bandejaNoLeidos();
@@ -6064,7 +6067,11 @@ function renderSidebar(){
   const delBtn=(tipo,id)=>`<button class="sb-del" title="Eliminar" onclick="event.stopPropagation();sbConfirmar={tipo:'${tipo}',id:'${id}'};renderSidebar()">✕</button>`;
   const nBj=bandejaNoLeidos();
   const nMias=Object.values(tareas).filter(t=>tareaEsMia(t)&&tareaPendiente(t)).length;
-  let h=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="bandeja"?" active":""}" onclick="switchTab('bandeja')" title="Bandeja"><span class="sb-caret"></span><span class="sb-ic">${ic("inbox")}</span><span class="sb-label">Bandeja</span><span class="sb-count${nBj?" sb-unread":""}">${nBj||""}</span></div>`;
+  const cBj=bandejaContadores(), bjAbierto=!col&&!sbAbiertos.has("bandeja_cerrada"), bjActivo=currentTab==="bandeja"; // abierta salvo que se pliegue a mano
+  let h=`<div class="sb-space${bjActivo?" active":""}"><div class="sb-node sb-space-head sb-bandeja${bjActivo&&bandejaFiltro==="todo"?" active":""}" onclick="abrirBandeja('todo')" title="Bandeja: ${nBj} sin leer"><span class="sb-caret" onclick="event.stopPropagation();sbToggleEspacio('bandeja_cerrada')" title="${bjAbierto?"Plegar":"Desplegar"}">${col?"":(bjAbierto?"▾":"▸")}</span><span class="sb-ic">${ic("inbox")}</span><span class="sb-label">Bandeja</span><span class="sb-count${nBj?" sb-unread":""}">${nBj||""}</span></div>`;
+  if(bjAbierto) BANDEJA_GRUPOS.filter(([k])=>k!=="correos"||puedeVerCorreo()).forEach(([k,i,t])=>{ const n=cBj[k]||0, activo=bjActivo&&bandejaFiltro===k;
+    h+=`<div class="sb-node sb-list${activo?" active":""}" onclick="abrirBandeja('${k}')" title="${t}: ${n} sin leer"><span class="sb-ic sb-ic-sm">${ic(i)}</span><span class="sb-label">${t}</span><span class="sb-count${n?" sb-unread":""}">${n||""}</span></div>`; });
+  h+=`</div>`;
   const nAsig=Object.values(tareas).filter(tareaEsMia).length;
   h+=`<div class="sb-node sb-space-head sb-bandeja${currentTab==="tareas"&&tareaFiltro.tipo==="mias"?" active":""}" onclick="irATareas({tipo:'mias'})" title="Mis tareas: ${nMias} pendiente${nMias===1?"":"s"} de ${nAsig} asignada${nAsig===1?"":"s"}"><span class="sb-caret"></span><span class="sb-ic">${ic("square-check-big")}</span><span class="sb-label">Mis tareas</span><span class="sb-count">${nMias||""}</span></div>`;
   h+=`<div class="sb-sep"></div>`;
