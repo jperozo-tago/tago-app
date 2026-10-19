@@ -1,0 +1,8 @@
+{
+  "name": "tago-funciones",
+  "description": "Funciones de Firebase de TAGO App: receptor de webhooks de Shopify",
+  "private": true,
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "dependencies": { "firebase-functions": "^6.4.0" }
+}

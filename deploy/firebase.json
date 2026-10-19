@@ -15,5 +15,17 @@
   },
   "storage": {
     "rules": "storage.rules"
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "tago",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log"
+      ]
+    }
+  ]
 }
