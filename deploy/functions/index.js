@@ -11,7 +11,10 @@
 //                           Notificaciones → Webhooks)
 //   RELOJ_URL               URL /exec del Apps Script con ?clave=<CLAVE_WEBHOOK>
 // URL de la función (va en los tres webhooks de Shopify: orders/paid, orders/cancelled,
-// refunds/create): https://us-central1-tago-app-489c1.cloudfunctions.net/shopifyWebhook
+// refunds/create): https://shopifywebhook-prukg2gqfq-uc.a.run.app (Cloud Run, 2.ª generación).
+// Primer despliegue (19-10-2026): hubo que dar a 919374961221-compute@developer.gserviceaccount.com
+// el rol «Cuenta de servicio de Cloud Build» y, en Cloud Run → Seguridad, «Permitir el acceso
+// público»; ninguna de las dos cosas la hace el CLI en este proyecto (política de la organización).
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const crypto = require("node:crypto");
