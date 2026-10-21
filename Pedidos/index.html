@@ -1748,6 +1748,7 @@
         <input class="search-input" type="text" id="search" placeholder="Buscar cliente, # pedido o producto..." oninput="render()"/>
         <div class="status-seg" role="group" aria-label="Filtrar por estado">
           <button class="filter-tab active" onclick="setFilter('todos',this)" title="Todos los estados">Todos <span class="tab-count" id="c-todos">0</span></button>
+          <button class="filter-tab" onclick="setFilter('pedidos_shopify',this)" title="Shopify"><span class="dot" style="background:var(--shop-c)"></span>Shopify <span class="tab-count" id="c-pedidos_shopify">0</span></button>
           <button class="filter-tab" onclick="setFilter('recibido',this)" title="Por revisar"><span class="dot" style="background:var(--grey-c)"></span>Por revisar <span class="tab-count" id="c-recibido">0</span></button>
           <button class="filter-tab" onclick="setFilter('enviado_produccion',this)" title="Enviado a Producción"><span class="dot" style="background:var(--blue-c)"></span>Enviado a Producción <span class="tab-count" id="c-enviado_produccion">0</span></button>
           <button class="filter-tab" onclick="setFilter('en_produccion',this)" title="Enviado a Impresión"><span class="dot" style="background:var(--amber-c)"></span>Enviado a Impresión <span class="tab-count" id="c-en_produccion">0</span></button>
@@ -2317,6 +2318,7 @@ function adminsFinancieros(){ if(!rolesTago) return ADMINS_FINANCIEROS; return [
 const ADMINS_ELIMINAR_CATEGORIA=['j.perozo@tago.cl','a.rodriguez@tago.cl'];
 function esAdminFinanciero(){ return adminsFinancieros().includes(currentUser?.email); }
 function esAdminPedidos(){ return esAdminFinanciero(); }
+function puedeVerValoresStats(){ return esAdminFinanciero()||(emailsDeRol("ventas")||[]).includes(currentUser?.email); }   // ventas ve los valores de Estadísticas sin ser admin financiero
 let selectedPersonas=[],selectedTintas=[];
 let currentTab="pedidos";
 let mailRef=null,mailAlerts={},mailKnownIds=null,mailPanelOpen=false,selectedMailIds=new Set();
@@ -4662,7 +4664,7 @@ function prodCardHtml(t,qtyJobs,moneyJobs){
   const disp=t.unit==="metros"?qty.toFixed(2):Math.round(qty);
   const label=t.label||t.key;
   let moneyHtml="";
-  if(esAdminFinanciero()){
+  if(puedeVerValoresStats()){
     const monto=moneyJobs.filter(deEsteTipo).reduce((a,j)=>a+(parseFloat(j.precio)||0),0);
     moneyHtml=`<div class="prod-card-money"${monto?"":' style="color:var(--text-muted)"'}>${monto?fmtCLP(monto):"—"}</div>`;
   }
@@ -4726,10 +4728,10 @@ function renderStatsView(){
   const hoyDinero=calcStats(iso=>isToday(iso),fechaDinero);
   renderProdCards("cards-hoy",hoyProd,hoyDinero);
 
-  // Valor producido hoy (solo admins financieros: José, Andreina, Carol) — desde que se envía a producción
+  // Valor producido hoy (admins financieros y rol ventas) — desde que se envía a producción
   const revHoy=hoyDinero.jobs.reduce((a,j)=>a+(parseFloat(j.precio)||0),0);
   const revHoyEl=document.getElementById("rev-hoy");
-  if(esAdminFinanciero()){
+  if(puedeVerValoresStats()){
     revHoyEl.style.display="";
     revHoyEl.innerHTML=`${ic("banknote")} Valor producido hoy: <strong>${fmtCLP(revHoy)}</strong> <span style="color:var(--text-muted)">c/IVA</span> &nbsp;·&nbsp; <strong>${fmtCLPNeto(revHoy)}</strong> <span style="color:var(--text-muted)">neto · ${hoyDinero.total} trabajo${hoyDinero.total!==1?"s":""}</span>`;
   }else{
@@ -4743,13 +4745,13 @@ function renderStatsView(){
   const mesDinero=calcStats(mesFiltro,fechaDinero);
   renderProdCards("cards-mes",mesProd,mesDinero);
 
-  // Valor producido mes (desde que se envía a producción) + tiempo promedio hasta Listo (solo admins financieros: José, Andreina, Carol)
+  // Valor producido mes (desde que se envía a producción) + tiempo promedio hasta Listo (admins financieros y rol ventas)
   const revMes=mesDinero.jobs.reduce((a,j)=>a+(parseFloat(j.precio)||0),0);
   const durs=mesProd.jobs.filter(j=>j.createdAt&&j.listaAt).map(j=>new Date(j.listaAt)-new Date(j.createdAt));
   let tpStr="—";
   if(durs.length){ const avg=durs.reduce((a,b)=>a+b,0)/durs.length; const h=avg/3600000; tpStr=h<48?`${h.toFixed(1)} horas`:`${(h/24).toFixed(1)} días`; }
   const revMesEl=document.getElementById("rev-mes");
-  if(esAdminFinanciero()){
+  if(puedeVerValoresStats()){
     revMesEl.style.display="";
     revMesEl.innerHTML=`${ic("banknote")} Valor producido en el mes: <strong>${fmtCLP(revMes)}</strong> <span style="color:var(--text-muted)">c/IVA</span> &nbsp;·&nbsp; <strong>${fmtCLPNeto(revMes)}</strong> <span style="color:var(--text-muted)">neto</span> &nbsp;·&nbsp; ${ic("timer")} Tiempo promedio venta → listo: <strong style="font-size:15px">${tpStr}</strong>`;
   }else{
