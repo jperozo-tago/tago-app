@@ -381,6 +381,10 @@
     .persona-chip{display:flex;align-items:center;gap:6px;background:var(--surface-alt);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;transition:all .15s;font-size:12px;color:var(--text-sec)}
     .persona-chip:hover{border-color:var(--teal);color:var(--text)}
     .persona-chip.selected{border-color:var(--teal);background:rgba(73,206,171,0.1);color:var(--teal-dark);font-weight:600}
+.persona-chip.solo-lectura{cursor:default}
+.chat-list-item.ajeno{opacity:.55}
+.chat-h-click{cursor:pointer}
+.chat-sistema span{font-style:italic;text-transform:none}
     .persona-chip .chip-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
     .chip-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600}
     .tinta-grid{display:flex;gap:8px;flex-wrap:wrap}
@@ -2002,6 +2006,20 @@
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="modal-integrantes" onclick="ovc(event,'modal-integrantes')">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title"><div class="modal-bar"></div><span id="integrantes-titulo">Integrantes</span></div>
+      <button class="modal-close" onclick="cerrarIntegrantes()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div><div class="chip-label" id="integrantes-sub"></div><div class="persona-grid" id="integrantes-grid"></div></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="cerrarIntegrantes()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL TAREA -->
 <div class="modal-overlay" id="modal-tarea" onclick="ovc(event,'modal-tarea')">
@@ -2772,7 +2790,7 @@ function initChat(){
   chatInitialized=true;
   chatRef=firebase.database().ref("tago_chats");
   chatRef.on("value",
-    snap=>{ chatsMeta=snap.val()||{}; ensureDefaultGroups(); renderChatSidebar(); renderChatHeader(); renderChatBadge(); chatAvisaNuevos(); },
+    snap=>{ chatsMeta=snap.val()||{}; ensureDefaultGroups(); renderChatSidebar(); renderChatHeader(); renderChatBadge(); chatAvisaNuevos(); if(integrantesChatId) renderIntegrantes(); },
     err=>{ toast("Error de sincronización de chat: "+err.message,"error"); console.error(err); }
   );
 }
@@ -2817,13 +2835,13 @@ function renderChatHeader(){
   let izq="";
   if(meta.tipo==="grupal"){
     const miembros=Object.keys(meta.miembros||{}).map(id=>EQUIPO.find(p=>p.id===id)).filter(Boolean);
-    izq=`<div class="chat-h-ico">${ic("hash")}</div><div class="chat-h-txt"><div class="chat-h-nombre">${esc(meta.nombre)}</div><div class="chat-h-sub">${miembros.length} integrantes · ${esc(miembros.map(p=>p.nombre.split(" ")[0]).join(", "))}</div></div>`;
+    izq=`<div class="chat-h-ico">${ic("hash")}</div><div class="chat-h-txt chat-h-click" onclick="abrirIntegrantes()" title="Ver integrantes"><div class="chat-h-nombre">${esc(meta.nombre)}</div><div class="chat-h-sub">${miembros.length} integrantes · ${esc(miembros.map(p=>p.nombre.split(" ")[0]).join(", "))}</div></div>`;
   }else{
     const otherId=Object.keys(meta.miembros||{}).find(id=>id!==currentUser.id); const p=EQUIPO.find(x=>x.id===otherId);
     const perfil=Object.values(AUTORIZADOS_PEDIDOS).find(x=>x.id===otherId);
     izq=p?`<div class="avatar ${p.avClass} chat-h-av">${p.id}</div><div class="chat-h-txt"><div class="chat-h-nombre">${esc(p.nombre)}</div><div class="chat-h-sub">${esc(perfil?.rol||ROL_LABEL[p.rol]||"")}</div></div>`:`<div class="chat-h-nombre">Conversación</div>`;
   }
-  el.innerHTML=izq+`<span class="fh-spacer"></span><button class="chat-tool" onclick="chatSonidoToggle()" title="${chatSonidoPref?"Silenciar el chat (sonido y avisos)":"Activar sonido y avisos del chat"}">${ic(chatSonidoPref?"bell":"bell-off")}</button><button class="chat-tool" onclick="chatAbrirBusqueda()" title="Buscar en la conversación">${ic("search")}</button>`;
+  el.innerHTML=izq+`<span class="fh-spacer"></span>${meta.tipo==="grupal"?`<button class="chat-tool" onclick="abrirIntegrantes()" title="${puedeAdministrarGrupos()?"Agregar o quitar integrantes":"Ver integrantes"}">${ic("users")}</button>`:""}<button class="chat-tool" onclick="chatSonidoToggle()" title="${chatSonidoPref?"Silenciar el chat (sonido y avisos)":"Activar sonido y avisos del chat"}">${ic(chatSonidoPref?"bell":"bell-off")}</button><button class="chat-tool" onclick="chatAbrirBusqueda()" title="Buscar en la conversación">${ic("search")}</button>`;
 }
 function renderChatSidebar(){
   if(!document.getElementById("chat-dm-list")||!document.getElementById("chat-group-list"))return;
@@ -2843,8 +2861,11 @@ function renderChatSidebar(){
       ${unread?'<span class="chat-dot"></span>':""}
     </div>`;
   }).join("");
-  const groupEntries=Object.entries(chatsMeta).filter(([,c])=>c.tipo==="grupal"&&c.miembros&&c.miembros[currentUser.id]);
+  const admin=puedeAdministrarGrupos();
+  // José y Andreina ven además los grupos en los que no están: no abren la conversación, abren sus integrantes.
+  const groupEntries=Object.entries(chatsMeta).filter(([,c])=>c.tipo==="grupal"&&c.miembros&&(c.miembros[currentUser.id]||admin));
   document.getElementById("chat-group-list").innerHTML=groupEntries.length?groupEntries.map(([id,c])=>{
+    if(!c.miembros[currentUser.id]) return`<div class="chat-list-item ajeno" onclick="abrirIntegrantes('${id}')" title="No estás en este grupo: toca para ver o cambiar sus integrantes"><span class="cli-hash">#</span><div class="cli-txt"><div class="cli-top"><span class="cli-nombre">${esc(c.nombre)}</span></div><div class="cli-prev">No estás en este grupo</div></div></div>`;
     const unread=c.ultimoMensaje&&(!c.leidoHasta||!c.leidoHasta[currentUser.id]||c.leidoHasta[currentUser.id]<c.ultimoMensaje.ts);
     return`<div class="chat-list-item ${currentChatId===id?"active":""}${unread?" sin-leer":""}" onclick="selectChat('${id}')">
       <span class="cli-hash">#</span>
@@ -2865,6 +2886,7 @@ function renderChatMessages(){
   entries.forEach(([id,m])=>{
     const d=new Date(m.ts||0), dia=chatEtiquetaDia(d);
     if(dia!==diaPrev){ html+=`<div class="chat-dia"><span>${dia}</span></div>`; diaPrev=dia; prevAutor=null; }
+    if(m.sistema){ html+=`<div class="chat-dia chat-sistema"><span>${esc(m.texto||"")}</span></div>`; prevAutor=null; return; }
     if(!nuevosPuesto&&limite&&m.ts>limite&&m.autor?.id!==currentUser.id){ html+=`<div class="chat-nuevos"><span>Mensajes nuevos</span></div>`; nuevosPuesto=true; prevAutor=null; }
     const p=EQUIPO.find(x=>x.id===m.autor?.id);
     const agrupado=prevAutor===m.autor?.id&&(m.ts-prevTs)<5*60*1000;
@@ -2951,6 +2973,39 @@ function crearGrupo(){
   const ref=chatRef.push();
   ref.set({tipo:"grupal",nombre,miembros,creadoPor:currentUser.id,creadoAt:Date.now()}).then(()=>{ selectChat(ref.key); });
   closeGrupoModal();
+}
+// ── Integrantes de un grupo ───────────────────────────────
+// José y Andreina agregan o quitan gente de cualquier grupo, estén o no en él (Andreina,
+// 22-10-2026). Los demás solo ven quién está. Cada cambio deja una línea de sistema en la
+// conversación (con autor, para que las versiones antiguas de la app la muestren como mensaje).
+let integrantesChatId=null;
+function puedeAdministrarGrupos(){ return esDueno(); }
+function abrirIntegrantes(chatId){
+  integrantesChatId=chatId||currentChatId;
+  const meta=integrantesChatId&&chatsMeta[integrantesChatId];
+  if(!meta||meta.tipo!=="grupal"){ integrantesChatId=null; return; }
+  renderIntegrantes(); document.getElementById("modal-integrantes").classList.add("open");
+}
+function cerrarIntegrantes(){ document.getElementById("modal-integrantes").classList.remove("open"); integrantesChatId=null; }
+function renderIntegrantes(){
+  const meta=chatsMeta[integrantesChatId], grid=document.getElementById("integrantes-grid");
+  if(!meta||!grid){ cerrarIntegrantes(); return; }
+  const admin=puedeAdministrarGrupos(), m=meta.miembros||{}, n=EQUIPO.filter(p=>m[p.id]).length;
+  document.getElementById("integrantes-titulo").textContent="Integrantes de "+(meta.nombre||"grupo");
+  document.getElementById("integrantes-sub").textContent=`${n} integrante${n===1?"":"s"}`+(admin?" · toca a alguien para agregarlo o quitarlo":"");
+  grid.innerHTML=EQUIPO.map(p=>`<div class="persona-chip${m[p.id]?" selected":""}${admin?"":" solo-lectura"}" data-id="${p.id}"${admin?` onclick="toggleIntegrante('${p.id}')"`:""} title="${m[p.id]?"Está en el grupo":"No está en el grupo"}"><div class="chip-av ${p.avClass}">${p.id}</div>${esc(p.nombre)}</div>`).join("");
+}
+function toggleIntegrante(pid){
+  const chatId=integrantesChatId, meta=chatsMeta[chatId], p=EQUIPO.find(x=>x.id===pid);
+  if(!meta||!p||!puedeAdministrarGrupos())return;
+  const esta=!!(meta.miembros||{})[pid];
+  if(esta&&Object.keys(meta.miembros||{}).length<=1){ toast("El grupo no puede quedar sin integrantes","error"); return; }
+  const nombre=p.nombre.split(" ")[0], quien=currentUser.nombre.split(" ")[0];
+  const ref=chatRef.child(chatId+"/miembros/"+pid);
+  Promise.resolve(esta?ref.remove():ref.set(true)).then(()=>{
+    firebase.database().ref("tago_mensajes/"+chatId).push({sistema:true,autor:{id:currentUser.id,nombre:currentUser.nombre},texto:esta?`${quien} quitó a ${nombre} del grupo`:`${quien} agregó a ${nombre} al grupo`,ts:Date.now()});
+    toast(esta?`${nombre} ya no está en el grupo`:`${nombre} ya está en el grupo`);
+  }).catch(err=>toast("No se pudo cambiar el grupo: "+(err.message||err),"error"));
 }
 
 // ── Tareas ────────────────────────────────────────────────
