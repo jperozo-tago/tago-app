@@ -69,6 +69,10 @@ Firestore).
 - `tago_categorias_custom` — categorías creadas por admins (aparte de las
   fijas "Impresiones"/"Personalizados")
 - `tago_chats` / `tago_mensajes` — chat del equipo (grupos y directos)
+  - Integrantes de un grupo (22-10-2026): `tago_chats/<id>/miembros/<ID>: true`. José y Andreina
+    (`esDueno()`) agregan o quitan gente de cualquier grupo desde la cabecera («Integrantes») y ven
+    en la barra lateral también los grupos en los que no están; el resto solo ve la lista. Cada cambio
+    deja en `tago_mensajes` una línea `{sistema:true, autor, texto}` que se dibuja centrada.
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
 - `tago_tareas*` — módulo de tareas internas. `tago_tareas_estados/<id>` puede
