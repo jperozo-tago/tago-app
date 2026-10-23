@@ -286,7 +286,8 @@ Firestore).
   motivo. El link de Google Drive es obligatorio al registrar la reimpresión y va al campo Drive del
   pedido (para que producción descargue y envíe). `responsable`: Miguel Gonzalez si es DTF Textil,
   DTF UV, DTF Flúor (incluidas las láminas prediseñadas) o Stickers UV; José Perozo si son
-  Insignias / Parches o Pines; el resto queda sin responsable (`respDeTipo` en Merma). Es solo
+  Insignias / Parches, Pines, Medallas, Imanes o Llaveros; el resto (Pendón Roller, Kit Corporativo,
+  Otro) queda sin responsable (`respDeTipo` en Merma). Es solo
   control interno: nunca avisa al cliente (`avisarCliente` sale si
   `origen==="reimpresion"`, y la ficha oculta el correo y «Aviso al cliente»). El registro de
   Merma guarda `pedidoNuevoId` y su tabla lo muestra («reimpresión → TG-xxxx»). En Pedidos la
