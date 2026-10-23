@@ -1951,6 +1951,7 @@
       <button class="chip-toggle" id="packs-tipo-textil" onclick="packsToggleTipo('textil')" title="Solo packs de DTF Textil"><svg class="ic" aria-hidden="true"><use href="#i-printer"/></svg>Textil</button>
       <button class="chip-toggle" id="packs-tipo-uv" onclick="packsToggleTipo('uv')" title="Solo packs de DTF UV"><svg class="ic" aria-hidden="true"><use href="#i-droplets"/></svg>UV</button>
       <button class="chip-toggle" id="packs-tipo-fluor" onclick="packsToggleTipo('fluor')" title="Solo packs de DTF Flúor"><svg class="ic" aria-hidden="true"><use href="#i-sparkles"/></svg>Flúor</button>
+      <button class="chip-toggle" id="packs-buscar-nuevos" onclick="packsBuscarNuevos()" title="El robot revisa ahora las últimas facturas y boletas de relBase; un pack nuevo aparece en un minuto. Sin tocarlo, lo revisa solo cada 30 minutos."><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Buscar packs nuevos</button>
     </div>
     <div class="table-wrap" id="packs-tabla"></div>
   </div>
@@ -6757,6 +6758,16 @@ function verPack(id){ switchTab("packs"); abrirPack(id); }
 // ── Vista Packs ──
 function packsToggleTipo(t){ packsTipo=packsTipo===t?null:t; renderPacks(); }
 function packsSetFiltro(f){ packsFiltro=f; renderPacks(); }
+// «Buscar packs nuevos»: pide al robot que revise ahora relBase (packs_recientes.py en la corrida
+// liviana); el pack aparece solo en la lista cuando el robot lo escribe. Freno de un minuto aquí y
+// otro de 45 s en el reloj. (Andreina, 22-10-2026.)
+let packsBuscadoEn=0;
+function packsBuscarNuevos(){
+  if(Date.now()-packsBuscadoEn<60000){ toast("Ya se lo pedí hace menos de un minuto; espera a que termine","ok"); return; }
+  packsBuscadoEn=Date.now();
+  try{ fetch(ROBOT_SHOPIFY_URL+"?clave="+ROBOT_SHOPIFY_CLAVE,{method:"POST",mode:"no-cors",body:JSON.stringify({accion:"packs",quien:(currentUser&&currentUser.nombre)||""})}).catch(()=>{}); }catch(e){}
+  toast("Revisando relBase; si hay un pack nuevo aparece en un minuto","ok");
+}
 function renderPacks(){
   const cont=document.getElementById("packs-tabla"); if(!cont)return;
   const q=(document.getElementById("packs-buscar")?.value||"").trim().toLowerCase();
