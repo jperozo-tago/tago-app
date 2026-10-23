@@ -551,7 +551,7 @@ function elegirPedido(p){
 const TIPO_DE_PROD = {dtf_textil:"DTF Textil", dtf_uv:"DTF UV", dtf_fluor:"DTF Flúor", stickers:"Stickers UV", pendon:"Pendón Roller", insignias:"Insignias / Parches", pines:"Pines", medallas:"Medallas", imanes:"Imanes", llaveros:"Llaveros", kit:"Kit Corporativo", otro:"Otro"};
 const tipoDeProd = id => { const c=(state.prodCfg||{})[id]; return (c && c.tipoPedido) || TIPO_DE_PROD[id] || prod(id).nombre; };
 /* Responsable del pedido de reimpresión (mismos nombres que la lista de Pedidos); el resto de productos queda sin responsable. */
-const respDeTipo = t => (/^DTF (Textil|UV|Flúor)/.test(t) || t==="Stickers UV") ? "Miguel Gonzalez" : (t==="Insignias / Parches" || t==="Pines") ? "José Perozo" : "";
+const respDeTipo = t => (/^DTF (Textil|UV|Flúor)/.test(t) || t==="Stickers UV") ? "Miguel Gonzalez" : ["Insignias / Parches","Pines","Medallas","Imanes","Llaveros"].includes(t) ? "José Perozo" : "";
 function siguienteIdPedido(){
   return new Promise((ok,fallo)=>{
     firebase.database().ref("tago_meta/lastId").transaction(cur=>{
