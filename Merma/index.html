@@ -442,7 +442,7 @@ function renderReimp(){
       : (pend ? "" : `<button type="button" class="link rojo" data-pedir-borrar="${esc(r.id)}">solicitar eliminación</button>`);
     return `<tr>
       <td class="num">${fmtFecha(r.fecha)}</td>
-      <td>${r.pedidoId?`<b>${esc(r.pedidoId)}</b>`:'<span class="faint">sin pedido</span>'}${r.cliente?`<div class="small muted">${esc(r.cliente)}</div>`:""}</td>
+      <td>${r.pedidoId?`<b>${esc(r.pedidoId)}</b>`:'<span class="faint">sin pedido</span>'}${r.cliente?`<div class="small muted">${esc(r.cliente)}</div>`:""}${r.pedidoNuevoId?`<div class="small muted">reimpresión → <b>${esc(r.pedidoNuevoId)}</b></div>`:""}</td>
       <td>${esc(m.nombre)}</td>
       <td class="n">${fmtN(r.cantidad,2)} ${UCORTA[m.unidad]||""}</td>
       <td>${esc(o?o.nombre:r.origen)}<div class="small muted">${esc(r.motivo||"")}${r.responsable?` · <b>${esc(r.responsable)}</b>`:""}</div></td>
@@ -490,7 +490,7 @@ function abrirReimp(pedidoId){
     <label class="campo">Origen<select class="inp" id="rOrigen" required><option value="">Elige el origen…</option>${opt(ORIGENES,"",o=>[o.id,o.nombre])}</select></label>
     <label class="campo" id="rRespCampo" hidden>Atribuible a<select class="inp" id="rResp"></select><span class="small faint" id="rRespAyuda"></span></label>
     <label class="campo">Motivo<select class="inp" id="rMotivo" required disabled><option value="">Primero elige el origen</option></select></label>
-    <label class="campo">Link de la foto (Drive u otro)<input class="inp" id="rFoto" type="url" placeholder="https://"></label>
+    <label class="campo">Link de Google Drive (archivos para reimprimir)<input class="inp" id="rFoto" type="url" placeholder="https://drive.google.com/…" required></label>
     <label class="campo">Nota<textarea class="inp" id="rNota" placeholder="Qué pasó, qué se hizo"></textarea></label>
     <p class="small faint" id="rCosto"></p>
     <div class="fila entre"><button type="button" class="btn sec" id="rCancelar">Cancelar</button><button type="submit" class="btn">Guardar</button></div>`;
@@ -546,7 +546,22 @@ function elegirPedido(p){
   const m=prodDeTipo(p.tipo); if(m && productos().some(x=>x.id===m)){ $("#rProd").value=m; actualizarCantidad(); }
   actualizarResponsable();
 }
+/* Cada reimpresión crea sola un pedido urgente en Pedidos («Enviado a Producción», marca URG-REIMPRESIÓN),
+   con el siguiente TG del mismo contador que usa Pedidos (tago_meta/lastId). */
+const TIPO_DE_PROD = {dtf_textil:"DTF Textil", dtf_uv:"DTF UV", dtf_fluor:"DTF Flúor", stickers:"Stickers UV", pendon:"Pendón Roller", insignias:"Insignias / Parches", pines:"Pines", medallas:"Medallas", imanes:"Imanes", llaveros:"Llaveros", kit:"Kit Corporativo", otro:"Otro"};
+const tipoDeProd = id => { const c=(state.prodCfg||{})[id]; return (c && c.tipoPedido) || TIPO_DE_PROD[id] || prod(id).nombre; };
+/* Responsable del pedido de reimpresión (mismos nombres que la lista de Pedidos); el resto de productos queda sin responsable. */
+const respDeTipo = t => (/^DTF (Textil|UV|Flúor)/.test(t) || t==="Stickers UV") ? "Miguel Gonzalez" : (t==="Insignias / Parches" || t==="Pines") ? "José Perozo" : "";
+function siguienteIdPedido(){
+  return new Promise((ok,fallo)=>{
+    firebase.database().ref("tago_meta/lastId").transaction(cur=>{
+      if(cur===null){ const ns=(state.pedidos||[]).map(x=>parseInt(String(x.id).replace("TG-",""),10)).filter(n=>!isNaN(n)); cur=ns.length?Math.max(...ns):0; }
+      return cur+1;
+    },(err,hecho,snap)=>{ if(err||!hecho) fallo(err||new Error("no se pudo generar el número del pedido")); else ok("TG-"+String(snap.val()).padStart(4,"0")); });
+  });
+}
 function guardarReimp(){
+  const btn=$("#formReimp button[type=submit]"); if(btn && btn.disabled) return;
   const cant=num($("#rCant").value), origen=$("#rOrigen").value, motivo=$("#rMotivo").value, fecha=$("#rFecha").value;
   if(!fecha){ toast("Falta la fecha."); return; }
   if(cant==null || cant<=0){ toast("Anota la cantidad perdida."); return; }
@@ -554,6 +569,7 @@ function guardarReimp(){
   if(!(MOTIVOS_POR_ORIGEN[origen]||[]).includes(motivo)){ toast("Ese motivo no corresponde al origen elegido."); return; }
   const resp=$("#rResp").value;
   if(!resp){ toast("Indica a quién es atribuible el error (o «No se sabe»)."); return; }
+  if(!/^https?:\/\//i.test($("#rFoto").value.trim())){ toast("Agrega el link de Google Drive (debe empezar con https://)."); return; }
   const txt=$("#rPedido").value.trim();
   const p = state.pedidoSel && state.pedidoSel.id===txt ? state.pedidoSel : (state.pedidos||[]).find(x=>x.id.toLowerCase()===txt.toLowerCase());
   const rec = {fecha, producto:$("#rProd").value, cantidad:cant, origen, motivo, asume:$("#rAsume").value, por:nombreYo(), porEmail:sesion.email, ts:Date.now()};
@@ -563,9 +579,29 @@ function guardarReimp(){
   else if(txt){ rec.pedidoTexto=txt.slice(0,80); }
   const foto=$("#rFoto").value.trim(); if(foto) rec.foto=foto.slice(0,500);
   const nota=$("#rNota").value.trim(); if(nota) rec.nota=nota.slice(0,1000);
-  firebase.database().ref("tago_merma/reimpresiones").push(rec)
-    .then(()=>{ $("#dlgReimp").close(); toast("Reimpresión registrada"); if(!p && txt) toast("Ojo: no encontré ese pedido; quedó como texto."); })
-    .catch(e=>toast("No se pudo guardar: "+(e.message||e)));
+  if(btn) btn.disabled=true;
+  const db=firebase.database(), rid=db.ref("tago_merma/reimpresiones").push().key;
+  siguienteIdPedido().then(idPed=>{
+    const ahora=new Date().toISOString(), yo=PERSONAS.find(x=>x.email===sesion.email)||{id:"", nombre:nombreYo()}, me={id:yo.id, nombre:yo.nombre};
+    const tipo=(p && prodDeTipo(p.tipo)===rec.producto) ? p.tipo : tipoDeProd(rec.producto);
+    const origenNombre=(ORIGENES.find(o=>o.id===origen)||{}).nombre||origen;
+    const notas=(`Reimpresión${p?` de ${p.id}`:(txt?` de «${txt}»`:"")}. ${origenNombre}: ${motivo}.`+(rec.responsable?` Atribuible a ${rec.responsable}.`:"")+(nota?` ${nota}`:"")).slice(0,1000);
+    const respPedido=respDeTipo(tipo);
+    const ped={pedido:idPed, cliente:(p && p.cliente)||txt||"Reimpresión sin pedido", tipoDtf:tipo, cantidad:cant, unidad:/^DTF /.test(tipo)?"metros":"unidades", precio:0, drive:foto, documento:"NA", tipoEntrega:"Retiro", estado:"enviado_produccion", prioridad:"urgente", fechaLimite:hoy(), origen:"reimpresion", reimpresionId:rid, notas, createdAt:ahora, createdBy:me, updatedAt:ahora, updatedBy:me, enviadoProdAt:ahora, enviadoProdBy:me};
+    if(p) ped.reimpresionDe=p.id;
+    if(respPedido) ped.responsable=respPedido;
+    rec.pedidoNuevoId=idPed;
+    const hist=db.ref("tago_pedido_historial/"+idPed), h1=hist.push().key, h2=hist.push().key;
+    const up={};
+    up["tago_merma/reimpresiones/"+rid]=rec;
+    up["tago_pedidos/"+idPed]=ped;
+    up["tago_pedido_historial/"+idPed+"/"+h1]={autor:me, ts:Date.now(), tipo:"creacion"};
+    up["tago_pedido_historial/"+idPed+"/"+h2]={autor:me, ts:Date.now()+1, tipo:"texto", texto:"Creado desde una reimpresión registrada en Merma"};
+    return db.ref().update(up).then(()=>idPed);
+  }).then(idPed=>{
+    $("#dlgReimp").close(); toast("Reimpresión registrada · pedido "+idPed+" creado en Pedidos");
+    if(!p && txt) toast("Ojo: no encontré ese pedido; quedó como texto.");
+  }).catch(e=>{ if(btn) btn.disabled=false; toast("No se pudo guardar: "+(e.message||e)); });
 }
 
 /* Nadie del equipo elimina: pide la eliminación con un motivo, la reimpresión sigue contando y
