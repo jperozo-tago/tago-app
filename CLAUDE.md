@@ -275,6 +275,24 @@ Firestore).
   relBase, `documento` = «Factura 14031»; la tabla los marca «Nuevo» 3 días.
   Solo el producto pack: Andreina aclaró que facturar 20/50/100 metros
   sueltos era un error de las vendedoras.
+- Reimpresiones → pedido automático (23-oct-2026, José): al guardar una reimpresión en Merma
+  (`guardarReimp`), la misma escritura multi-ruta crea en `tago_pedidos` un pedido interno con el
+  siguiente `TG-xxxx` (transacción sobre `tago_meta/lastId`, igual que Pedidos): `estado:
+  "enviado_produccion"` (con `enviadoProdAt`), `prioridad:"urgente"`, `origen:"reimpresion"`,
+  `reimpresionId`, `reimpresionDe` (el TG original, si se enlazó), `# Pedido` = su propio TG,
+  cliente del pedido original, tipo (el del original si coincide con el producto; si no, el que
+  corresponde al producto) y cantidad de la reimpresión, `precio:0`, `documento:"NA"` (no cuenta
+  como «sin boleta/factura»), `tipoEntrega:"Retiro"`, `fechaLimite` hoy y notas con origen y
+  motivo. El link de Google Drive es obligatorio al registrar la reimpresión y va al campo Drive del
+  pedido (para que producción descargue y envíe). `responsable`: Miguel Gonzalez si es DTF Textil,
+  DTF UV, DTF Flúor (incluidas las láminas prediseñadas) o Stickers UV; José Perozo si son
+  Insignias / Parches o Pines; el resto queda sin responsable (`respDeTipo` en Merma). Es solo
+  control interno: nunca avisa al cliente (`avisarCliente` sale si
+  `origen==="reimpresion"`, y la ficha oculta el correo y «Aviso al cliente»). El registro de
+  Merma guarda `pedidoNuevoId` y su tabla lo muestra («reimpresión → TG-xxxx»). En Pedidos la
+  Lista y el Kanban muestran «URG-REIMPRESIÓN» bajo el número, la ficha dice «reimpresión de
+  TG-xxxx» y la búsqueda encuentra «reimpresión». No se crea nada para reimpresiones registradas
+  antes de esa fecha, y eliminar una reimpresión en Merma no borra su pedido.
 
 **Roles (`tago_roles`, desde el 28-09-2026):** quién cumple cada rol vive en
 un solo nodo: `tago_roles/<rol>/<emailKey> = "<email>"`, con los roles
