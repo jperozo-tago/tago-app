@@ -5,7 +5,8 @@
 // texto, lo que hace falta para decirle al cliente en el chat si su archivo sirve:
 //   - formato y tamaño en píxeles;
 //   - fondo: transparente, de un color (se imprimiría como un rectángulo) o sin transparencia;
-//   - sombras o difuminados semitransparentes (salen con blanco y adhesivo detrás);
+//   - sombras o difuminados semitransparentes (salen con blanco y adhesivo detrás), con dónde están
+//     y, en index.js, un enlace a una vista con esas zonas marcadas para mostrárselas al cliente;
 //   - calidad: el mínimo es 300 ppp (regla de Andreina, 29-10-2026). Con la medida que pide el
 //     cliente dice si alcanza; sin medida, hasta cuántos centímetros queda bien.
 // En pines, imanes, llaveros y parches no se usa: ahí basta un boceto y el taller arma la propuesta.
@@ -89,15 +90,7 @@ async function analizar(buf, anchoCm, altoCm) {
   const visibles = total - transp;
   const conTransparencia = transp / total > 0.01;
 
-  // Semitransparencia «profunda»: píxeles semitransparentes rodeados solo de semitransparentes.
-  // El suavizado de los bordes es una franja de 1 o 2 píxeles; una sombra o un difuminado es ancho.
-  let profundos = 0;
-  if (semi) for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
-    const al = a(x, y);
-    if (al <= 10 || al >= 245) continue;
-    const v = [a(x - 1, y), a(x + 1, y), a(x, y - 1), a(x, y + 1)];
-    if (v.every((n) => n > 10 && n < 245)) profundos++;
-  }
+  const { mascara, profundos } = semi ? mascaraSemi(px, w, h) : { mascara: null, profundos: 0 };
   const difuminados = profundos / visibles > 0.01;
 
   const fondo = conTransparencia ? null : fondoDelBorde(px, w, h);
@@ -121,7 +114,19 @@ async function analizar(buf, anchoCm, altoCm) {
       ? `Tiene fondo ${nombreColor(fondo)}: se imprimiría ese rectángulo de color alrededor del diseño. No quitamos fondos: se necesita el mismo diseño en PNG sin fondo (salvo que el cliente quiera el rectángulo).`
       : "No tiene fondo transparente: se imprimiría el rectángulo completo de la imagen. Se necesita el diseño en PNG sin fondo.");
   }
-  if (difuminados) avisos.push("Tiene sombras, difuminados o partes semitransparentes: esas zonas se imprimen con blanco detrás y no se ven como en pantalla (en DTF UV, además, con adhesivo).");
+  let zonas = [];
+  if (difuminados) {
+    avisos.push("Tiene sombras, difuminados o partes semitransparentes: esas zonas se imprimen con blanco detrás y no se ven como en pantalla (en DTF UV, además, con adhesivo).");
+    // Dónde están, para cuando el cliente pregunta «¿cuáles?»: en palabras respecto del diseño y,
+    // si el archivo declara su resolución, en centímetros desde la esquina de arriba a la izquierda.
+    const aCm = (v) => cm(v / escala / dens * CM);
+    const tercio = (v, desde, hasta, palabras) => palabras[Math.min(2, Math.floor((v - desde) / ((hasta - desde + 1) / 3)))];
+    zonas = zonasSemi(mascara, w, h).map((z, k) => {
+      const donde = tercio((z.y0 + z.y1) / 2, y0, y1, ["arriba", "a media altura", "abajo"]) + ", " +
+        tercio((z.x0 + z.x1) / 2, x0, x1, ["a la izquierda", "al centro", "a la derecha"]);
+      return `Zona ${k + 1}: ${donde}` + (dens ? ` (de ${aCm(z.y0)} a ${aCm(z.y1 + 1)} cm desde arriba y de ${aCm(z.x0)} a ${aCm(z.x1 + 1)} cm desde la izquierda del archivo)` : "");
+    });
+  }
 
   let ppp = null;
   if (!vectorial && (anchoCm > 0 || altoCm > 0)) {
@@ -146,7 +151,73 @@ async function analizar(buf, anchoCm, altoCm) {
       : `el diseño queda bien hasta ${cm(maxAncho)} × ${cm(maxAlto)} cm (mínimo ${PPP_MINIMO} ppp)` + (ppp ? `; a la medida pedida queda a ${ppp} ppp` : ""),
     problemas,
     avisos,
+    ...(zonas.length ? { zonas_semitransparentes: zonas } : {}),
   };
 }
 
-module.exports = { revisar, analizar, PPP_MINIMO };
+// Semitransparencia «profunda»: píxeles semitransparentes rodeados solo de semitransparentes.
+// El suavizado de los bordes es una franja de 1 o 2 píxeles; una sombra o un difuminado es ancho.
+function mascaraSemi(px, w, h) {
+  const a = (x, y) => px[(y * w + x) * 4 + 3];
+  const mascara = new Uint8Array(w * h);
+  let profundos = 0;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const al = a(x, y);
+    if (al <= 10 || al >= 245) continue;
+    if ([a(x - 1, y), a(x + 1, y), a(x, y - 1), a(x, y + 1)].every((n) => n > 10 && n < 245)) { mascara[y * w + x] = 1; profundos++; }
+  }
+  return { mascara, profundos };
+}
+
+// Agrupa la máscara en zonas (lo que está a pocos píxeles se junta) y devuelve las más grandes,
+// hasta 5, ordenadas de arriba hacia abajo: así la zona 1 del texto es la 1 de la vista marcada.
+function zonasSemi(mascara, w, h) {
+  const R = Math.max(3, Math.round(Math.max(w, h) / 200));
+  const junta = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (mascara[y * w + x])
+    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+      const X = x + dx, Y = y + dy;
+      if (X >= 0 && Y >= 0 && X < w && Y < h) junta[Y * w + X] = 1;
+    }
+  const visto = new Uint8Array(w * h), zonas = [];
+  for (let i = 0; i < w * h; i++) if (junta[i] && !visto[i]) {
+    const z = { n: 0, x0: w, y0: h, x1: 0, y1: 0 }, pila = [i];
+    visto[i] = 1;
+    while (pila.length) {
+      const j = pila.pop(), x = j % w, y = (j / w) | 0;
+      if (mascara[j]) { z.n++; if (x < z.x0) z.x0 = x; if (x > z.x1) z.x1 = x; if (y < z.y0) z.y0 = y; if (y > z.y1) z.y1 = y; }
+      for (const k of [x > 0 ? j - 1 : -1, x < w - 1 ? j + 1 : -1, j - w, j + w]) if (k >= 0 && k < w * h && junta[k] && !visto[k]) { visto[k] = 1; pila.push(k); }
+    }
+    if (z.n) zonas.push(z);
+  }
+  const total = zonas.reduce((s, z) => s + z.n, 0);
+  return zonas.filter((z) => z.n / total > 0.05).sort((p, q) => q.n - p.n).slice(0, 5).sort((p, q) => p.y0 - q.y0 || p.x0 - q.x0);
+}
+
+// Vista para el cliente: el diseño sobre gris claro, lo semitransparente en magenta (casi nunca está
+// en un logo, a diferencia del marca) y cada zona en un
+// recuadro numerado igual que en zonas_semitransparentes (se calcula a la misma escala que la
+// revisión para que los números coincidan) y al final se achica a 1.200 px de lado.
+async function vistaMarcada(buf) {
+  const meta = await sharp(buf, { failOn: "none", limitInputPixels: 2e8 }).metadata();
+  const escala = Math.min(1, LADO_ANALISIS / Math.max(meta.width, meta.height));
+  const { data: px, info } = await sharp(buf, { failOn: "none", limitInputPixels: 2e8 })
+    .resize(Math.max(1, Math.round(meta.width * escala)), Math.max(1, Math.round(meta.height * escala)), { kernel: "nearest", fit: "fill" })
+    .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const w = info.width, h = info.height, k = Math.max(1, Math.max(w, h) / 1200);
+  const { mascara } = mascaraSemi(px, w, h);
+  const marca = Buffer.alloc(w * h * 4);
+  for (let i = 0; i < w * h; i++) if (mascara[i]) { marca[i * 4] = 255; marca[i * 4 + 2] = 200; marca[i * 4 + 3] = 210; }
+  const m = 8 * k, r = 16 * k;
+  const cajas = zonasSemi(mascara, w, h).map((z, n) =>
+    `<rect x="${z.x0 - m}" y="${z.y0 - m}" width="${z.x1 - z.x0 + 2 * m}" height="${z.y1 - z.y0 + 2 * m}" fill="none" stroke="#b0007a" stroke-width="${4 * k}" rx="${6 * k}"/>` +
+    `<circle cx="${z.x0 - m}" cy="${z.y0 - m}" r="${r}" fill="#b0007a"/>` +
+    `<text x="${z.x0 - m}" y="${z.y0 - m + 7 * k}" font-size="${20 * k}" font-family="Arial, sans-serif" font-weight="bold" fill="#fff" text-anchor="middle">${n + 1}</text>`).join("");
+  const marcada = await sharp(px, { raw: { width: w, height: h, channels: 4 } }).flatten({ background: "#d9d9d9" })
+    .composite([{ input: marca, raw: { width: w, height: h, channels: 4 } },
+      { input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${cajas}</svg>`) }])
+    .png({ compressionLevel: 1 }).toBuffer();
+  return sharp(marcada).resize(1200, 1200, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+}
+
+module.exports = { revisar, analizar, descargar, vistaMarcada, PPP_MINIMO };
