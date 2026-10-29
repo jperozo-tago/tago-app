@@ -99,7 +99,9 @@ exports.revisarArchivo = onRequest(
     const url = (String(c.url || "").match(/https:\/\/[^\s\]\)"'<>]+/) || [""])[0];
     const ancho = numero(c.ancho_cm), alto = numero(c.alto_cm);
     try {
-      const r = await revisar(url, ancho, alto);
+      // archivo_revisado va primero: cuando el cliente manda varios archivos, el bot pide varias
+      // revisiones a la vez y sin esto cruzaba los resultados (pruebas del 29-10-2026).
+      const r = { archivo_revisado: url, ...(await revisar(url, ancho, alto)) };
       if (r.zonas_semitransparentes && url.startsWith(VAMBE)) {
         const ruta = url.slice(VAMBE.length);
         r.vista_marcada = `https://${req.get("host")}/vista?a=${ruta.split("/").map(encodeURIComponent).join("/")}&f=${firmar(ruta)}`;
@@ -108,6 +110,6 @@ exports.revisarArchivo = onRequest(
       res.status(200).json(r);
     } catch (e) {
       console.warn("no se pudo revisar", e.message, url.slice(-60));
-      res.status(200).json({ se_pudo_revisar: false, motivo: `No se pudo revisar el archivo: ${e.message}. Pide al cliente que lo vuelva a enviar como documento.` });
+      res.status(200).json({ archivo_revisado: url, se_pudo_revisar: false, motivo: `No se pudo revisar el archivo: ${e.message}. Pide al cliente que lo vuelva a enviar como documento.` });
     }
   });
