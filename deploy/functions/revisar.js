@@ -195,9 +195,11 @@ function zonasSemi(mascara, w, h) {
 }
 
 // Vista para el cliente: el diseño sobre gris claro, lo semitransparente en magenta (casi nunca está
-// en un logo, a diferencia del marca) y cada zona en un
-// recuadro numerado igual que en zonas_semitransparentes (se calcula a la misma escala que la
-// revisión para que los números coincidan) y al final se achica a 1.200 px de lado.
+// en un logo, a diferencia del rojo) y cada zona en un recuadro numerado igual que en
+// zonas_semitransparentes (se calcula a la misma escala que la revisión para que los números
+// coincidan). Se achica a 1.200 px de lado y lleva abajo una leyenda que explica el magenta, para
+// que se entienda sola aunque el bot no la explique o el cliente se la reenvíe a su diseñador.
+const LEYENDA = "En magenta: sombras o partes semitransparentes. Se imprimen con blanco detrás y no se ven igual que en pantalla.";
 async function vistaMarcada(buf) {
   const meta = await sharp(buf, { failOn: "none", limitInputPixels: 2e8 }).metadata();
   const escala = Math.min(1, LADO_ANALISIS / Math.max(meta.width, meta.height));
@@ -217,7 +219,26 @@ async function vistaMarcada(buf) {
     .composite([{ input: marca, raw: { width: w, height: h, channels: 4 } },
       { input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${cajas}</svg>`) }])
     .png({ compressionLevel: 1 }).toBuffer();
-  return sharp(marcada).resize(1200, 1200, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+  const { data: chica, info: fin } = await sharp(marcada).resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+    .png({ compressionLevel: 1 }).toBuffer({ resolveWithObject: true });
+
+  // Leyenda en una franja blanca abajo, cortada en líneas según el ancho de la imagen.
+  const W = fin.width, letra = Math.max(14, Math.min(22, Math.round(W / 40))), cuadro = letra, margen = letra;
+  const porLinea = Math.max(18, Math.floor((W - 3 * margen - cuadro) / (letra * 0.52)));
+  const lineas = [];
+  for (const p of LEYENDA.split(" ")) {
+    if (lineas.length && (lineas[lineas.length - 1] + " " + p).length <= porLinea) lineas[lineas.length - 1] += " " + p;
+    else lineas.push(p);
+  }
+  const alto = Math.round(margen * 2 + lineas.length * letra * 1.3);
+  const xTexto = margen * 2 + cuadro;
+  const leyenda = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${alto}">` +
+    `<rect x="${margen}" y="${margen}" width="${cuadro}" height="${cuadro}" rx="3" fill="rgb(255,0,200)"/>` +
+    lineas.map((l, i) => `<text x="${xTexto}" y="${margen + letra * 0.85 + i * letra * 1.3}" font-size="${letra}" font-family="Arial, sans-serif" fill="#222">${l}</text>`).join("") +
+    `</svg>`;
+  return sharp(chica).extend({ bottom: alto, background: "#ffffff" })
+    .composite([{ input: Buffer.from(leyenda), top: fin.height, left: 0 }])
+    .jpeg({ quality: 82 }).toBuffer();
 }
 
 module.exports = { revisar, analizar, descargar, vistaMarcada, PPP_MINIMO };
