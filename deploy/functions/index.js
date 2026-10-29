@@ -72,7 +72,7 @@ const VAMBE = "https://vambe-bkt.s3.us-east-1.amazonaws.com/";
 const firmar = (ruta) => crypto.createHmac("sha256", REVISAR_CLAVE.value()).update(ruta).digest("hex").slice(0, 20);
 
 exports.revisarArchivo = onRequest(
-  { region: "us-central1", secrets: [REVISAR_CLAVE], timeoutSeconds: 60, memory: "1GiB", concurrency: 1, maxInstances: 3 },
+  { region: "us-central1", secrets: [REVISAR_CLAVE], timeoutSeconds: 120, memory: "1GiB", concurrency: 1, maxInstances: 3 },
   async (req, res) => {
     if (req.method === "GET" && req.path === "/vista") {
       const ruta = String(req.query.a || ""), f = String(req.query.f || "");
@@ -96,20 +96,27 @@ exports.revisarArchivo = onRequest(
     }
     const c = req.body || {};
     // El asistente a veces copia el enlace con el «[url: …]» de Vambe alrededor: se toma solo el enlace.
-    const url = (String(c.url || "").match(/https:\/\/[^\s\]\)"'<>]+/) || [""])[0];
+    // Si el cliente mandó varios archivos, url trae todos los enlaces en el orden en que llegaron y
+    // se revisan en una sola llamada: con una llamada por archivo el bot cruzaba los resultados
+    // (pruebas del 29-10-2026), aun con archivo_revisado en cada respuesta.
+    const urls = [...new Set(String(c.url || "").match(/https:\/\/[^\s\]\)"'<>,]+/g) || [""])].slice(0, 5);
     const ancho = numero(c.ancho_cm), alto = numero(c.alto_cm);
-    try {
-      // archivo_revisado va primero: cuando el cliente manda varios archivos, el bot pide varias
-      // revisiones a la vez y sin esto cruzaba los resultados (pruebas del 29-10-2026).
-      const r = { archivo_revisado: url, ...(await revisar(url, ancho, alto)) };
-      if (r.zonas_semitransparentes && url.startsWith(VAMBE)) {
-        const ruta = url.slice(VAMBE.length);
-        r.vista_marcada = `https://${req.get("host")}/vista?a=${ruta.split("/").map(encodeURIComponent).join("/")}&f=${firmar(ruta)}`;
+    const uno = async (url) => {
+      try {
+        const r = { archivo_revisado: url, ...(await revisar(url, ancho, alto)) };
+        if (r.zonas_semitransparentes && url.startsWith(VAMBE)) {
+          const ruta = url.slice(VAMBE.length);
+          r.vista_marcada = `https://${req.get("host")}/vista?a=${ruta.split("/").map(encodeURIComponent).join("/")}&f=${firmar(ruta)}`;
+        }
+        console.log("revisado", { url: url.slice(-60), ancho, alto, sirve: r.sirve, problemas: (r.problemas || []).length });
+        return r;
+      } catch (e) {
+        console.warn("no se pudo revisar", e.message, url.slice(-60));
+        return { archivo_revisado: url, se_pudo_revisar: false, motivo: `No se pudo revisar el archivo: ${e.message}. Pide al cliente que lo vuelva a enviar como documento.` };
       }
-      console.log("revisado", { url: url.slice(-60), ancho, alto, sirve: r.sirve, problemas: (r.problemas || []).length });
-      res.status(200).json(r);
-    } catch (e) {
-      console.warn("no se pudo revisar", e.message, url.slice(-60));
-      res.status(200).json({ archivo_revisado: url, se_pudo_revisar: false, motivo: `No se pudo revisar el archivo: ${e.message}. Pide al cliente que lo vuelva a enviar como documento.` });
-    }
+    };
+    if (urls.length === 1) return res.status(200).json(await uno(urls[0]));
+    const resultados = [];
+    for (const [i, url] of urls.entries()) resultados.push({ archivo_numero: i + 1, ...(await uno(url)) });
+    res.status(200).json({ cantidad_de_archivos: urls.length, resultados });
   });
