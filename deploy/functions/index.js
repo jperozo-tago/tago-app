@@ -56,3 +56,35 @@ exports.shopifyWebhook = onRequest(
     } finally { clearTimeout(t); }
     res.status(200).send("ok");
   });
+
+// Revisión de archivos para el bot de ventas de Vambe (29-10-2026): el bot manda el enlace del
+// archivo que recibió y la medida que pide el cliente, y recibe si sirve para imprimir en DTF.
+// Detalle de qué se mide en revisar.js. Vambe la llama como función «Webhook» del asistente TAGO
+// con la cabecera X-Clave fija.
+// Secreto: REVISAR_CLAVE (copia en Data TAGO/informe/.revisar_archivo_clave).
+const REVISAR_CLAVE = defineSecret("REVISAR_CLAVE");
+const { revisar } = require("./revisar");
+const numero = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return n > 0 ? n : 0; };
+
+exports.revisarArchivo = onRequest(
+  { region: "us-central1", secrets: [REVISAR_CLAVE], timeoutSeconds: 60, memory: "1GiB", concurrency: 1, maxInstances: 3 },
+  async (req, res) => {
+    if (req.method !== "POST") return res.status(405).send("solo POST");
+    const clave = String(req.get("X-Clave") || "");
+    const esperada = REVISAR_CLAVE.value();
+    if (clave.length !== esperada.length || !crypto.timingSafeEqual(Buffer.from(clave), Buffer.from(esperada))) {
+      return res.status(401).json({ error: "clave inválida" });
+    }
+    const c = req.body || {};
+    // El asistente a veces copia el enlace con el «[url: …]» de Vambe alrededor: se toma solo el enlace.
+    const url = (String(c.url || "").match(/https:\/\/[^\s\]\)"'<>]+/) || [""])[0];
+    const ancho = numero(c.ancho_cm), alto = numero(c.alto_cm);
+    try {
+      const r = await revisar(url, ancho, alto);
+      console.log("revisado", { url: url.slice(-60), ancho, alto, sirve: r.sirve, problemas: (r.problemas || []).length });
+      res.status(200).json(r);
+    } catch (e) {
+      console.warn("no se pudo revisar", e.message, url.slice(-60));
+      res.status(200).json({ se_pudo_revisar: false, motivo: `No se pudo revisar el archivo: ${e.message}. Pide al cliente que lo vuelva a enviar como documento.` });
+    }
+  });
