@@ -48,6 +48,7 @@
       --amber-c:#D4870A; --amber-bg:rgba(212,135,10,0.1);  --amber-bd:rgba(212,135,10,0.3);
       --green-c:#1F9E6E; --green-bg:rgba(31,158,110,0.1);  --green-bd:rgba(31,158,110,0.3);
       --violet-c:#6B5BD6;--violet-bg:rgba(107,91,214,0.1); --violet-bd:rgba(107,91,214,0.3);
+      --maq-c:#0E7C86;--maq-bg:rgba(14,124,134,.12);--maq-bd:rgba(14,124,134,.35);
       --danger-c:#DC2626;--danger-bg:rgba(220,38,38,0.08); --danger-bd:rgba(220,38,38,0.2);
       --orange-c:#EA580C;--orange-bg:rgba(234,88,12,0.08); --orange-bd:rgba(234,88,12,0.2);
       --stale-c:#5A63C4;--stale-bg:rgba(143,155,255,0.14); --stale-bd:rgba(143,155,255,0.35);
@@ -265,6 +266,7 @@
     .badge-recibido{color:var(--grey-c);background:var(--grey-bg);border:1px solid var(--grey-bd)}
     .badge-enviado_produccion{color:var(--blue-c);background:var(--blue-bg);border:1px solid var(--blue-bd)}
     .badge-en_produccion{color:var(--amber-c);background:var(--amber-bg);border:1px solid var(--amber-bd)}
+    .badge-maquilado{color:var(--maq-c);background:var(--maq-bg);border:1px solid var(--maq-bd)}
     .badge-listo{color:var(--green-c);background:var(--green-bg);border:1px solid var(--green-bd)}
     .badge-entregado{color:var(--violet-c);background:var(--violet-bg);border:1px solid var(--violet-bd)}
     .badge-doc-ok{color:var(--green-c);background:var(--green-bg);border:1px solid var(--green-bd);font-size:12px;padding:2px 7px}
@@ -814,7 +816,7 @@
     .cal-celda.hoy .cal-dia{color:var(--azul)}
     .cal-chip{font-size:12px;font-weight:600;padding:2px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
     .cal-chip-cli{font-weight:400;opacity:.8}
-    .cal-pedidos_shopify{background:var(--shop-bg);color:var(--shop-c)}.cal-recibido{background:var(--grey-bg);color:var(--grey-c)}.cal-enviado_produccion{background:var(--blue-bg);color:var(--blue-c)}.cal-en_produccion{background:var(--amber-bg);color:var(--amber-c)}.cal-listo{background:var(--green-bg);color:var(--green-c)}.cal-entregado{background:var(--violet-bg);color:var(--violet-c);opacity:.7}
+    .cal-pedidos_shopify{background:var(--shop-bg);color:var(--shop-c)}.cal-recibido{background:var(--grey-bg);color:var(--grey-c)}.cal-enviado_produccion{background:var(--blue-bg);color:var(--blue-c)}.cal-en_produccion{background:var(--amber-bg);color:var(--amber-c)}.cal-maquilado{background:var(--maq-bg);color:var(--maq-c)}.cal-listo{background:var(--green-bg);color:var(--green-c)}.cal-entregado{background:var(--violet-bg);color:var(--violet-c);opacity:.7}
     .cal-chip.ov,.carga-chip.ov{border-color:var(--danger-bd);box-shadow:inset 3px 0 0 var(--danger-c)}
     .cal-mas{font-size:12px;color:var(--text-muted)}
     .carga-head{font-size:11px;color:var(--text-muted);margin-bottom:8px}
@@ -1127,18 +1129,21 @@
       --amber-c:#0B1447; --amber-bg:rgba(11,20,71,.10);    --amber-bd:rgba(11,20,71,.3);      /* Enviado a Impresión: Azul Oscuro */
       --green-c:#49CEAB; --green-bg:rgba(73,206,171,.18);  --green-bd:rgba(73,206,171,.5);    /* Listo: Verde Tago */
       --violet-c:#545B7E;--violet-bg:rgba(84,91,126,.12);  --violet-bd:rgba(84,91,126,.35);   /* Entregado: gris azulado del sistema */
+      --maq-c:#0E7C86;   --maq-bg:rgba(14,124,134,.12);    --maq-bd:rgba(14,124,134,.35);     /* Maquilado (solo productos personalizados): petróleo */
     }
     .badge-pedidos_shopify{background:var(--shop-c);color:#fff;border-color:var(--shop-c)}
     .badge-recibido{background:var(--grey-c);color:#fff;border-color:var(--grey-c)}
     .badge-enviado_produccion{background:var(--blue-c);color:#fff;border-color:var(--blue-c)}
     .badge-en_produccion{background:var(--amber-c);color:#fff;border-color:var(--amber-c)}
+    .badge-maquilado{background:var(--maq-c);color:#fff;border-color:var(--maq-c)}
     .badge-listo{background:var(--green-c);color:#fff;border-color:var(--green-c)}
     .badge-entregado{background:var(--violet-c);color:#fff;border-color:var(--violet-c)}
-    .badge-pedidos_shopify,.badge-recibido,.badge-enviado_produccion,.badge-en_produccion,.badge-listo,.badge-entregado{border-radius:999px;padding:4px 10px;letter-spacing:0}
+    .badge-pedidos_shopify,.badge-recibido,.badge-enviado_produccion,.badge-en_produccion,.badge-maquilado,.badge-listo,.badge-entregado{border-radius:999px;padding:4px 10px;letter-spacing:0}
     .table-row.estado-pedidos_shopify{box-shadow:inset 4px 0 0 var(--shop-c)}
     .table-row.estado-recibido{box-shadow:inset 4px 0 0 var(--grey-c)}
     .table-row.estado-enviado_produccion{box-shadow:inset 4px 0 0 var(--blue-c)}
     .table-row.estado-en_produccion{box-shadow:inset 4px 0 0 var(--amber-c)}
+    .table-row.estado-maquilado{box-shadow:inset 4px 0 0 var(--maq-c)}
     .table-row.estado-listo{box-shadow:inset 4px 0 0 var(--green-c)}
     .table-row.estado-entregado{box-shadow:inset 4px 0 0 var(--violet-c)}
     .pedidos-group-pill{border-radius:999px;padding:4px 12px}
@@ -1756,6 +1761,7 @@
           <button class="filter-tab" onclick="setFilter('recibido',this)" title="Por revisar"><span class="dot" style="background:var(--grey-c)"></span>Por revisar <span class="tab-count" id="c-recibido">0</span></button>
           <button class="filter-tab" onclick="setFilter('enviado_produccion',this)" title="Enviado a Producción"><span class="dot" style="background:var(--blue-c)"></span>Enviado a Producción <span class="tab-count" id="c-enviado_produccion">0</span></button>
           <button class="filter-tab" onclick="setFilter('en_produccion',this)" title="Enviado a Impresión"><span class="dot" style="background:var(--amber-c)"></span>Enviado a Impresión <span class="tab-count" id="c-en_produccion">0</span></button>
+          <button class="filter-tab" onclick="setFilter('maquilado',this)" title="Maquilado (productos personalizados)"><span class="dot" style="background:var(--maq-c)"></span>Maquilado <span class="tab-count" id="c-maquilado">0</span></button>
           <button class="filter-tab" onclick="setFilter('listo',this)" title="Listos"><span class="dot" style="background:var(--green-c)"></span>Listos <span class="tab-count" id="c-listo">0</span></button>
           <button class="filter-tab" onclick="setFilter('entregado',this)" title="Entregados"><span class="dot" style="background:var(--violet-c)"></span>Entregados <span class="tab-count" id="c-entregado">0</span></button>
         </div>
@@ -2169,7 +2175,7 @@
       </div>
 
       <div class="form-row f-3">
-        <div><label>Estado</label><select id="f-estado"><option value="pedidos_shopify">Pedidos Shopify</option><option value="recibido">Por revisar</option><option value="enviado_produccion">Enviado a Producción</option><option value="en_produccion">Enviado a Impresión</option><option value="listo">Listo ✓</option><option value="entregado">Entregado</option></select></div>
+        <div><label>Estado</label><select id="f-estado"><option value="pedidos_shopify">Pedidos Shopify</option><option value="recibido">Por revisar</option><option value="enviado_produccion">Enviado a Producción</option><option value="en_produccion">Enviado a Impresión</option><option value="maquilado">Maquilado</option><option value="listo">Listo ✓</option><option value="entregado">Entregado</option></select></div>
         <div><label>Prioridad</label><select id="f-prioridad"><option value="normal">Normal</option><option value="urgente">Urgente</option></select></div>
         <div><label>Fecha límite</label><input id="f-fechaLimite" type="date"/></div>
       </div>
@@ -2240,7 +2246,8 @@ const ST={
   pedidos_shopify:    {label:"Pedidos Shopify",      next:"recibido",          nextLabel:"→ Revisar"}, // los crea el robot del tablero desde Shopify (shopify_importar.py); una persona los revisa y los pasa a Por revisar
   recibido:           {label:"Por revisar",          next:"enviado_produccion",nextLabel:"→ Enviar a Prod."},
   enviado_produccion: {label:"Enviado a Producción", next:"en_produccion",    nextLabel:"→ Iniciar"},
-  en_produccion:      {label:"Enviado a Impresión",  next:"listo",            nextLabel:"→ Marcar Listo"},
+  en_produccion:      {label:"Enviado a Impresión",  next:"listo",            nextLabel:"→ Marcar Listo"}, // en productos personalizados el siguiente es Maquilado (sigEstado)
+  maquilado:          {label:"Maquilado",            next:"listo",            nextLabel:"→ Marcar Listo"}, // 02-11-2026 (José): solo productos personalizados, entre Impresión y Listo; al entrar se asigna a Ignacio
   listo:              {label:"Listo ✓",              next:"entregado",        nextLabel:"→ Entregar"},
   entregado:          {label:"Entregado",            next:null,               nextLabel:null},
 };
@@ -2249,6 +2256,7 @@ const STAT_DEFS=[
   {key:"recibido",           label:"Por revisar",           color:"var(--grey-c)"},
   {key:"enviado_produccion", label:"Enviado a Producción",  color:"var(--blue-c)"},
   {key:"en_produccion",      label:"Enviado a Impresión",   color:"var(--amber-c)"},
+  {key:"maquilado",          label:"Maquilado",             color:"var(--maq-c)"},
   {key:"listo",              label:"Listos",        color:"var(--green-c)"},
   {key:"entregado",          label:"Entregados",    color:"var(--violet-c)"},
 ];
@@ -2273,6 +2281,13 @@ const getUnit=t=>UNIT[t]||"unidades";
 // Licencia aprobada por Andreina (2026-09-10): cada tipo de producto lleva un color propio para reconocerlo rápido.
 const TIPO_COLOR={"DTF Textil":"#4063F9","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV":"#1C7A63","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor":"#C026D3","DTF Flúor (Lámina prediseñada)":"#D946EF","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#D4537E","Otro":"#858AA3"};
 const tipoColor=t=>TIPO_COLOR[t]||"var(--grey-c)";
+// Maquilado (02-11-2026, José): estado extra solo para productos personalizados (por tipo de producto, no por categoría manual).
+// Al entrar a Maquilado el pedido pasa a ser responsabilidad de Ignacio.
+const RESPONSABLE_MAQUILA="Ignacio Paredes", ID_MAQUILA="IP";
+const usaMaquila=j=>!!j&&CATEGORIAS_PRODUCTO.find(c=>c.key==="personalizados").tipos.includes(j.tipoDtf);
+const sigEstado=j=>(j&&j.estado==="en_produccion"&&usaMaquila(j))?{next:"maquilado",nextLabel:"→ A maquila"}:(ST[j&&j.estado]||{});
+const estadosPara=j=>ORDEN_ESTADOS.filter(k=>k!=="maquilado"||usaMaquila(j)||(j&&j.estado==="maquilado"));
+const verGrupoMaquila=(catKey,n)=>n>0||catKey==="personalizados"||catKey==="todos";
 const ES_STICKER=t=>t==="Stickers UV";
 const ES_ACC=t=>["Insignias / Parches","Pines","Medallas","Imanes","Llaveros"].includes(t);
 const CON_COLOR=t=>["Pines","Medallas","Imanes","Llaveros"].includes(t);
@@ -4183,6 +4198,8 @@ function saveJob(){
   };
   // Preservar entregadoAt/entregadoBy si ya existían (y solo mientras siga en Entregado)
   if(editId&&jobs[editId]?.entregadoAt&&gv("f-estado")==="entregado"){ data.entregadoAt=jobs[editId].entregadoAt; if(jobs[editId].entregadoBy) data.entregadoBy=jobs[editId].entregadoBy; }
+  // Preservar maquiladoAt/maquiladoBy si ya existían
+  if(editId&&jobs[editId]?.maquiladoAt){ data.maquiladoAt=jobs[editId].maquiladoAt; if(jobs[editId].maquiladoBy) data.maquiladoBy=jobs[editId].maquiladoBy; }
   // Preservar listaAt/listaBy si ya existían
   if(editId&&jobs[editId]?.listaAt){ data.listaAt=jobs[editId].listaAt; if(jobs[editId].listaBy) data.listaBy=jobs[editId].listaBy; }
   // Preservar impresionAt/impresionBy si ya existían
@@ -4194,9 +4211,12 @@ function saveJob(){
   // Asignar listaAt + listaBy si se guarda directamente en listo
   if(data.estado==="listo"&&!data.listaAt){ data.listaAt=now; data.listaBy={id:currentUser.id,nombre:currentUser.nombre}; }
   // Asignar impresionAt + impresionBy si se guarda directamente en producción/listo/entregado
-  if(["en_produccion","listo","entregado"].includes(data.estado)&&!data.impresionAt){ data.impresionAt=now; data.impresionBy={id:currentUser.id,nombre:currentUser.nombre}; }
+  if(["en_produccion","maquilado","listo","entregado"].includes(data.estado)&&!data.impresionAt){ data.impresionAt=now; data.impresionBy={id:currentUser.id,nombre:currentUser.nombre}; }
+  // Maquilado: hito y responsable Ignacio si recién entra a ese estado
+  if(data.estado==="maquilado"&&!data.maquiladoAt){ data.maquiladoAt=now; data.maquiladoBy={id:currentUser.id,nombre:currentUser.nombre}; }
+  if(data.estado==="maquilado"&&!(editId&&jobs[editId]?.estado==="maquilado")) data.responsable=RESPONSABLE_MAQUILA;
   // Asignar enviadoProdAt + enviadoProdBy si se guarda directamente en producción o más adelante
-  if(["enviado_produccion","en_produccion","listo","entregado"].includes(data.estado)&&!data.enviadoProdAt){ data.enviadoProdAt=now; data.enviadoProdBy={id:currentUser.id,nombre:currentUser.nombre}; }
+  if(["enviado_produccion","en_produccion","maquilado","listo","entregado"].includes(data.estado)&&!data.enviadoProdAt){ data.enviadoProdAt=now; data.enviadoProdBy={id:currentUser.id,nombre:currentUser.nombre}; }
 
   if(data.tipoEntrega!=="Retiro") data.envio={nombre:gv("f-env-nombre").trim(),rut:gv("f-env-rut").trim(),tel:gv("f-env-tel").trim(),correo:gv("f-env-correo").trim(),dir:gv("f-env-dir").trim(),costo:parseFloat(gv("f-env-costo"))||0};
   if(ES_STICKER(tipo)) data.sticker={logo:gv("f-sticker-logo").trim(),vinilo:gv("f-vinilo"),troquel:gv("f-troquel"),disenos:leerDisenosActuales("sticker"),corte:gv("f-corte"),tintas:[...selectedTintas],textura:gv("f-sticker-textura").trim(),archivoProduccion:gv("f-sticker-archivo-prod").trim()};
@@ -4311,34 +4331,41 @@ function fichaAvisoHtml(j){
   return fiFila(ic("mail")+" Aviso al cliente",`<span class="fi-ro ${cls}">${txt}</span>${accion}`,true);
 }
 function advance(id){
-  const j=jobs[id]; if(!j||!ST[j.estado]?.next)return;
-  moverEstado(id,ST[j.estado].next);
+  const j=jobs[id], sig=sigEstado(j); if(!j||!sig.next)return;
+  moverEstado(id,sig.next);
 }
-const ORDEN_ESTADOS=["pedidos_shopify","recibido","enviado_produccion","en_produccion","listo","entregado"];
+const ORDEN_ESTADOS=["pedidos_shopify","recibido","enviado_produccion","en_produccion","maquilado","listo","entregado"];
 function moverEstado(id,nuevoEstado){
   const j=jobs[id]; if(!j||j.estado===nuevoEstado||!ST[nuevoEstado])return;
   const now=new Date().toISOString();
   const upd={estado:nuevoEstado,updatedAt:now,updatedBy:{id:currentUser.id,nombre:currentUser.nombre}};
   const pos=ORDEN_ESTADOS.indexOf(nuevoEstado);
   const idx=Math.max(0,pos-1); // etapa para los hitos: «Pedidos Shopify» y «Por revisar» son la 0, antes de producción
+  const H={prod:1,imp:2,maq:3,lista:4,entrega:5}; // etapas (idx) de cada hito; «maquilado» (3) solo lo usan los productos personalizados
+  const yo={id:currentUser.id,nombre:currentUser.nombre};
   // Estos hitos se asignan SOLO la primera vez que el pedido alcanza (o supera) esa etapa
-  if(idx>=1&&!j.enviadoProdAt){ upd.enviadoProdAt=now; upd.enviadoProdBy={id:currentUser.id,nombre:currentUser.nombre}; }
-  if(idx>=2&&!j.impresionAt){ upd.impresionAt=now; upd.impresionBy={id:currentUser.id,nombre:currentUser.nombre}; }
-  if(idx>=3&&!j.listaAt){ upd.listaAt=now; upd.listaBy={id:currentUser.id,nombre:currentUser.nombre}; }
-  if(idx>=4&&!j.entregadoAt){ upd.entregadoAt=now; upd.entregadoBy={id:currentUser.id,nombre:currentUser.nombre}; } // hora real de entrega (02-11-2026): base del % de entregas a tiempo
+  if(idx>=H.prod&&!j.enviadoProdAt){ upd.enviadoProdAt=now; upd.enviadoProdBy=yo; }
+  if(idx>=H.imp&&!j.impresionAt){ upd.impresionAt=now; upd.impresionBy=yo; }
+  if(nuevoEstado==="maquilado"&&!j.maquiladoAt){ upd.maquiladoAt=now; upd.maquiladoBy=yo; } // solo al entrar de verdad a Maquilado (saltárselo no inventa la hora)
+  if(idx>=H.lista&&!j.listaAt){ upd.listaAt=now; upd.listaBy=yo; }
+  if(idx>=H.entrega&&!j.entregadoAt){ upd.entregadoAt=now; upd.entregadoBy=yo; } // hora real de entrega (02-11-2026): base del % de entregas a tiempo
+  // Maquilado → el pedido pasa a Ignacio (02-11-2026, José)
+  const aMaquila=nuevoEstado==="maquilado"&&j.responsable!==RESPONSABLE_MAQUILA;
+  if(aMaquila) upd.responsable=RESPONSABLE_MAQUILA;
   // Retroceder: las etapas que se dejan atrás pierden su hito (al volver a avanzar se toma la fecha nueva)
   const atras=pos<ORDEN_ESTADOS.indexOf(j.estado);
   if(atras){
-    if(idx<1){ upd.enviadoProdAt=null; upd.enviadoProdBy=null; }
-    if(idx<2){ upd.impresionAt=null; upd.impresionBy=null; }
-    if(idx<3){ upd.listaAt=null; upd.listaBy=null; }
-    if(idx<4){ upd.entregadoAt=null; upd.entregadoBy=null; }
+    if(idx<H.prod){ upd.enviadoProdAt=null; upd.enviadoProdBy=null; }
+    if(idx<H.imp){ upd.impresionAt=null; upd.impresionBy=null; }
+    if(idx<H.maq){ upd.maquiladoAt=null; upd.maquiladoBy=null; }
+    if(idx<H.lista){ upd.listaAt=null; upd.listaBy=null; }
+    if(idx<H.entrega){ upd.entregadoAt=null; upd.entregadoBy=null; }
     if(j.estado==="entregado"&&j.shopify&&!j.shopify.cerradoAt) upd.shopify=null; // aún no se cerró en Shopify: se quita la marca
   }
   const cierraShopify=nuevoEstado==="entregado"&&marcarCierreShopify(upd,j,now); // el robot lo marca enviado y lo archiva en Shopify al momento
-  if(dbRef){ dbRef.child(id).update(upd).then(()=>{ if(cierraShopify) avisarRobotShopify(id); }); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); }
+  if(dbRef){ dbRef.child(id).update(upd).then(()=>{ if(cierraShopify) avisarRobotShopify(id); }); registrarLog(id,"Estado",ST[j.estado].label,ST[nuevoEstado].label); if(aMaquila){ registrarLog(id,"Responsable",j.responsable||"—",RESPONSABLE_MAQUILA); notificarAsignados(id,j.cliente,[ID_MAQUILA]); } }
   else{ jobs[id]={...j,...upd}; Object.keys(upd).forEach(k=>{ if(upd[k]===null) delete jobs[id][k]; }); saveLocal(); render(); }
-  toast((atras?"← ":"→ ")+ST[nuevoEstado].label,"ok");
+  toast((atras?"← ":"→ ")+ST[nuevoEstado].label+(aMaquila?" · asignado a Ignacio":""),"ok");
   { const retiro=(j.tipoEntrega||"Retiro")==="Retiro", a=j.aviso||{}; // Klaviyo avisa al cliente: retiro al estar listo, envío al entregarse al courier
     if(nuevoEstado==="listo"&&retiro&&!a.retiroAt) avisarCliente(id,{...j,...upd},"retiro");
     if(nuevoEstado==="entregado"&&!retiro&&!a.despachoAt) avisarCliente(id,{...j,...upd},"despacho");
@@ -4489,6 +4516,7 @@ function diasEnEtapaActual(j){
   const ts=(j.estado==="recibido"||j.estado==="pedidos_shopify")?j.createdAt
     :j.estado==="enviado_produccion"?(j.enviadoProdAt||j.createdAt)
     :j.estado==="en_produccion"?(j.impresionAt||j.enviadoProdAt||j.createdAt)
+    :j.estado==="maquilado"?(j.maquiladoAt||j.impresionAt||j.createdAt)
     :j.estado==="listo"?(j.listaAt||j.createdAt)
     :(j.updatedAt||j.createdAt);
   return ts?timeAgo(ts):"—";
@@ -4497,6 +4525,7 @@ function renderKanban(entries){
   const board=document.getElementById("kanban-board"); if(!board)return;
   board.innerHTML=STAT_DEFS.map(s=>{
     const items=entries.filter(([,j])=>j.estado===s.key).sort(([,a],[,b])=>cmpJobs(a,b));
+    if(s.key==="maquilado"&&!verGrupoMaquila(categoriaSeleccionada,items.length))return "";
     return`<div class="kcol" style="border-top:3px solid ${s.color}" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="onKanbanDrop(event,'${s.key}')">
       <div class="kcol-head"><span class="dot" style="background:${s.color}"></span>${s.label}<span class="n">${items.length}</span></div>
       ${items.map(([id,j])=>renderKcard(id,j)).join("")}
@@ -4511,7 +4540,7 @@ function renderKcard(id,j){
     <div class="kcard-client">${esc(j.cliente)}</div>
     ${tambienDe(j).length?`<div class="kcard-tambien">${ic("shopping-cart")} También compró: ${esc(tambienDe(j).map(t=>t.texto+(t.pedido?" ("+t.pedido+")":"")).join(" · "))}</div>`:""}
     <div class="kcard-meta"><span class="job-type-pill" style="background:color-mix(in srgb, ${tipoColor(j.tipoDtf)} 18%, white);color:${tipoColor(j.tipoDtf)}">${esc(j.tipoDtf)}</span><span>${j.cantidad?j.cantidad+(j.unidad==="metros"?"m":"u"):"—"}</span><span class="${ov?"overdue":""}">${delIcon}${j.fechaLimite?" "+fmtDate(j.fechaLimite):""}${ov?" "+ic("triangle-alert"):""}</span></div>
-    <div class="kcard-foot">${ST[j.estado]?.next?`<button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${ST[j.estado].nextLabel}</button>`:`<span class="badge badge-${j.estado}" style="font-size:9.5px">${ST[j.estado]?.label||""}</span>`}<span class="kcard-age">${ic("timer")} ${diasEnEtapaActual(j)}</span></div>
+    <div class="kcard-foot">${sigEstado(j).next?`<button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${sigEstado(j).nextLabel}</button>`:`<span class="badge badge-${j.estado}" style="font-size:9.5px">${ST[j.estado]?.label||""}</span>`}<span class="kcard-age">${ic("timer")} ${diasEnEtapaActual(j)}</span></div>
   </div>`;
 }
 let kanbanDragId=null;
@@ -4595,6 +4624,7 @@ function render(){
         const catCollapsed=categoriasColapsadas.has(cat.key);
         const inner=STAT_DEFS.map(s=>{
           const items=catItems.filter(([,j])=>j.estado===s.key).sort(([,a],[,b])=>cmpTabla(a,b));
+          if(s.key==="maquilado"&&!verGrupoMaquila(cat.key,items.length))return "";
           const groupKey=cat.key+"|"+s.key;
           const collapsed=pedidosGruposColapsados.has(groupKey);
           return`<div class="pedidos-group">
@@ -4618,6 +4648,7 @@ function render(){
     }else{
       tbody.innerHTML=STAT_DEFS.map(s=>{
         const items=filtered.filter(([,j])=>j.estado===s.key).sort(([,a],[,b])=>cmpTabla(a,b));
+        if(s.key==="maquilado"&&!verGrupoMaquila(categoriaSeleccionada,items.length))return "";
         const groupKey=categoriaSeleccionada+"|"+s.key;
         const collapsed=pedidosGruposColapsados.has(groupKey);
         return`<div class="pedidos-group">
@@ -4666,7 +4697,7 @@ function renderRow(id,j){
     <div><div class="job-qty celda-edit" onclick="editarCelda(event,'${id}','cantidad')" title="Clic para editar la cantidad">${qty}${j.packId&&packs[j.packId]?`<span class="job-pack" title="Descuenta del pack ${esc(packNombre(j.packId))}">${ic("package")}</span>`:""}</div><div class="job-unit celda-edit" onclick="editarCelda(event,'${id}','responsable')" title="Clic para cambiar el responsable">Resp: ${j.responsable?esc(j.responsable.split(" ")[0]):"—"}</div></div>
     <div><span class="badge badge-doc-${j.documento==="SI"?"ok":j.documento==="NA"?"na":"no"} celda-edit" onclick="editarCelda(event,'${id}','documento')" title="Clic para cambiar boleta / factura">${j.documento==="SI"?"✓":j.documento==="NA"?"➖":"✗"}</span></div>
     <div>${j.drive?`<a href="${esc(safeUrl(j.drive))}" target="_blank" class="drive-link" onclick="event.stopPropagation()">${ic("folder")}</a>`:`<span class="job-sub celda-edit" style="margin-top:0" onclick="editarCelda(event,'${id}','drive')" title="Clic para agregar el link de Drive">—</span>`}${af.length?`<a href="${esc(safeUrl(af[0]))}" target="_blank" class="drive-link adj-link" title="${af.length>1?af.length+" archivos del cliente (abre el primero; los demás en la ficha)":"Archivo que subió el cliente"}" onclick="event.stopPropagation()">${ic("paperclip")}</a>`:""}</div>
-    <div><span class="badge badge-${j.estado} celda-edit" onclick="editarCelda(event,'${id}','estado')" title="Clic para cambiar el estado (también hacia atrás)">${st.label}</span>${j.shopify&&j.shopify.cerradoAt?`<span class="job-pack" title="Cerrado en Shopify · ${esc(fmtFull(j.shopify.cerradoAt))}">${ic("shopping-cart")}</span>`:j.shopify&&j.shopify.error?`<span class="job-pack" style="color:var(--danger-c)" title="${esc(j.shopify.error)}">${ic("triangle-alert")}</span>`:""}${st.next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${st.nextLabel}</button>`:""}</div>
+    <div><span class="badge badge-${j.estado} celda-edit" onclick="editarCelda(event,'${id}','estado')" title="Clic para cambiar el estado (también hacia atrás)">${st.label}</span>${j.shopify&&j.shopify.cerradoAt?`<span class="job-pack" title="Cerrado en Shopify · ${esc(fmtFull(j.shopify.cerradoAt))}">${ic("shopping-cart")}</span>`:j.shopify&&j.shopify.error?`<span class="job-pack" style="color:var(--danger-c)" title="${esc(j.shopify.error)}">${ic("triangle-alert")}</span>`:""}${sigEstado(j).next?`<br><button class="advance-btn" onclick="event.stopPropagation();advance('${id}')">${sigEstado(j).nextLabel}</button>`:""}</div>
     <div><div class="${delCls} celda-edit" onclick="editarCelda(event,'${id}','tipoEntrega')" title="Clic para cambiar el tipo de entrega">${delIcon}</div><div class="job-sub celda-edit ${ov?"overdue":""}" onclick="editarCelda(event,'${id}','fechaLimite')" title="Clic para cambiar la fecha límite">${fmtDate(j.fechaLimite)}${ov?" "+ic("triangle-alert"):""}</div></div>
     <div class="row-actions"><button class="btn btn-edit" onclick="event.stopPropagation();abrirFicha('${id}')">Editar</button><button class="btn btn-danger" onclick="event.stopPropagation();del('${id}')">✕</button></div>
     ${tb.length?`<div class="job-tambien">${ic("shopping-cart")} También compró: ${esc(tb.map(t=>t.texto+(t.pedido?" ("+t.pedido+")":"")).join(" · "))}</div>`:""}
@@ -5291,7 +5322,7 @@ function editarCelda(ev,id,campo){
   if(campo==="tipoDtf"){ esLista=true; const ops=[]; FICHA_TIPOS.forEach(([g,ts])=>{ ops.push({grupo:g.replace(/^── /,"")}); ts.forEach(t=>ops.push({v:t,l:t,dot:tipoColor(t)})); }); ctl=menu(ops,j.tipoDtf); }
   else if(campo==="tipoEntrega"){ esLista=true; ctl=menu(FICHA_ENTREGAS.map(([v,l])=>({v,l})),j.tipoEntrega||"Retiro"); hint="Los datos de envío se completan en la ficha"; }
   else if(campo==="documento"){ esLista=true; ctl=menu(FICHA_DOCS.map(([v,l])=>({v,l})),j.documento||"NO"); }
-  else if(campo==="estado"){ esLista=true; ctl=menu(ORDEN_ESTADOS.map(k=>({v:k,l:ST[k].label,dot:(STAT_DEFS.find(s=>s.key===k)||{}).color})),j.estado||"recibido"); hint="Un clic elige · también se puede volver a un estado anterior"; }
+  else if(campo==="estado"){ esLista=true; ctl=menu(estadosPara(j).map(k=>({v:k,l:ST[k].label,dot:(STAT_DEFS.find(s=>s.key===k)||{}).color})),j.estado||"recibido"); hint="Un clic elige · también se puede volver a un estado anterior"; }
   else if(campo==="responsable"){ esLista=true; ctl=menu([{v:"",l:"— Sin asignar —"},...FICHA_RESPONSABLES.map(x=>({v:x,l:x}))],j.responsable||""); }
   else if(campo==="cantidad"){ const u=getUnit(j.tipoDtf); ctl=`<input class="celda-input" type="number" min="0" step="${u==="metros"?"0.01":"1"}" value="${esc(fiVal(j.cantidad))}"/>`; hint=`En ${u} · Enter guarda · Esc cancela`; }
   else if(campo==="fechaLimite"){ ctl=`<input class="celda-input" type="date" value="${esc(j.fechaLimite||"")}"/>`; hint="Se guarda al elegir · vacío quita la fecha"; }
@@ -6481,8 +6512,9 @@ function crearDesdeFicha(){
   const data={...JSON.parse(JSON.stringify(d)),cliente,pedido:(d.pedido||"").trim(),categoria:d.categoria||categoriaDeTipo(d.tipoDtf),cantidad:cantidadNum,unidad:getUnit(d.tipoDtf),precio:precioNum,drive:(d.drive||"").trim(),notas:(d.notas||"").trim(),personas:[...(d.personas||[])],updatedAt:now,updatedBy:me,createdAt:now,createdBy:me};
   if(data.estado==="listo"&&!data.listaAt){ data.listaAt=now; data.listaBy=me; }
   if(data.estado==="entregado"&&!data.entregadoAt){ data.entregadoAt=now; data.entregadoBy=me; }
-  if(["en_produccion","listo","entregado"].includes(data.estado)&&!data.impresionAt){ data.impresionAt=now; data.impresionBy=me; }
-  if(["enviado_produccion","en_produccion","listo","entregado"].includes(data.estado)&&!data.enviadoProdAt){ data.enviadoProdAt=now; data.enviadoProdBy=me; }
+  if(["en_produccion","maquilado","listo","entregado"].includes(data.estado)&&!data.impresionAt){ data.impresionAt=now; data.impresionBy=me; }
+  if(["enviado_produccion","en_produccion","maquilado","listo","entregado"].includes(data.estado)&&!data.enviadoProdAt){ data.enviadoProdAt=now; data.enviadoProdBy=me; }
+  if(data.estado==="maquilado"){ if(!data.maquiladoAt){ data.maquiladoAt=now; data.maquiladoBy=me; } data.responsable=RESPONSABLE_MAQUILA; }
   if(!ES_STICKER(data.tipoDtf)) delete data.sticker;
   if(!ES_ACC(data.tipoDtf)) delete data.accesorio;
   if((data.tipoEntrega||"Retiro")==="Retiro") delete data.envio;
@@ -6524,7 +6556,7 @@ function renderFicha(forzar){
   const prev=nombreCli?Object.entries(jobs).filter(([k,x])=>k!==fichaId&&(x.cliente||"").trim().toLowerCase()===nombreCli).length:0;
   const hint=prev>0?`↻ Cliente recurrente · ${prev} pedido${prev!==1?"s":""} anterior${prev!==1?"es":""}`:"";
   const tipoOpts=FICHA_TIPOS.map(([g,ts])=>`<optgroup label="${g}">${ts.map(t=>`<option value="${esc(t)}"${t===tipo?" selected":""}>${esc(t)}</option>`).join("")}</optgroup>`).join("");
-  const estadoOpts=Object.entries(ST).map(([k,v])=>`<option value="${k}"${j.estado===k?" selected":""}>${v.label}</option>`).join("");
+  const estadoOpts=estadosPara(j).map(k=>[k,ST[k]]).map(([k,v])=>`<option value="${k}"${j.estado===k?" selected":""}>${v.label}</option>`).join("");
   let html=`
   <div class="fh-top">
     <span class="fh-crumb">${cat?esc(cat.label):"Sin categoría"}<span class="fh-sep">›</span><span class="fh-id">${fichaNuevo?"Nuevo pedido":esc(fichaId)}</span></span>
@@ -6547,7 +6579,7 @@ function renderFicha(forzar){
     ${tambienDe(j).length?`<div class="fi-tambien">${ic("shopping-cart")} <strong>También compró:</strong> ${tambienDe(j).map(tambienItemHtml).join(" · ")}</div>`:""}
   </div>
   <div class="fh-pills">
-    <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&st.next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${st.next}')">${st.nextLabel}</button>`:""}
+    <select class="badge badge-${j.estado||"recibido"} fi-estado" title="${fichaNuevo?"Estado inicial":"Cambiar el estado (también hacia atrás)"}" onchange="fichaCampo('estado',this.value)">${estadoOpts}</select>${!fichaNuevo&&sigEstado(j).next?`<button class="advance-btn fi-avanzar" onclick="fichaCampo('estado','${sigEstado(j).next}')">${sigEstado(j).nextLabel}</button>`:""}
     <span class="fh-spacer"></span>
     <button class="fi-asig${fichaAsigAbierto?" abierto":""}" title="Personas asignadas" onclick="fichaToggleAsignados()"><span class="fi-asig-label">Personas asignadas</span>${avatars?`<div class="avatars">${avatars}</div>`:`<span>—</span>`}<span class="fi-asig-plus">＋</span></button>
   </div>
@@ -6657,6 +6689,7 @@ function renderFicha(forzar){
       (j.importado&&j.importado.at?fiFila("Creado desde Shopify",fiRO(`${fmtFull(j.importado.at)} · ${esc(j.importado.name||"")}`)):"")+
       (j.enviadoProdAt?fiFila("Enviado a producción",fiRO(`${fmtFull(j.enviadoProdAt)}${quien(j.enviadoProdBy)}`)):"")+
       (j.impresionAt?fiFila("Enviado a impresión",fiRO(`${fmtFull(j.impresionAt)}${quien(j.impresionBy)}`)):"")+
+      (j.maquiladoAt?fiFila("Maquilado",fiRO(`${fmtFull(j.maquiladoAt)}${quien(j.maquiladoBy)}`)):"")+
       (j.listaAt?fiFila("Listo",fiRO(`${fmtFull(j.listaAt)}${quien(j.listaBy)}`)):"")+
       (j.entregadoAt?fiFila("Entregado",fiRO(`${fmtFull(j.entregadoAt)}${quien(j.entregadoBy)}`)):""),"fi-sec-meta");
   }

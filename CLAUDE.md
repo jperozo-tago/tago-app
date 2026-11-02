@@ -317,7 +317,18 @@ categoría personalizada, restringido a `j.perozo@tago.cl` en
 `database.rules.json`.
 
 **Estados de un pedido:** Pedidos Shopify → Por revisar → Enviado a Producción →
-Enviado a Impresión → Listo → Entregado (ver objeto `ST` en el JS). «Pedidos
+Enviado a Impresión → [Maquilado] → Listo → Entregado (ver objeto `ST` en el JS).
+**Maquilado** (`maquilado`, desde el 02-11-2026, José) existe solo para los productos
+personalizados (por tipo: Insignias / Parches, Pines, Medallas, Imanes, Llaveros, Kit
+Corporativo; `usaMaquila(j)`): en ellos «→ siguiente» desde Impresión lleva a Maquilado
+(`sigEstado(j)`), y los menús de estado solo lo ofrecen a esos tipos (`estadosPara(j)`).
+Al entrar a Maquilado (`moverEstado`, el modal antiguo y `crearDesdeFicha`) el
+`responsable` pasa a «Ignacio Paredes» (`RESPONSABLE_MAQUILA`), queda en el historial y
+le llega una notificación de asignación; se guarda el hito `maquiladoAt`/`maquiladoBy`
+(solo al entrar de verdad, saltárselo no lo inventa; al retroceder se borra). El grupo,
+la columna del Tablero y la pestaña usan el color `--maq-c` (petróleo); en las vistas de
+Impresiones el grupo se oculta si está vacío (`verGrupoMaquila`). Estadísticas no separa
+todavía la etapa de maquila: «Enviado a Impresión» mide de `impresionAt` a `listaAt`. «Pedidos
 Shopify» (`pedidos_shopify`, desde el 01-oct-2026) es la bandeja de entrada de los
 pedidos web: los crea el robot del tablero (`tago-tablero/pipeline/shopify_importar.py`,
 cada 30 min) con `origen:"shopify"`, `importado{orderId, name, numero, at, pedidoAt,
