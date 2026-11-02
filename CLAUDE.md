@@ -345,10 +345,13 @@ columna Tipo mide 150 px en `COLS_DEF` para que se lean enteros): en
 `UNIT`, `TIPO_COLOR`, `CATEGORIAS_PRODUCTO`, `FICHA_TIPOS`, el modal, `calcStats` (suman
 a textil/uv) y `TIPOS_STATS`; `packTipoDePedido` los deja fuera de los packs; Merma los
 traduce en `PROD_DE_TIPO`. `FICHA_RESPONSABLES` incluye a Allyson, responsable por
-defecto de los importados. Cambiar de estado
+defecto de los importados, e Ignacio Paredes (desde el 02-11-2026: maquila,
+láser y despachos). Cambiar de estado
 guarda automáticamente fechas hito (`enviadoProdAt`, `impresionAt`,
-`listaAt`) la primera vez que se alcanza cada una — esas fechas alimentan las
-métricas de tiempo en Estadísticas.
+`listaAt`, `entregadoAt`, cada una con su `…By`) la primera vez que se alcanza cada una — esas fechas alimentan las
+métricas de tiempo en Estadísticas. `entregadoAt` existe desde el 02-11-2026 (hora real
+de entrega, base del % de entregas a tiempo); los pedidos entregados antes no lo tienen
+(para esos, `aviso.entregadoAt` de Klaviyo sirve de aproximación desde el 24-09-2026).
 
 **Categorías:** cada pedido tiene una categoría efectiva
 (`categoriaDePedido(j)`) que es `j.categoria` si se asignó manualmente, o si
@@ -370,7 +373,7 @@ pedido se abre en una ficha lateral (`abrirFicha`) que reemplaza al modal
 de edición. El estado se cambia desde el desplegable de la ficha, la pastilla
 de la tabla (menú) o el botón «→ siguiente», y **también puede retroceder**
 (desde el 14-sep-2026): al volver atrás, `moverEstado` borra los hitos de las
-etapas que se dejan (`enviadoProdAt`, `impresionAt`, `listaAt`) para que las
+etapas que se dejan (`enviadoProdAt`, `impresionAt`, `listaAt`, `entregadoAt`) para que las
 estadísticas no las cuenten, y si se sale de Entregado con el cierre en
 Shopify aún pendiente quita esa marca. El arrastrar-y-soltar del Tablero usa el API nativo
 de HTML5 (`draggable`), que **no funciona con el dedo en celular** — en
