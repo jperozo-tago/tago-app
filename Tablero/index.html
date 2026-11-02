@@ -2236,8 +2236,9 @@ function fichaCliente(ci) {
       m.set(l[1], (m.get(l[1]) || 0) + l[2]);
     }
     return [...m.entries()].sort((a,b) => b[1] - a[1])
-      .map(([pi, cant]) => `${esc(D.prod[pi][0])}${cant > 1
-        ? ` <span style="color:var(--gris)">×${nf.format(Math.round(cant*100)/100)}</span>` : ""}`);
+      .map(([pi, cant]) => `${esc(D.prod[pi][0])}${D.prod[pi][5] === "dtf"
+        ? ` <span style="color:var(--gris)">· ${nf.format(Math.round(cant*100)/100)} m</span>`
+        : cant > 1 ? ` <span style="color:var(--gris)">×${nf.format(Math.round(cant*100)/100)}</span>` : ""}`);
   };
   /* Lo que más compra, agrupado por familia de producto: da igual la medida, lo que
      importa es qué compra. El detalle por medida está en la tabla de abajo. */
@@ -2864,10 +2865,18 @@ function sProductos() {
   const tot = ps.reduce((s,p) => s + p.neto, 0);
   const totQueda = conCosto.reduce((s,p) => s + p.queda, 0);
   const netoC = conCosto.reduce((s,p) => s + p.neto, 0);
-  /* Metros de film: cada producto de film trae su factor a metros (1 por metro, 0,01
-     por centímetro, 0,25 por pieza de 25 cm). Antes se sumaba la cantidad cruda de todo
-     lo que dijera "metro" en el nombre, y los medios metros ni entraban. */
-  const metros = ps.reduce((s,p) => s + (D.prod[p.pi][4] ? p.cant * D.prod[p.pi][4] : 0), 0);
+  /* Metros de DTF: el paquete ya trae cada línea de DTF por metro en metros (relBase anota
+     metros, centímetros o piezas según quién emitió, y paquete.py lo resuelve línea por
+     línea), así que su factor es 1. Los packs y las láminas prediseñadas traen sus metros
+     fijos por unidad (D.prod[i][5] dice cuál es cuál) y se muestran aparte. */
+  const mts = { dtf: 0, pack: 0, lamina: 0 };
+  for (const p of ps) {
+    const pr = D.prod[p.pi];
+    if (pr[4]) mts[pr[5] || "dtf"] += p.cant * pr[4];
+  }
+  const metros = mts.dtf + mts.pack + mts.lamina;
+  const partes = [[mts.dtf, "sueltos"], [mts.pack, "en packs"], [mts.lamina, "en láminas prediseñadas"]]
+    .filter(([v]) => Math.round(v) > 0).map(([v, t]) => `${num(v)} ${t}`);
   const famQueda = fams.filter(f => f.queda !== null).sort((a,b) => b.queda - a.queda);
   const famSin = fams.filter(f => f.queda === null).sort((a,b) => b.neto - a.neto);
 
@@ -2878,9 +2887,10 @@ function sProductos() {
     <div class="caja"><span class="rot">Lo que me queda, en los productos con costo cargado</span>
       <span class="medNum" style="color:var(--verde)">${clp(totQueda)}</span>
       <span class="bajo">${pct(totQueda, netoC)} de esos ${clp(netoC)}</span></div>
-    <div class="caja"><span class="rot">Metros de film impresos</span>
+    <div class="caja"><span class="rot">Metros de DTF vendidos</span>
       <span class="medNum">${num(metros)}</span>
-      <span class="bajo">${(metros/largo()).toFixed(1).replace(".",",")} metros por día</span></div>
+      <span class="bajo">${partes.length > 1 ? partes.join(" · ")
+        : `${(metros/largo()).toFixed(1).replace(".",",")} metros por día`}</span></div>
     <div class="caja"><span class="rot">Cuánto de tu venta tiene costo conocido</span>
       <span class="medNum" style="color:${netoC/tot < .8 ? "var(--ambar)" : "var(--verde)"}">${
         pct(netoC, tot)}</span>
