@@ -162,14 +162,21 @@ const textoDe = (cuerpo) => {
   return "";
 };
 
+// Si el service account de la función no tiene permiso sobre la base, el SDK se queda reintentando en
+// silencio y la llamada muere por tiempo (pasó el 03-11-2026: faltaba el rol «Firebase Realtime Database
+// Admin» a 919374961221-compute@developer.gserviceaccount.com). Mejor un error claro a los 8 s.
+const leerConPlazo = (ref, ms = 8000) => Promise.race([
+  ref.once("value"),
+  new Promise((_, rechazar) => setTimeout(() => rechazar(new Error("la base no respondió en " + ms / 1000 + " s: revisar que el service account de la función tenga el rol Firebase Realtime Database Admin")), ms).unref?.()),
+]);
 async function publicarComoRobot(db, cuerpo, clave, ahora = Date.now()) {
-  const cfg = (await db.ref("tago_meta/robotChat").once("value")).val() || {};
+  const cfg = (await leerConPlazo(db.ref("tago_meta/robotChat"))).val() || {};
   if (!cfg.clave || !cfg.chat) return { status: 503, body: { error: "falta configurar tago_meta/robotChat (clave y chat)" } };
   if (!claveOk(clave, cfg.clave)) return { status: 401, body: { error: "clave inválida" } };
   let texto = textoDe(cuerpo).replace(/\r\n/g, "\n").trim();
   if (!texto) return { status: 400, body: { error: "falta el texto: manda un JSON {\"texto\": \"…\"}" } };
   if (texto.length > ROBOT_TOPE) texto = texto.slice(0, ROBOT_TOPE - 1) + "…";
-  const chat = (await db.ref("tago_chats/" + cfg.chat).once("value")).val();
+  const chat = (await leerConPlazo(db.ref("tago_chats/" + cfg.chat))).val();
   if (!chat || chat.tipo !== "grupal") return { status: 404, body: { error: "el grupo configurado en tago_meta/robotChat/chat no existe" } };
   if (cfg.ultimo && ahora - cfg.ultimo < ROBOT_PAUSA) return { status: 429, body: { error: "espera un minuto entre mensajes" } };
   const nombre = String(cfg.nombre || "Robot de prioridades");
