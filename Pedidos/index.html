@@ -382,6 +382,10 @@
     .persona-grid{display:flex;flex-wrap:wrap;gap:6px}
     .persona-chip{display:flex;align-items:center;gap:6px;background:var(--surface-alt);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;transition:all .15s;font-size:12px;color:var(--text-sec)}
     .persona-chip:hover{border-color:var(--teal);color:var(--text)}
+    .fi-resp{display:flex;flex-wrap:wrap;gap:6px}
+    .fi-resp .persona-chip{font:inherit;font-size:12px}
+    .fi-resp .persona-chip.auto{cursor:default;opacity:.9;border-style:dashed}
+    .fi-resp .persona-chip small{font-size:10px;font-weight:600;opacity:.75;text-transform:uppercase;letter-spacing:.04em}
     .persona-chip.selected{border-color:var(--teal);background:rgba(73,206,171,0.1);color:var(--teal-dark);font-weight:600}
 .persona-chip.solo-lectura{cursor:default}
 .chat-list-item.ajeno{opacity:.55}
@@ -2298,6 +2302,21 @@ const CATEGORIAS_PRODUCTO=[
 ];
 const categoriaDeTipo=t=>CATEGORIAS_PRODUCTO.find(c=>c.tipos.includes(t))?.key||"impresiones";
 const categoriaDePedido=j=>j.categoria||categoriaDeTipo(j.tipoDtf);
+// Responsables (03-11-2026, José): «responsable» puede llevar varios nombres separados por coma («José Perozo, Allyson»).
+// Además se suman solos, sin guardarse, por regla: DTF Textil / UV / Flúor (y sus láminas) y Stickers UV → Miguel; lo demás → Allyson
+// mientras está en Pedidos Shopify o Por revisar; todo lo de Productos Personalizados → José. El «Allyson» que deja el
+// robot en los importados de Shopify cuenta como la regla, no como elección a mano. El Centro de Operaciones usa lo mismo.
+// Las reglas valen solo para los pedidos creados desde RESP_REGLAS_DESDE: los anteriores muestran solo lo que tenían (José).
+const RESP_REGLAS_DESDE=Date.parse("2026-11-03T00:00:00-03:00");
+const ES_DE_MIGUEL=t=>/^DTF (Textil|UV|Flúor)/.test(t||"")||t==="Stickers UV";
+const conReglasResp=j=>!!j&&(j.createdAt?new Date(j.createdAt).getTime()>=RESP_REGLAS_DESDE:(fichaNuevo&&j===fichaDraft));
+function responsablesManual(j){ const r=String((j&&j.responsable)||"").trim(); if(conReglasResp(j)&&j.origen==="shopify"&&r==="Allyson") return []; return r.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean); }
+function responsablesAuto(j){ const out=[]; if(!conReglasResp(j)) return out;
+  if(ES_DE_MIGUEL(j.tipoDtf)) out.push("Miguel Gonzalez"); else if(j.estado==="pedidos_shopify"||j.estado==="recibido") out.push("Allyson");
+  if(categoriaDePedido(j)==="personalizados") out.push("José Perozo");
+  return out; }
+function responsablesDe(j){ return [...new Set([...responsablesManual(j),...responsablesAuto(j)])]; }
+const esResponsable=(j,nombre)=>{ const f=String(nombre||"").split(" ")[0]; return !!f&&responsablesDe(j).some(n=>n.split(" ")[0]===f); };
 let categoriasCustom={},categoriaSeleccionada="impresiones";
 // Merma (app /merma): reimpresiones registradas por producción, enlazadas por pedidoId. Pedidos solo las lee.
 var reimpresiones={};
@@ -2386,7 +2405,7 @@ function alertaPred(j){
 let soloMios=false;
 function esMio(j){
   if(!currentUser)return true;
-  return (j.personas||[]).includes(currentUser.id)||j.createdBy?.id===currentUser.id||(!!j.responsable&&j.responsable.split(" ")[0]===currentUser.nombre);
+  return (j.personas||[]).includes(currentUser.id)||j.createdBy?.id===currentUser.id||esResponsable(j,currentUser.nombre);
 }
 function toggleSoloMios(){ soloMios=!soloMios; document.getElementById("btn-mios").classList.toggle("active",soloMios); render(); }
 function toggleFechas(){ document.getElementById("date-range").classList.toggle("abierto"); }
@@ -6399,9 +6418,9 @@ function renderCalendario(entries){
 function renderCarga(entries){
   const cont=document.getElementById("carga-contenedor"); if(!cont)return;
   const abiertos=entries.filter(([,j])=>j.estado!=="entregado");
-  const esDe=(j,p)=>(j.personas||[]).includes(p.id)||(!!j.responsable&&j.responsable.split(" ")[0]===p.nombre.split(" ")[0]);
+  const esDe=(j,p)=>(j.personas||[]).includes(p.id)||esResponsable(j,p.nombre);
   const filas=EQUIPO.map(p=>({p,items:abiertos.filter(([,j])=>esDe(j,p))})).sort((a,b)=>b.items.length-a.items.length);
-  const sin=abiertos.filter(([,j])=>!(j.personas&&j.personas.length)&&!j.responsable);
+  const sin=abiertos.filter(([,j])=>!(j.personas&&j.personas.length)&&!responsablesDe(j).length);
   const max=Math.max(1,...filas.map(f=>f.items.length),sin.length);
   const fila=(nombre,avatarHtml,rol,items)=>{
     const porEstado=STAT_DEFS.filter(s=>s.key!=="entregado").map(s=>({s,n:items.filter(([,j])=>j.estado===s.key).length}));
@@ -6496,6 +6515,12 @@ function fichaCampo(campo,valor){
   fichaAplicar(nuevo,j,FICHA_ESTRUCTURAL.has(campo));
   if((campo==="cliente"||campo==="cantidad")&&!FICHA_ESTRUCTURAL.has(campo)){ const fila=document.getElementById("fc-pack-fila"); if(fila) fila.outerHTML=fichaPackHtml(nuevo); } // la fila del pack se refresca sola, sin rearmar la ficha (el foco sigue donde estaba)
 }
+function fichaRespHtml(j){ // varios responsables: un clic suma o quita; los que vienen por regla quedan marcados «auto»
+  const man=responsablesManual(j), auto=responsablesAuto(j);
+  return `<div class="fi-resp">${FICHA_RESPONSABLES.map((n,i)=>{ const m=man.includes(n), a=auto.includes(n), soloAuto=a&&!m;
+    return `<button type="button" class="persona-chip${m||a?" selected":""}${soloAuto?" auto":""}" ${soloAuto?`disabled title="Responsable por regla (tipo de producto o estado)"`:`onclick="fichaToggleResp(${i})"`}>${esc(n)}${soloAuto?' <small>auto</small>':""}</button>`; }).join("")}</div>`; }
+function fichaToggleResp(i){ const j=fichaJob(); const n=FICHA_RESPONSABLES[i]; if(!j||!n)return; const set=new Set(responsablesManual(j)); set.has(n)?set.delete(n):set.add(n);
+  const nuevo=JSON.parse(JSON.stringify(j)); nuevo.responsable=[...set].join(", "); fichaAplicar(nuevo,j,true); }
 function fichaTogglePersona(pid){ const j=fichaJob(); if(!j)return; const nuevo=JSON.parse(JSON.stringify(j)); const set=new Set(nuevo.personas||[]); set.has(pid)?set.delete(pid):set.add(pid); nuevo.personas=[...set]; fichaAplicar(nuevo,j,true); }
 function fichaToggleTinta(t){ const j=fichaJob(); if(!j)return; const nuevo=JSON.parse(JSON.stringify(j)); fichaSecciones(nuevo); const set=new Set(nuevo.sticker.tintas||[]); set.has(t)?set.delete(t):set.add(t); nuevo.sticker.tintas=[...set]; fichaAplicar(nuevo,j,true); }
 function fichaDisenos(ns,n){ const j=fichaJob(); if(!j)return; const nuevo=JSON.parse(JSON.stringify(j)); fichaSecciones(nuevo); const sec=nuevo[ns]; const dis=(sec.disenos&&sec.disenos.length)?sec.disenos:[{}]; n=Math.max(1,Math.min(4,parseInt(n,10)||1)); sec.disenos=Array.from({length:n},(_,i)=>dis[i]||{}); fichaAplicar(nuevo,j,true); }
@@ -6630,7 +6655,7 @@ function renderFicha(forzar){
     (!(ES_STICKER(tipo)||ES_ACC(tipo))?fiFila(ic("folder")+" Link Google Drive",fiText("drive",j.drive,"https://drive.google.com/...","url"),true):"")+
     (archivosDe(j).length?fiFila(ic("paperclip")+" Archivo del cliente",fiRO(archivosDe(j).map((u,i,arr)=>`<a href="${esc(safeUrl(u))}" target="_blank" class="pk-link" style="color:var(--azul)">${arr.length>1?"Archivo "+(i+1):"Abrir el archivo"} ${ic("external-link")}</a>`).join(" · ")),true):"")+
     (shopifyUrl(j)?fiFila(ic("shopping-cart")+" Pedido en Shopify",fiRO(`<a href="${esc(shopifyUrl(j))}" target="_blank" class="pk-link" style="color:var(--azul)">Abrir ${esc(j.pedido||"el pedido")} en el administrador ${ic("external-link")}</a>`),true):"")+
-    fiFila("Responsable",fiSelect("responsable",j.responsable||"",[["","— Sin asignar —"],...FICHA_RESPONSABLES.map(r=>[r,r])])))}`;
+    fiFila("Responsables",fichaRespHtml(j),true))}`;
   if(ES_STICKER(tipo)){
     const s=j.sticker||{}; const dis=(s.disenos&&s.disenos.length)?s.disenos:(s.ancho||s.alto?[{ancho:s.ancho,alto:s.alto}]:[{}]);
     const resumen=[s.vinilo,s.troquel,dis.map(d=>`${d.ancho||"?"}×${d.alto||"?"} cm`).join(", "),(s.tintas||[]).join(" + ")].filter(Boolean).join(" · ");
