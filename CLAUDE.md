@@ -17,7 +17,7 @@ cual a Firebase Hosting:
 | Control de inventario | `Control de inventario/` | — | **proyecto Firebase aparte** (`tago-inventario`), tiene su propio `deploy.sh` dentro de esa carpeta. No se publica junto con las demás. |
 | Pedidos (seguimiento de producción) | `Pedidos/` | `/pedidos` | la más activa, ver detalle abajo |
 | Tablero (ventas y marketing) | `Tablero/` | `/tablero` | vive en la rama `tablero`; sin datos incrustados, lee todo de Realtime Database, ver detalle abajo |
-| Centro de Operaciones (solo José) | `Operaciones/` | `/operaciones` | panel en vivo de **solo lectura** sobre `tago_pedidos` y `tago_tareas`, ver detalle abajo |
+| Centro de Operaciones (solo José) | `Operaciones/` | `/operaciones` | panel en vivo de **solo lectura** sobre `tago_pedidos` y `tago_tareas` (solo escribe su rutina del día en `tago_operaciones/rutina`), ver detalle abajo |
 
 Home, Cotizador 3D, Pedidos y Tablero viven en el **mismo** proyecto de
 Firebase (`tago-app-489c1`) y se publican juntas con un solo script.
@@ -365,6 +365,22 @@ métricas de tiempo en Estadísticas. `entregadoAt` existe desde el 02-11-2026 (
 de entrega, base del % de entregas a tiempo); los pedidos entregados antes no lo tienen
 (para esos, `aviso.entregadoAt` de Klaviyo sirve de aproximación desde el 24-09-2026).
 
+**Responsables (03-11-2026, José):** `responsable` puede llevar varios nombres separados por
+coma («José Perozo, Allyson»); un solo nombre sigue siendo válido, así nada de lo viejo cambia.
+En la ficha es la fila «Responsables» con un botón por persona de `FICHA_RESPONSABLES`
+(`fichaRespHtml` / `fichaToggleResp`, se guarda con `fichaAplicar` y queda en el historial).
+A los pedidos **creados desde el 03-11-2026** (`RESP_REGLAS_DESDE`; los anteriores muestran solo
+lo que tenían, a pedido de José para no alterar lo antiguo) se les suman por regla, calculados y
+**nunca guardados** (`responsablesAuto`): DTF Textil / UV / Flúor con sus láminas y Stickers UV →
+Miguel (`ES_DE_MIGUEL`, también los de Shopify en Por revisar); todo lo demás → Allyson mientras
+está en Pedidos Shopify o Por revisar; todo lo de Productos Personalizados (`categoriaDePedido`)
+→ José. En esos pedidos nuevos el «Allyson» que deja el robot de Shopify en `responsable` cuenta
+como la regla, no como elección a mano. Los de regla salen en la ficha marcados «AUTO» y no se
+quitan a mano. `responsablesDe(j)` (manual + regla) y `esResponsable(j,nombre)` los usan «Míos»
+y Carga; `j.responsable` en crudo solo va a Klaviyo. Maquilado sigue reemplazando `responsable`
+por Ignacio. El Centro de Operaciones repite las mismas reglas (`responsablesDe` en su capa de
+datos): si se cambian aquí, cambiarlas allá.
+
 **Categorías:** cada pedido tiene una categoría efectiva
 (`categoriaDePedido(j)`) que es `j.categoria` si se asignó manualmente, o si
 no, la categoría por defecto según el tipo de producto. Los admins pueden
@@ -504,7 +520,8 @@ en tiempo real. Un solo archivo, como las demás apps, publicado en `/operacione
   de José en `AUTORIZADOS`. Es control visual: los datos que muestra son los mismos que cualquier
   permitido ya lee en Pedidos. `tago_tareas` completo solo lo pueden leer los admins (reglas); si
   la lectura falla, el panel sigue sin tareas (`DATA.tareasError`).
-- **Nunca escribe en la base.** Escucha `tago_pedidos`, `tago_tareas`, `tago_tareas_estados` y
+- **Nunca escribe pedidos ni tareas.** Lo único que escribe es su rutina del día (abajo). Escucha
+  `tago_pedidos`, `tago_tareas`, `tago_tareas_estados`, `tago_operaciones/rutina` y
   `.info/connected`. Normaliza sobre copias (`normalizaPedidos`, `normalizaTareas`): ids de
   persona de `impresionBy`/`listaBy`/… como texto, hermanos de `tambienCompro` (lista u objeto,
   y los TG-xxxx del texto o de `tambienTexto`), y hora de entrega `entregadoAt` con
@@ -518,10 +535,31 @@ en tiempo real. Un solo archivo, como las demás apps, publicado en `/operacione
   día, indicadores, flujo, «Depende de ti», alertas, equipo, entregas, metros DTF, actividad y la
   ficha con la leyenda armada para copiar). Cada vista tiene su CSS con prefijo `.v2` / `.v1` y
   sus ids (los de Seguimiento llevan prefijo `a-`).
-- **Máquina:** el tracker no la guarda; `MAQ_DE_TIPO` la deduce del tipo de producto (DTF Textil y
-  Flúor → impresora DTF, DTF UV y Stickers → UCJV300, Medallas e Imanes → UJF-6042, Pines → ORIC,
-  Llaveros → CO2, Insignias → iEcho, Kit Corporativo y todo lo que está en Maquilado → mesa de
-  Ignacio, Pendón → pre-prensa). Si algún día se agrega `pedido.maquina`, el mapa ya la usa.
+- **Máquina** (03-11-2026, José): el tracker no la guarda; `MAQ_DE_TIPO` da la máquina donde se
+  imprime (la que ocupa el pedido en «Enviado a Impresión»): DTF Textil y Flúor → Impresora DTF
+  Textil, DTF UV → Impresora DTF UV, Stickers UV → Mimaki UCJV300 (todas de Miguel); pines,
+  medallas, llaveros, imanes e impresión directa → Mimaki UJF-6042; insignias y parches → ORIC
+  (cama plana); Kit Corporativo y todo lo que está en Maquilado → mesa de Ignacio; Pendón →
+  pre-prensa. Los personalizados (`CORTA_EN_CO2`) se cortan después en el Láser CO2; como no hay
+  estado de corte, el láser solo dice qué se corta y la ficha muestra el recorrido (`rutaMaq`).
+  Cada máquina de `ZONAS` lleva `hace` (lo que se produce ahí, visible en la tarjeta libre). Si
+  algún día se agrega `pedido.maquina`, el mapa ya la usa.
+- **Responsables y zonas:** `normalizaPedidos` agrega `responsables` (nombres) y `resps` (ids
+  MG/JP/IP/AL; si no hay, el primero de `personas`) con las mismas reglas que Pedidos. Un pedido
+  con varios responsables aparece en la zona y en la cola de cada uno (`esDeZona`, `esDe`). Un
+  pedido en Pedidos Shopify / Por revisar con Allyson y otra persona dice «⏳ espera a Allyson» en
+  la cola del otro y «→ luego …» en la de ella (`esperaHtml`): así José ve qué tiene detenido por
+  pre-prensa.
+- **Rutina del día** (03-11-2026): apertura, planificación, reunión de pie, colación de Miguel,
+  colación de Ignacio y cierre, en `tago_operaciones/rutina = {hitos/<k>: {t (minutos desde las
+  00:00), dur?}, updatedAt, updatedBy}`; sin datos usa `RUTINA_DEF`. Se ajusta arrastrando los
+  puntos de la barra de Seguimiento (pasos de 5 min) o en «Ajustar horarios»
+  (`abrirRutina`/`guardarHitos` → `guardarRutina`). La regla de la base solo deja leer y escribir
+  a `j.perozo@tago.cl`. La línea de tiempo de Sala de control usa esas horas: huecos «sin nada en
+  curso» desde la reunión de pie hasta el cierre y sin contar la colación de cada persona
+  (`colacionDe`; José y Allyson usan la primera del día).
+- **Números:** se muestra el «# Pedido» (`numDe`/`refHtml`: lo que escribe ventas o el número de
+  Shopify), nunca el id TG-xxxx; si no tiene, el cliente. Metros con máximo 2 decimales (`m2`).
 - **Actividad:** se arma con los hitos de hoy de cada pedido (`createdAt`, `enviadoProdAt`,
   `impresionAt`, `maquiladoAt`, `listaAt`, `entregadoAt` y sus `…By`), no con el historial.
 - **% a tiempo:** entregados con `entregadoAt` (o `aviso.entregadoAt`) en la semana, a tiempo si
