@@ -2918,7 +2918,7 @@ function renderChatMessages(){
       ${mio?"":`<div class="chat-m-av">${agrupado?"":`<div class="avatar ${p?p.avClass:"av-prod"}" title="${esc(m.autor?.nombre||"")}">${p?p.id:"?"}</div>`}</div>`}
       <div class="chat-m-cuerpo">
         ${(mio||agrupado||!esGrupo)?"":`<div class="chat-m-head"><span class="chat-m-autor" style="color:${colorPersona(m.autor?.id)}">${esc(m.autor?.nombre||"?")}</span></div>`}
-        ${m.imagen?`<div class="chat-m-img"><img src="${m.imagen}" alt="Imagen adjunta" title="Ver en grande" onclick="chatAbrirImagen(this.src,'${esc(nombreImagen(m,d))}')"/></div>`:""}
+        ${m.imagen?`<div class="chat-m-img"><img src="${m.imagen}" alt="Imagen adjunta" title="Ver en grande" onclick="chatAbrirImagenMsg('${id}')"/></div>`:""}
         ${m.archivo?chatArchivoHtml(id,m.archivo):""}
         ${m.audio?`<div class="chat-m-audio-wrap">${ic("mic")}<audio controls preload="metadata" class="chat-m-audio" src="${m.audio}" onplay="this.playbackRate=chatVelocidadPref"></audio><button type="button" class="chat-audio-vel" onclick="chatVelocidadAudio()" title="Velocidad de reproducción">${chatFmtVel(chatVelocidadPref)}</button>${m.audioSeg?`<span class="chat-m-audio-seg">${chatFmtSeg(m.audioSeg)}</span>`:""}</div>`:""}
         ${texto?`<div class="chat-m-texto">${texto}</div>`:""}
@@ -2941,7 +2941,8 @@ async function onChatImageSelected(e){
 function renderChatImagenPreview(){
   const cont=document.getElementById("chat-imagen-preview"); if(!cont)return;
   cont.style.display=chatImagenPendiente?"flex":"none";
-  cont.innerHTML=chatImagenPendiente?`<img src="${chatImagenPendiente}" alt="Imagen por enviar"/><span class="chat-pendiente-txt">Imagen lista para enviar</span><button class="btn btn-secondary" onclick="chatImagenPendiente=null;renderChatImagenPreview()">✕ Quitar</button>`:"";
+  if(!chatImagenPendiente) chatImagenOriginal=null;
+  cont.innerHTML=chatImagenPendiente?`<img src="${chatImagenPendiente}" alt="Imagen por enviar"/><span class="chat-pendiente-txt">Imagen lista para enviar${chatImagenOriginal?" · se guarda en calidad original":""}</span><button class="btn btn-secondary" onclick="chatImagenPendiente=null;renderChatImagenPreview()">✕ Quitar</button>`:"";
 }
 async function sendChatMessage(){
   const ta=document.getElementById("chat-input");
@@ -2949,7 +2950,10 @@ async function sendChatMessage(){
   if((!texto&&!chatImagenPendiente&&!chatAudioPendiente&&!chatArchivoPendiente)||!currentChatId||chatArchivoEnviando)return;
   const chatId=currentChatId;
   const payload={autor:{id:currentUser.id,nombre:currentUser.nombre},texto,ts:0};
-  if(chatImagenPendiente)payload.imagen=chatImagenPendiente;
+  if(chatImagenPendiente){
+    payload.imagen=chatImagenPendiente;
+    if(chatImagenOriginal){ try{ payload.imagenHd=await chatSubirImagenHd(chatImagenOriginal,chatId); }catch(err){ console.warn("La imagen va solo en miniatura:",err); } }
+  }
   if(chatAudioPendiente){ payload.audio=chatAudioPendiente.dataUrl; payload.audioSeg=chatAudioPendiente.seg; }
   if(chatArchivoPendiente){
     chatArchivoEnviando=true; renderChatArchivoPreview();
@@ -5168,7 +5172,7 @@ function chatReaccionar(msgId,emoji){
 // Imagen: clip, arrastre y pegado
 async function chatAdjuntarArchivo(file){
   const dataUrl=await comprimirImagenSegura(file); if(!dataUrl)return;
-  chatImagenPendiente=dataUrl; renderChatImagenPreview();
+  chatImagenPendiente=dataUrl; chatImagenOriginal=file; renderChatImagenPreview();
 }
 function chatDragOver(e){ if(![...(e.dataTransfer?.types||[])].includes("Files"))return; e.preventDefault(); document.getElementById("chat-panel").classList.add("arrastrando"); }
 function chatDragLeave(e){ if(e.relatedTarget&&document.getElementById("chat-panel").contains(e.relatedTarget))return; document.getElementById("chat-panel").classList.remove("arrastrando"); }
@@ -5185,6 +5189,32 @@ function chatPegar(e){
 let chatArchivoPendiente=null, chatArchivoEnviando=false;
 const CHAT_ARCHIVO_MAX_BASE=4*1024*1024, CHAT_ARCHIVO_MAX_STORAGE=50*1024*1024;
 function chatStorageDisponible(){ return typeof firebase!=="undefined"&&typeof firebase.storage==="function"; }
+// ── Imagen en alta calidad (Andreina, 03-11-2026: las capturas llegaban ilegibles) ──
+// La miniatura (900 px, JPEG 0,6) sigue dentro del mensaje para que el chat cargue rápido; la copia en alta va
+// aparte por el mismo camino que los adjuntos (Storage si está cargado, si no tago_archivos) y se baja solo al
+// tocar la imagen. Tal cual si pesa hasta CHAT_IMG_HD_TOPE; si no, se reduce a 2400 px y JPEG 0,85.
+let chatImagenOriginal=null;
+const CHAT_IMG_HD_TOPE=3.5*1024*1024, CHAT_IMG_HD_LADO=2400, CHAT_IMG_HD_CALIDAD=0.85;
+async function chatImagenHdArchivo(file){
+  if(file.size<=CHAT_IMG_HD_TOPE) return file;
+  const blob=dataUrlABlob(await comprimirImagen(file,CHAT_IMG_HD_LADO,CHAT_IMG_HD_CALIDAD));
+  if(blob.size>CHAT_ARCHIVO_MAX_BASE&&!chatStorageDisponible()) throw new Error("la copia en alta pesa más de "+fmtBytes(CHAT_ARCHIVO_MAX_BASE));
+  return new File([blob],(file.name||"imagen").replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg"});
+}
+async function chatSubirImagenHd(file,chatId){ return chatSubirArchivo(await chatImagenHdArchivo(file),chatId); }
+async function chatAbrirImagenMsg(msgId){
+  const m=chatMessages[msgId]; if(!m||!m.imagen)return;
+  const nombre=nombreImagen(m,new Date(m.ts||0));
+  chatAbrirImagen(m.imagen,nombre);                       // primero la miniatura, al instante
+  const hd=m.imagenHd; if(!hd)return;
+  try{
+    let url=hd.url||null;
+    if(!url){ const snap=await firebase.database().ref("tago_archivos/"+hd.id+"/datos").once("value"); url=snap.val()||null; }
+    const lb=document.getElementById("chat-lightbox"); if(!url||lb.style.display!=="flex")return;
+    const img=document.getElementById("chat-lightbox-img"); if(img.src!==m.imagen)return;   // ya se abrió otra imagen
+    img.src=url; const a=document.getElementById("chat-lightbox-descarga"); a.href=url; a.download=hd.nombre||nombre;
+  }catch(e){ console.warn("No se pudo bajar la imagen en alta:",e); }
+}
 function chatAdjuntarCualquiera(file){ if(file.type&&file.type.startsWith("image/")&&file.type!=="image/svg+xml") chatAdjuntarArchivo(file); else chatAdjuntarDocumento(file); }
 function chatAdjuntarDocumento(file){
   const max=chatStorageDisponible()?CHAT_ARCHIVO_MAX_STORAGE:CHAT_ARCHIVO_MAX_BASE;
