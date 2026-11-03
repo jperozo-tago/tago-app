@@ -9,6 +9,7 @@
 #   /ruta        -> Ruta TAGO, plan de 12 semanas (privada; datos en tago_ruta)
 #   /opinion     -> Página pública de opinión para clientes (sin login; manda a Klaviyo)
 #   /merma       -> Control de merma: cierre diario por máquina y reimpresiones (datos en tago_merma)
+#   /operaciones -> Centro de Operaciones (solo José): panel en vivo de solo lectura sobre tago_pedidos y tago_tareas
 #
 # Uso (desde la carpeta deploy/):
 #   ./deploy.sh                     arma public/ y publica Hosting en producción
@@ -95,6 +96,12 @@ if [ -d "../Merma" ]; then
   mkdir -p public/merma
   cp "../Merma/index.html" "public/merma/index.html"
 fi
+# Centro de Operaciones bajo /operaciones. SOLO index.html: lee tago_pedidos y tago_tareas,
+# no guarda datos propios ni escribe en la base.
+if [ -d "../Operaciones" ]; then
+  mkdir -p public/operaciones
+  cp "../Operaciones/index.html" "public/operaciones/index.html"
+fi
 
 # ── vista previa: canal temporal, el sitio en vivo no cambia ──────────────
 if [ "$MODO" = "preview" ]; then
@@ -128,4 +135,7 @@ if [ -d "../Ruta" ]; then
 fi
 if [ -d "../Merma" ]; then
   echo "  Merma:       https://tago-app-489c1.web.app/merma"
+fi
+if [ -d "../Operaciones" ]; then
+  echo "  Operaciones: https://tago-app-489c1.web.app/operaciones (solo José)"
 fi

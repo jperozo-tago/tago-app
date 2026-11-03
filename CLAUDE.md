@@ -17,6 +17,7 @@ cual a Firebase Hosting:
 | Control de inventario | `Control de inventario/` | — | **proyecto Firebase aparte** (`tago-inventario`), tiene su propio `deploy.sh` dentro de esa carpeta. No se publica junto con las demás. |
 | Pedidos (seguimiento de producción) | `Pedidos/` | `/pedidos` | la más activa, ver detalle abajo |
 | Tablero (ventas y marketing) | `Tablero/` | `/tablero` | vive en la rama `tablero`; sin datos incrustados, lee todo de Realtime Database, ver detalle abajo |
+| Centro de Operaciones (solo José) | `Operaciones/` | `/operaciones` | panel en vivo de **solo lectura** sobre `tago_pedidos` y `tago_tareas`, ver detalle abajo |
 
 Home, Cotizador 3D, Pedidos y Tablero viven en el **mismo** proyecto de
 Firebase (`tago-app-489c1`) y se publican juntas con un solo script.
@@ -493,6 +494,41 @@ el registro no es de un dueño, o si quien borra es un dueño; el historial y lo
 comentarios de una tarea los borra su creador junto con ella. Por eso al crear
 espacios, carpetas y elementos ahora se guarda `creadoPorEmail`; lo creado
 antes sin ese campo solo lo eliminan los admins.
+
+## Centro de Operaciones — el panel de José
+
+`Operaciones/index.html` (desde el 02-11-2026) es el panel del Gerente de Operaciones: el taller
+en tiempo real. Un solo archivo, como las demás apps, publicado en `/operaciones` por `deploy.sh`.
+- **Acceso:** solo `ACCESO_OPERACIONES` (hoy `j.perozo@tago.cl`). Otra cuenta ve «sin acceso» y
+  no se le cierra la sesión del ecosistema. En Home la tarjeta es `privada` y solo está en la lista
+  de José en `AUTORIZADOS`. Es control visual: los datos que muestra son los mismos que cualquier
+  permitido ya lee en Pedidos. `tago_tareas` completo solo lo pueden leer los admins (reglas); si
+  la lectura falla, el panel sigue sin tareas (`DATA.tareasError`).
+- **Nunca escribe en la base.** Escucha `tago_pedidos`, `tago_tareas`, `tago_tareas_estados` y
+  `.info/connected`. Normaliza sobre copias (`normalizaPedidos`, `normalizaTareas`): ids de
+  persona de `impresionBy`/`listaBy`/… como texto, hermanos de `tambienCompro` (lista u objeto,
+  y los TG-xxxx del texto o de `tambienTexto`), y hora de entrega `entregadoAt` con
+  `aviso.entregadoAt` de respaldo. Los entregados de hace más de 60 días no se cargan.
+- **Tareas:** se toman las asignadas a JP, MG, IP o AL, sin las de clientes de la Ruta
+  (`campos.rut`). «Hecha» = estado cuyo nombre dice listo/hecho/completado… o el de mayor `orden`
+  de su grupo (espacio + lista); «En curso» = nombre con curso/progreso/haciendo.
+- **Dos vistas** con botón arriba (`#sala` / `#seguimiento`, recordada en `localStorage`
+  `tago_ops_vista`): **Sala de control** (anillos del día, mapa del taller por máquina, línea de
+  tiempo de hoy por persona, «Lo que espera por ti» y salidas de hoy) y **Seguimiento** (rutina del
+  día, indicadores, flujo, «Depende de ti», alertas, equipo, entregas, metros DTF, actividad y la
+  ficha con la leyenda armada para copiar). Cada vista tiene su CSS con prefijo `.v2` / `.v1` y
+  sus ids (los de Seguimiento llevan prefijo `a-`).
+- **Máquina:** el tracker no la guarda; `MAQ_DE_TIPO` la deduce del tipo de producto (DTF Textil y
+  Flúor → impresora DTF, DTF UV y Stickers → UCJV300, Medallas e Imanes → UJF-6042, Pines → ORIC,
+  Llaveros → CO2, Insignias → iEcho, Kit Corporativo y todo lo que está en Maquilado → mesa de
+  Ignacio, Pendón → pre-prensa). Si algún día se agrega `pedido.maquina`, el mapa ya la usa.
+- **Actividad:** se arma con los hitos de hoy de cada pedido (`createdAt`, `enviadoProdAt`,
+  `impresionAt`, `maquiladoAt`, `listaAt`, `entregadoAt` y sus `…By`), no con el historial.
+- **% a tiempo:** entregados con `entregadoAt` (o `aviso.entregadoAt`) en la semana, a tiempo si
+  el día de entrega ≤ `fechaLimite`. Seis semanas, de lunes a domingo.
+- Se edita directo en `Operaciones/index.html` (nació de los mockups «Sala de control» y
+  «Centro de Operaciones»; no hay proceso de build). Antes de publicar, el mismo chequeo de
+  sintaxis de Pedidos cambiando la ruta del archivo.
 
 ## Convenciones al trabajar en este código
 

@@ -246,7 +246,10 @@ const APPS = [
   // quién la edita: tago_ruta/editores (solo Andreina; José entra en solo lectura).
   { key:'ruta',        nombre:'Ruta TAGO',               desc:'El plan de doce semanas: tareas por persona, arranques de cada fecha y listas de clientes para recuperar.', icono:'🧭', acc:'#4063F9', estado:'activo', url:'/ruta', privada:true },
   // Merma: cierre diario por producto y reimpresiones con su causa (datos en tago_merma).
-  { key:'merma',       nombre:'Control de Merma',        desc:'Lo que se pierde por producto y por qué: cierre diario y registro de cada reimpresión.', icono:'📉', acc:'#1C7A63', estado:'activo', url:'/merma' }
+  { key:'merma',       nombre:'Control de Merma',        desc:'Lo que se pierde por producto y por qué: cierre diario y registro de cada reimpresión.', icono:'📉', acc:'#1C7A63', estado:'activo', url:'/merma' },
+  // privada: el panel del Gerente de Operaciones (02-11-2026). Solo José la tiene en su lista, así que
+  // nadie más ve la tarjeta; la propia página además rechaza cualquier otra cuenta (ACCESO_OPERACIONES).
+  { key:'operaciones', nombre:'Centro de Operaciones',   desc:'El taller en tiempo real: máquinas, qué hace cada uno, lo que depende de ti y las salidas del día.', icono:'🎛️', acc:'#49CEAB', estado:'activo', url:'/operaciones', privada:true }
 ];
 
 // --- Identidad central (compartida con las apps por la misma clave) ---
@@ -277,7 +280,7 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<
    las reglas de Firestore → seguridad REAL impuesta por el servidor: un extraño
    con el link no puede leer ni escribir nada. */
 const AUTORIZADOS = {
-  'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos','tablero','ruta','merma'], admin:true },
+  'j.perozo@tago.cl':               { nombre:'José',     apps:['inventario','calculadora','pedidos','tablero','ruta','merma','operaciones'], admin:true },
   'a.rodriguez@tago.cl':            { nombre:'Andreina', apps:['inventario','calculadora','pedidos','tablero','ruta','merma'], admin:true },
   'c.oviedo@tago.cl':               { nombre:'Carol',    apps:['inventario','calculadora','pedidos','merma'], admin:true },
   'produccion.tago@gmail.com':      { nombre:'Miguel',   apps:['inventario','pedidos','merma'],        admin:false },
