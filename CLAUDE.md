@@ -81,7 +81,7 @@ Firestore).
     redesplegar): `chat` es el id del grupo, `clave` la que manda el robot (copia en
     Data TAGO/informe/.chat_robot_clave). Rechaza dos mensajes con menos de un minuto entre sí. El primer
     uso es el robot de prioridades de Grok (cada 2 h lee Vambe y ventas@tago.cl). Se despliega con
-    `firebase deploy --only functions:chatPublicar` desde `deploy/`; prueba local en
+    `firebase deploy --only functions:tago:chatPublicar` desde `deploy/`; prueba local en
     Data TAGO/.claude/sandbox/prueba-chat-robot.js.
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
