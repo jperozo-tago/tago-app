@@ -82,7 +82,12 @@ Firestore).
     Data TAGO/informe/.chat_robot_clave). Rechaza dos mensajes con menos de un minuto entre sí. El primer
     uso es el robot de prioridades de Grok (cada 2 h lee Vambe y ventas@tago.cl). Se despliega con
     `firebase deploy --only functions:tago:chatPublicar` desde `deploy/`; prueba local en
-    Data TAGO/.claude/sandbox/prueba-chat-robot.js.
+    Data TAGO/.claude/sandbox/prueba-chat-robot.js. Por la política de la organización, la cuenta
+    `919374961221-compute@developer.gserviceaccount.com` necesita tener a la vez los roles «Cuenta de
+    servicio de Cloud Build» (compila) y «Administrador de Firebase Realtime Database» (sin él, el SDK se
+    queda reintentando y la llamada muere por tiempo), y el servicio en Cloud Run debe tener «Permitir el
+    acceso público» marcado a mano. Al editar roles en IAM, agregar sin reemplazar: el 03-11-2026 se perdió
+    el de Cloud Build y las compilaciones fallaron hasta volver a ponerlo (y esperar unos minutos).
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
 - `tago_tareas*` — módulo de tareas internas. `tago_tareas_estados/<id>` puede
