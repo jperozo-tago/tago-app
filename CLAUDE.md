@@ -17,7 +17,7 @@ cual a Firebase Hosting:
 | Control de inventario | `Control de inventario/` | — | **proyecto Firebase aparte** (`tago-inventario`), tiene su propio `deploy.sh` dentro de esa carpeta. No se publica junto con las demás. |
 | Pedidos (seguimiento de producción) | `Pedidos/` | `/pedidos` | la más activa, ver detalle abajo |
 | Tablero (ventas y marketing) | `Tablero/` | `/tablero` | vive en la rama `tablero`; sin datos incrustados, lee todo de Realtime Database, ver detalle abajo |
-| Centro de Operaciones (solo José) | `Operaciones/` | `/operaciones` | panel en vivo de **solo lectura** sobre `tago_pedidos` y `tago_tareas` (solo escribe su rutina del día en `tago_operaciones/rutina`), ver detalle abajo |
+| Centro de Operaciones (José y Andreina) | `Operaciones/` | `/operaciones` | panel en vivo de **solo lectura** sobre `tago_pedidos` y `tago_tareas` (solo escribe su rutina del día en `tago_operaciones/rutina`), ver detalle abajo |
 
 Home, Cotizador 3D, Pedidos y Tablero viven en el **mismo** proyecto de
 Firebase (`tago-app-489c1`) y se publican juntas con un solo script.
@@ -515,9 +515,12 @@ antes sin ese campo solo lo eliminan los admins.
 
 `Operaciones/index.html` (desde el 02-11-2026) es el panel del Gerente de Operaciones: el taller
 en tiempo real. Un solo archivo, como las demás apps, publicado en `/operaciones` por `deploy.sh`.
-- **Acceso:** solo `ACCESO_OPERACIONES` (hoy `j.perozo@tago.cl`). Otra cuenta ve «sin acceso» y
-  no se le cierra la sesión del ecosistema. En Home la tarjeta es `privada` y solo está en la lista
-  de José en `AUTORIZADOS`. Es control visual: los datos que muestra son los mismos que cualquier
+- **Acceso:** solo `ACCESO_OPERACIONES` (José y, desde el 03-11-2026, Andreina
+  `a.rodriguez@tago.cl`). Otra cuenta ve «sin acceso» y no se le cierra la sesión del ecosistema.
+  En Home la tarjeta es `privada` y solo está en las listas de José y Andreina en `AUTORIZADOS`.
+  Para sumar a alguien: `ACCESO_OPERACIONES`, su lista en Home y la regla de lectura de
+  `tago_operaciones/rutina`. La rutina la edita solo `EDITA_RUTINA` (José); para los demás la
+  barra es de solo lectura (clase `rut-ro` en `<body>`: sin arrastre ni «Ajustar horarios»). Es control visual: los datos que muestra son los mismos que cualquier
   permitido ya lee en Pedidos. `tago_tareas` completo solo lo pueden leer los admins (reglas); si
   la lectura falla, el panel sigue sin tareas (`DATA.tareasError`).
 - **Nunca escribe pedidos ni tareas.** Lo único que escribe es su rutina del día (abajo). Escucha
@@ -555,9 +558,18 @@ en tiempo real. Un solo archivo, como las demás apps, publicado en `/operacione
   00:00), dur?}, updatedAt, updatedBy}`; sin datos usa `RUTINA_DEF`. Se ajusta arrastrando los
   puntos de la barra de Seguimiento (pasos de 5 min) o en «Ajustar horarios»
   (`abrirRutina`/`guardarHitos` → `guardarRutina`). La regla de la base solo deja leer y escribir
-  a `j.perozo@tago.cl`. La línea de tiempo de Sala de control usa esas horas: huecos «sin nada en
+  a `j.perozo@tago.cl` (leer, también a Andreina). La línea de tiempo de Sala de control usa esas horas: huecos «sin nada en
   curso» desde la reunión de pie hasta el cierre y sin contar la colación de cada persona
   (`colacionDe`; José y Allyson usan la primera del día).
+- **Indicadores clickeables** (03-11-2026, José: «visual e informativo, que me muestre todo»):
+  en Sala de control, los cuatro anillos y las frases del titular («trabajos en máquina»,
+  «esperando por ti», «salidas de hoy») y de la bajada («pedidos atrasados») llevan `data-kpi`
+  (`hoy`, `semana`, `atr`, `cap`, `run`, `bloq`) y abren el panel lateral ancho (`abrirKpi`, clase
+  `ancho`): totales (pedidos, clientes, metros, unidades), barra por estado, barras por producto,
+  responsables y entrega (`kxResumen`), y los pedidos agrupados (por etapa, por máquina, faltan /
+  listas / entregadas, tarde / a tiempo con el gráfico de 6 semanas) con una línea de contexto
+  (`kxFila`, `ctx*`). Los cálculos salen de `kpiSets()`, el mismo que usa `renderHero`. Tocar un
+  pedido abre su ficha con «‹ Volver a la lista»; con datos en vivo la lista abierta se repinta.
 - **Números:** se muestra el «# Pedido» (`numDe`/`refHtml`: lo que escribe ventas o el número de
   Shopify), nunca el id TG-xxxx; si no tiene, el cliente. Metros con máximo 2 decimales (`m2`).
 - **Actividad:** se arma con los hitos de hoy de cada pedido (`createdAt`, `enviadoProdAt`,
