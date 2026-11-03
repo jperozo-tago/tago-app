@@ -75,6 +75,58 @@ button{font:inherit;color:inherit}
 .v2 .ring .s{font-size:12px;color:var(--ink-3);margin-top:-6px}
 .v2 .ring text{font-family:var(--f-display);font-weight:600;fill:var(--ink)}
 .v2 .ring .arc{transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)}
+.v2 button.ring{font:inherit;color:inherit;cursor:pointer;transition:border-color .15s,transform .15s,background-color .15s}
+.v2 button.ring:hover{border-color:var(--teal);transform:translateY(-2px);background-color:color-mix(in srgb,var(--panel) 88%,var(--teal))}
+.v2 button.ring:focus-visible,.v2 .kp:focus-visible,.v2 .lrow:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.v2 .ring .ver{font-family:var(--f-display);font-weight:600;font-size:11px;color:var(--ink-3);margin-top:-2px;transition:color .15s}
+.v2 button.ring:hover .ver{color:var(--teal)}
+.v2 .kp{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;text-decoration:underline dotted;text-decoration-thickness:.07em;text-underline-offset:.18em;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent)}
+.v2 .kp:hover{text-decoration-style:solid;text-decoration-color:currentColor}
+.v2 .hero h1 .kp.r{color:var(--bad)}
+.v2 .drawer.ancho{width:min(660px,100vw)}
+.v2 .volver{display:block;font:inherit;font-family:var(--f-display);font-weight:600;font-size:12px;color:var(--azul-2);background:none;border:0;padding:0 0 8px;cursor:pointer}
+.v2 .kx-lead{margin:6px 0 0;font-size:13px;line-height:1.45;color:var(--ink-2);max-width:60ch}
+.v2 .lst{display:grid;gap:18px}
+.v2 .kx-big{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.v2 .kx-big div{background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;min-width:0}
+.v2 .kx-big b{display:block;font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.v2 .kx-big span{font-size:11px;color:var(--ink-3)}
+.v2 .kx-sec h4,.v2 .lgrp h4{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.v2 .lgrp h4 b{font-size:11px;color:var(--ink);background:rgba(255,255,255,.08);border-radius:999px;padding:1px 8px;letter-spacing:0}
+.v2 .kx-bar{display:flex;gap:2px;height:12px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.06)}
+.v2 .kx-bar span{min-width:6px}
+.v2 .kx-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink-2)}
+.v2 .kx-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
+.v2 .kx-rows{display:grid;gap:7px}
+.v2 .kx-r{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12px}
+.v2 .kx-r .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2 .kx-r .tr{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.v2 .kx-r .tr i{display:block;height:100%;border-radius:999px;background:var(--c)}
+.v2 .kx-r b{font-family:var(--f-display);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.v2 .kx-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.v2 .kx-ppl{display:flex;flex-wrap:wrap;gap:6px}
+.v2 .kx-ppl span{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border-radius:999px;padding:3px 10px 3px 3px;font-size:12px}
+.v2 .kx-ppl span.ch-e{padding-left:10px}
+.v2 .kav{display:inline-grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;font-family:var(--f-display);font-weight:700;font-size:9.5px;font-style:normal;color:#fff;background:var(--c)}
+.v2 .kx-sem{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;height:110px}
+.v2 .kx-sem div{display:grid;grid-template-rows:1fr auto auto;justify-items:center;gap:3px;min-width:0}
+.v2 .kx-sem .b{align-self:end;width:60%;border-radius:5px 5px 2px 2px}
+.v2 .kx-sem b{font-family:var(--f-display);font-size:12px}
+.v2 .kx-sem small{font-size:10px;color:var(--ink-3)}
+.v2 .lgrp{display:grid;gap:8px}
+.v2 .lrow{all:unset;box-sizing:border-box;display:grid;gap:6px;padding:11px 14px;border:1px solid var(--line-2);border-left:3px solid var(--c);border-radius:10px;background:rgba(255,255,255,.03);cursor:pointer;min-width:0;transition:background-color .15s}
+.v2 .lrow:hover{background:rgba(255,255,255,.07)}
+.v2 .lrow .l1{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0}
+.v2 .lrow .lt{font-family:var(--f-display);font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2 .lrow .lt em{font-style:normal;color:var(--azul-2);margin-right:6px}
+.v2 .lrow .l2{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px}
+.v2 .lrow .l2 b{font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums}
+.v2 .lrow .l3{font-size:12px;color:var(--ink-3)}
+.v2 .lrow .ctx{font-size:12px;font-weight:600;color:var(--ink-2)}
+.v2 .lrow .ctx.bad{color:var(--bad)}
+.v2 .lrow .ctx.ok{color:var(--good)}
+.v2 .chain-lst .ch{margin:0}
+@media (max-width:560px){.v2 .kx-big{grid-template-columns:repeat(2,minmax(0,1fr))}.v2 .kx-two{grid-template-columns:minmax(0,1fr)}.v2 .kx-r{grid-template-columns:minmax(0,120px) minmax(0,1fr) auto}}
 .v2 .floor{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 .v2 .zone{background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .v2 .zone-h{display:flex;align-items:center;gap:10px}
@@ -262,6 +314,8 @@ body.tv .wrap{max-width:none}
 .v1 .mile i::after{content:"";position:absolute;inset:-10px}
 .v1 .mile span{margin-top:calc(var(--row,0) * 28px)}
 .v1 .mile.drag{cursor:grabbing;z-index:2}
+.rut-ro .v1 .mile{cursor:default}
+.rut-ro .v1 .rail-edit{display:none}
 .v1 .mile.drag i{background:var(--teal);border-color:#fff;box-shadow:0 0 0 6px rgba(73,206,171,.3)}
 .v1 .mile.drag span{display:flex;flex-direction:column}
 .v1 .rut-f{display:grid;gap:10px}
@@ -689,20 +743,23 @@ a.hbtn{text-decoration:none;color:var(--ink)}
    Centro de Operaciones · capa de datos en vivo (SOLO LECTURA)
    ──────────────────────────────────────────────────────────────────────────
    · Entra con el mismo Google del ecosistema. Solo lo abre quien está en
-     ACCESO_OPERACIONES (hoy, José). Para otra cuenta muestra «sin acceso».
+     ACCESO_OPERACIONES (José y, desde el 03-11-2026, Andreina). Para otra
+     cuenta muestra «sin acceso».
    · Escucha tago_pedidos, tago_tareas y tago_tareas_estados. Nunca escribe
      pedidos ni tareas. Lo único que escribe es su propia configuración:
      tago_operaciones/rutina (horas de apertura, planificación, reunión,
      colación de Miguel y de Ignacio, cierre), que José ajusta arrastrando los
-     puntos de la barra o desde «Ajustar horarios» (02-11-2026). Solo José la
-     lee y la escribe (database.rules.json).
+     puntos de la barra o desde «Ajustar horarios» (02-11-2026). La leen los de
+     ACCESO_OPERACIONES y la escribe solo EDITA_RUTINA (database.rules.json);
+     para los demás la barra es de solo lectura (clase rut-ro en <body>).
    · Normaliza cada pedido a la forma que usan las dos vistas (ids de persona
      como texto, hermanos de tambienCompro, hora de entrega) sobre una COPIA:
      los objetos de la base no se tocan.
    · Arma la actividad del día con los hitos de cada pedido (createdAt,
      enviadoProdAt, impresionAt, maquiladoAt, listaAt, entregadoAt y sus …By).
    ══════════════════════════════════════════════════════════════════════════ */
-const ACCESO_OPERACIONES=["j.perozo@tago.cl"];
+const ACCESO_OPERACIONES=["j.perozo@tago.cl","a.rodriguez@tago.cl"]; // también en Home (apps) y en las reglas de tago_operaciones/rutina
+const EDITA_RUTINA=["j.perozo@tago.cl"];
 window.DATA={jobs:{},tareas:{},feed:[],semanas:[],semanaPct:null,tareasError:false,cargado:false,rutina:null};
 // Rutina del día: horas por defecto; lo guardado en tago_operaciones/rutina/hitos/<k> = {t (minutos desde 00:00), dur?} manda.
 window.RUTINA_DEF={apertura:{l:"Apertura",t:8*60+30},planificacion:{l:"Planificación",t:8*60+45},reunion:{l:"Reunión de pie",t:9*60},
@@ -757,7 +814,8 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
     cierra();
     if(!user){ entrada("login"); return; }
     const email=(user.email||"").toLowerCase();
-    if(!ACCESO_OPERACIONES.includes(email)){ entrada("sinacceso",`Entraste como ${email}. El Centro de Operaciones es solo para José Perozo.`); return; }
+    if(!ACCESO_OPERACIONES.includes(email)){ entrada("sinacceso",`Entraste como ${email}. El Centro de Operaciones es solo para José y Andreina.`); return; }
+    document.body.classList.toggle("rut-ro",!EDITA_RUTINA.includes(email));
     const quien=$("u-name"); if(quien) quien.textContent=(user.displayName||"José").split(" ")[0];
     entrada("cargando","Leyendo pedidos…");
     escucha("tago_pedidos",s=>{ raw.pedidos=s.val()||{}; programa(); },e=>{
@@ -946,23 +1004,100 @@ function ring(pct,color,big,small){
   return `<svg viewBox="0 0 116 116" aria-hidden="true"><circle cx="58" cy="58" r="${r}" fill="none" stroke="rgba(143,155,255,.13)" stroke-width="10"/><circle class="arc" cx="58" cy="58" r="${r}" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 58 58)"/><text x="58" y="${small?62:66}" text-anchor="middle" font-size="${small?20:26}">${big}</text>${small?`<text x="58" y="80" text-anchor="middle" font-size="10" style="fill:var(--ink-3)">${small}</text>`:""}</svg>`;
 }
 function renderHero(){
-  const ab=open().map(([,j])=>j);
-  const hoyL=Object.values(jobs).filter(j=>(j.estado!=="entregado"&&(j.fechaLimite===HOY||atrasado(j)))||(j.estado==="entregado"&&j.entregadoAt&&cl(new Date(j.entregadoAt)).ymd===HOY));
-  const listosHoy=hoyL.filter(j=>["listo","entregado"].includes(j.estado)).length;
-  const atr=ab.filter(atrasado).length;
-  const run=ab.filter(j=>j.estado==="en_produccion"||j.estado==="maquilado").length;
-  const bloq=chainItems().length;
-  const cap=ab.filter(j=>j.estado!=="listo").length;
+  const s=kpiSets(), n=s.hoyL.length, ok=s.listosHoy.length, atr=s.atr.length, run=s.run.length, bloq=s.chain.length, cap=s.cap.length;
   $("fecha").textContent=new Intl.DateTimeFormat("es-CL",{timeZone:TZ,weekday:"long",day:"numeric",month:"long"}).format(new Date());
-  $("headline").innerHTML=`${run} trabajos en máquina, <span class="${bloq?"r":""}">${bloq} esperando por ti</span> y <em>${listosHoy} de ${hoyL.length}</em> salidas de hoy listas.`;
-  $("subline").textContent=atr?`${atr} pedidos atrasados. El más antiguo es de ${Object.entries(jobs).filter(([,j])=>atrasado(j)).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1).map(([k,j])=>`${j.cliente}${j.pedido?` (${j.pedido})`:""}`)[0]}.`:"Nada atrasado.";
+  $("headline").innerHTML=`<button type="button" class="kp" data-kpi="run" title="Ver qué está en máquina">${run} ${run===1?"trabajo":"trabajos"} en máquina</button>, <button type="button" class="kp ${bloq?"r":""}" data-kpi="bloq" title="Ver qué depende de ti">${bloq} esperando por ti</button> y <button type="button" class="kp" data-kpi="hoy" title="Ver las salidas de hoy"><em>${ok} de ${n}</em> salidas de hoy listas</button>.`;
+  const viejo=s.atr.slice().sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1)[0];
+  $("subline").innerHTML=atr?`<button type="button" class="kp" data-kpi="atr">${atr} ${atr===1?"pedido atrasado":"pedidos atrasados"}</button>. El más antiguo es de ${esc(viejo[1].cliente)}${viejo[1].pedido?` (${esc(viejo[1].pedido)})`:""}.`:"Nada atrasado.";
   const R=[
-    {l:"Salidas de hoy",s:`${listosHoy} de ${hoyL.length} listas`,svg:ring(hoyL.length?listosHoy/hoyL.length:0,"var(--teal)",`${hoyL.length?Math.round(listosHoy/hoyL.length*100):0}%`)},
-    {l:"A tiempo · semana",s:DATA.semanaPct==null?"Sin entregas esta semana":"Meta 90%",svg:ring((DATA.semanaPct||0)/100,(DATA.semanaPct||0)>=90?"var(--teal)":"var(--warn)",DATA.semanaPct==null?"—":DATA.semanaPct+"%")},
-    {l:"Atrasados",s:atr?"Revisar ahora":"Al día",svg:ring(atr?Math.min(1,atr/6):0,"var(--bad)",atr)},
-    {l:"En cola",s:"Sin terminar",svg:ring(Math.min(1,cap/30),"var(--azul-2)",cap,"pedidos")},
+    {k:"hoy",l:"Salidas de hoy",s:`${ok} de ${n} listas`,svg:ring(n?ok/n:0,"var(--teal)",`${n?Math.round(ok/n*100):0}%`)},
+    {k:"semana",l:"A tiempo · semana",s:DATA.semanaPct==null?"Sin entregas esta semana":"Meta 90%",svg:ring((DATA.semanaPct||0)/100,(DATA.semanaPct||0)>=90?"var(--teal)":"var(--warn)",DATA.semanaPct==null?"—":DATA.semanaPct+"%")},
+    {k:"atr",l:"Atrasados",s:atr?"Revisar ahora":"Al día",svg:ring(atr?Math.min(1,atr/6):0,"var(--bad)",atr)},
+    {k:"cap",l:"En cola",s:"Sin terminar",svg:ring(Math.min(1,cap/30),"var(--azul-2)",cap,"pedidos")},
   ];
-  $("rings").innerHTML=R.map(r=>`<div class="ring">${r.svg}<span class="lbl">${r.l}</span><span class="s">${r.s}</span></div>`).join("");
+  $("rings").innerHTML=R.map(r=>`<button type="button" class="ring" data-kpi="${r.k}" aria-label="${r.l}: ver pedidos">${r.svg}<span class="lbl">${r.l}</span><span class="s">${r.s}</span><span class="ver">Ver pedidos ›</span></button>`).join("");
+}
+
+/* ── Indicadores clickeables (03-11-2026, José: «visual e informativo, que me muestre todo») ──
+   Cada número del encabezado abre el panel lateral ancho con un resumen (estado, producto, responsable,
+   entrega) y la lista de sus pedidos con todo el detalle; tocar uno abre su ficha y «‹ Volver» regresa. */
+const fDM=f=>f?`${f.slice(8,10)}/${f.slice(5,7)}`:"—";
+const ymdCL=iso=>iso?cl(new Date(iso)).ymd:"";
+const lunesHoy=()=>{const d=new Date(HOY+"T12:00:00Z");return addD(HOY,-((d.getUTCDay()+6)%7))};
+function kpiSets(){
+  const ab=open();
+  const hoyL=Object.entries(jobs).filter(([,j])=>(j.estado!=="entregado"&&(j.fechaLimite===HOY||atrasado(j)))||(j.estado==="entregado"&&ymdCL(j.entregadoAt)===HOY));
+  const lun=lunesHoy(), dom=addD(lun,6);
+  const semana=Object.entries(jobs).filter(([,j])=>{if(j.estado!=="entregado"||!j.entregadoAt||!j.fechaLimite)return false;const e=ymdCL(j.entregadoAt);return e>=lun&&e<=dom});
+  return {ab,hoyL,lun,dom,semana,listosHoy:hoyL.filter(([,j])=>["listo","entregado"].includes(j.estado)),
+    atr:ab.filter(([,j])=>atrasado(j)),run:ab.filter(([,j])=>j.estado==="en_produccion"||j.estado==="maquilado"),
+    cap:ab.filter(([,j])=>j.estado!=="listo"),chain:chainItems()};
+}
+const porFecha=(a,b)=>(a[1].fechaLimite||"9999")<(b[1].fechaLimite||"9999")?-1:(a[1].fechaLimite||"9999")>(b[1].fechaLimite||"9999")?1:0;
+const avatar=pid=>{const p=P[pid];return p?`<i class="kav" style="--c:${p.c}" title="${esc(p.n)}">${p.id}</i>`:""};
+function kxResumen(L){
+  if(!L.length)return "";
+  const js=L.map(x=>x[1]), cuenta=(f)=>{const m=new Map();js.forEach(j=>[].concat(f(j)).forEach(k=>m.set(k,(m.get(k)||0)+1)));return [...m].sort((a,b)=>b[1]-a[1])};
+  const mts=js.filter(j=>UNIT(j.tipoDtf)==="m").reduce((s,j)=>s+(+j.cantidad||0),0), uds=js.filter(j=>UNIT(j.tipoDtf)!=="m").reduce((s,j)=>s+(+j.cantidad||0),0);
+  const cli=new Set(js.map(j=>(j.cliente||"").trim().toLowerCase()).filter(Boolean)).size;
+  const est=ORDEN.map(e=>[e,js.filter(j=>j.estado===e).length]).filter(x=>x[1]);
+  const tipos=cuenta(j=>j.tipoDtf), max=tipos[0][1];
+  const qty=t=>{const q=js.filter(j=>j.tipoDtf===t).reduce((s,j)=>s+(+j.cantidad||0),0);return `${m2(q)} ${UNIT(t)}`};
+  const per=cuenta(j=>(j.resps&&j.resps.length)?j.resps:["—"]), ent=cuenta(j=>j.tipoEntrega||"Sin definir");
+  return `<div class="kx-big"><div><b>${L.length}</b><span>${L.length===1?"pedido":"pedidos"}</span></div><div><b>${cli}</b><span>${cli===1?"cliente":"clientes"}</span></div><div><b>${m2(mts)}</b><span>metros DTF</span></div><div><b>${m2(uds)}</b><span>unidades</span></div></div>
+  <div class="kx-sec"><h4>Por estado</h4><div class="kx-bar">${est.map(([e,n])=>`<span style="flex-grow:${n};background:${STC[e]}" title="${ST[e]}: ${n}"></span>`).join("")}</div><div class="kx-leg">${est.map(([e,n])=>`<span><i style="--c:${STC[e]}"></i>${ST[e]} <b>${n}</b></span>`).join("")}</div></div>
+  <div class="kx-sec"><h4>Por producto</h4><div class="kx-rows">${tipos.map(([t,n])=>`<div class="kx-r"><span class="nm">${tp(t)}</span><span class="tr"><i style="width:${Math.max(4,n/max*100)}%;--c:${TIPO_COLOR[t]||"#6B7BB8"}"></i></span><b>${n} · ${qty(t)}</b></div>`).join("")}</div></div>
+  <div class="kx-two"><div class="kx-sec"><h4>Responsables</h4><div class="kx-ppl">${per.map(([pid,n])=>`<span>${pid==="—"?'<i class="kav" style="--c:#555E8C">?</i>Sin responsable':avatar(pid)+esc(P[pid]?P[pid].n:pid)} <b>${n}</b></span>`).join("")}</div></div>
+  <div class="kx-sec"><h4>Entrega</h4><div class="kx-ppl">${ent.map(([e,n])=>`<span class="ch-e">${esc(ENTREGA[e]||e)} <b>${n}</b></span>`).join("")}</div></div></div>`;
+}
+function kxFila([id,j],ctx){
+  const d=due(j.fechaLimite,j.estado), c=ctx?ctx(j):null;
+  return `<button type="button" class="lrow" data-job="${id}" style="--c:${STC[j.estado]}">
+    <span class="l1"><span class="lt">${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente||"(sin cliente)")}</span>${j.estado==="entregado"?`<span class="due">Entregado</span>`:`<span class="due ${d.c}">${d.l}</span>`}</span>
+    <span class="l2">${tp(j.tipoDtf)}<b>${cant(j)}</b><span class="pill" style="--c:${STC[j.estado]}">${ST[j.estado]}</span>${(j.resps||[]).map(avatar).join("")}</span>
+    <span class="l3">${esc(ENTREGA[j.tipoEntrega]||"Entrega sin definir")} · ${esc(rutaMaq(j))}${j.fechaLimite?` · prometido ${fDM(j.fechaLimite)}`:""}</span>
+    ${c?`<span class="ctx ${c.cls||""}">${c.t}</span>`:""}</button>`;
+}
+const ctxAtr=j=>({cls:"bad",t:`Atrasado ${-dDiff(j.fechaLimite,HOY)} ${-dDiff(j.fechaLimite,HOY)===1?"día":"días"}${(j.responsables||[]).length?" · a cargo de "+esc(j.responsables.map(n=>n.split(" ")[0]).join(", ")):""}`});
+const ctxMaq=j=>{const t=desdeDe(j);return {t:`${j.estado==="maquilado"?"En maquila":"Imprimiéndose"}${t?` desde las ${hhmm(t)} (hace ${el(t)})`:""}`}};
+const ctxEnt=j=>{const e=ymdCL(j.entregadoAt),dd=dDiff(e,j.fechaLimite);return {cls:dd>0?"bad":"ok",t:`Entregado el ${fDM(e)} a las ${hhmm(j.entregadoAt)} · ${dd>0?`${dd} ${dd===1?"día":"días"} tarde`:dd<0?`${-dd} ${dd===-1?"día":"días"} antes`:"justo a tiempo"}`}};
+const ctxHoy=j=>j.estado==="entregado"?{cls:"ok",t:`Entregado a las ${hhmm(j.entregadoAt)}`}:j.estado==="listo"?{cls:"ok",t:`Listo${j.listaAt?" desde las "+hhmm(j.listaAt):""} · falta ${j.tipoEntrega==="Retiro"?"que lo retiren":"despacharlo"}`}:atrasado(j)?ctxAtr(j):{t:`Le falta: ${ORDEN.slice(ORDEN.indexOf(j.estado)+1,ORDEN.indexOf("listo")+1).filter(e=>e!=="maquilado").map(e=>ST[e]).join(" → ")}`};
+const grupo=(t,L,ctx,vacio)=>L.length?`<div class="lgrp"><h4>${t}<b>${L.length}</b></h4>${L.sort(porFecha).map(x=>kxFila(x,ctx)).join("")}</div>`:(vacio?`<div class="lgrp"><h4>${t}<b>0</b></h4><p class="empty">${vacio}</p></div>`:"");
+let ultimaKpi=null;
+function abrirKpi(k,refrescar){
+  const s=kpiSets(); let eb="",h="",lead="",L=[],body="";
+  if(k==="hoy"){ const fal=s.hoyL.filter(x=>!["listo","entregado"].includes(x[1].estado));
+    eb="Salidas de hoy"; h=`${s.listosHoy.length} de ${s.hoyL.length} listas`; L=s.hoyL;
+    lead="Todo lo que debe salir hoy: lo que vence hoy, lo atrasado que sigue abierto y lo que ya se entregó hoy.";
+    body=grupo("Faltan",fal,ctxHoy,"Nada pendiente para hoy.")+grupo("Listas para salir",s.hoyL.filter(x=>x[1].estado==="listo"),ctxHoy)+grupo("Entregadas hoy",s.hoyL.filter(x=>x[1].estado==="entregado"),ctxHoy); }
+  else if(k==="semana"){ const tarde=s.semana.filter(([,j])=>ymdCL(j.entregadoAt)>j.fechaLimite);
+    eb="A tiempo · esta semana"; h=DATA.semanaPct==null?"Sin entregas aún":`${DATA.semanaPct}% a tiempo`; L=s.semana;
+    lead=`Entregas del lunes ${fDM(s.lun)} al domingo ${fDM(s.dom)} comparadas con su fecha prometida. Meta: 90 %. ${s.semana.length?`${s.semana.length-tarde.length} a tiempo y ${tarde.length} tarde.`:""}`;
+    const sem=(DATA.semanas||[]).filter(w=>w.p!=null);
+    body=(sem.length?`<div class="kx-sec"><h4>Últimas semanas</h4><div class="kx-sem">${(DATA.semanas||[]).map(w=>`<div title="${w.s}: ${w.p==null?"sin entregas":w.p+"% de "+w.n}"><span class="b" style="height:${w.p==null?0:Math.max(4,w.p)}%;background:${w.p==null?"transparent":w.p>=90?"var(--teal)":"var(--warn)"}"></span><b>${w.p==null?"—":w.p+"%"}</b><small>${w.s}</small></div>`).join("")}</div></div>`:"")
+      +grupo("Entregadas tarde",tarde,ctxEnt)+grupo("A tiempo",s.semana.filter(x=>!tarde.includes(x)),ctxEnt,"Ninguna todavía."); }
+  else if(k==="atr"){ eb="Atrasados"; h=`${s.atr.length} ${s.atr.length===1?"pedido":"pedidos"}`; L=s.atr;
+    lead="Pedidos abiertos con la fecha prometida vencida. Un pedido Listo para retiro no cuenta: solo falta que el cliente pase.";
+    body=ORDEN.map(e=>grupo(ST[e],s.atr.filter(x=>x[1].estado===e),ctxAtr)).join("")||`<p class="empty">Nada atrasado.</p>`; }
+  else if(k==="cap"){ eb="En cola"; h=`${s.cap.length} sin terminar`; L=s.cap;
+    lead="Todo lo abierto que todavía no está Listo, agrupado por la etapa en que va.";
+    body=ORDEN.map(e=>grupo(ST[e],s.cap.filter(x=>x[1].estado===e),j=>atrasado(j)?ctxAtr(j):null)).join("")||`<p class="empty">No hay nada en cola.</p>`; }
+  else if(k==="run"){ eb="En máquina"; h=`${s.run.length} ${s.run.length===1?"trabajo":"trabajos"}`; L=s.run;
+    lead="Lo que está en Enviado a Impresión o en maquila ahora mismo, por máquina.";
+    const m=new Map(); s.run.forEach(x=>{const n=rutaMaq(x[1]);m.set(n,[...(m.get(n)||[]),x])});
+    body=[...m].map(([n,l])=>grupo(n,l,ctxMaq)).join("")||`<p class="empty">No hay nada en máquina.</p>`; }
+  else if(k==="bloq"){ eb="Esperando por ti"; h=`${s.chain.length} ${s.chain.length===1?"cosa":"cosas"}`;
+    lead="Lo tuyo que frena a otros: pedidos tuyos que no dejan salir a uno ya listo, tareas que detienen una tirada y pedidos tuyos atrasados.";
+    L=s.chain.filter(l=>l.mine.job).map(l=>[l.mine.job,jobs[l.mine.job]]).filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i);
+    body=s.chain.length?`<div class="lgrp chain-lst">${s.chain.map(chainFila).join("")}</div>`:`<p class="empty">Nada está detenido por ti.</p>`; }
+  else return;
+  ultimaKpi=k;
+  $("drawer").classList.add("ancho");
+  $("dr-t").innerHTML=`<span class="eyebrow">${eb}</span><h3>${h}</h3><p class="kx-lead">${lead}</p>`;
+  const top=refrescar?$("dr-b").scrollTop:0;
+  $("dr-b").innerHTML=`<div class="lst">${kxResumen(L)}${body}</div>`;
+  $("dr-b").scrollTop=top;
+  if(!refrescar)show();
 }
 
 /* ── Mapa del taller ── */
@@ -1038,9 +1173,10 @@ function chainItems(){
 }
 function renderChain(){
   const L=chainItems();
-  $("chain").innerHTML=L.length?L.slice(0,8).map(l=>{const at=o=>o.job?`data-job="${o.job}"`:`data-tarea="${o.tarea}"`;const w=l.wait.who?P[l.wait.who]:null;
-    return `<div class="ch"><div class="node mine" ${at(l.mine)}><div class="t">${l.mine.t}</div><div class="m">${l.mine.m}${l.mine.d?`<span class="due ${l.mine.d.c}">${l.mine.d.l}</span>`:""}</div></div><div class="link"><span>${l.lbl}</span></div><div class="node wait" ${at(l.wait)}><div class="t">${l.wait.t}</div><div class="m">${w?`<span class="who"><i style="background:${w.c}">${w.id}</i>${w.n}</span>`:""}<span>${l.wait.m}</span></div></div></div>`}).join("")+(L.length>8?`<p class="empty">y ${L.length-8} más</p>`:""):`<p class="empty">Nada está detenido por ti.</p>`;
+  $("chain").innerHTML=L.length?L.slice(0,8).map(chainFila).join("")+(L.length>8?`<p class="empty">y ${L.length-8} más · <a href="#" data-kpi="bloq" style="color:var(--azul-2)">ver todo</a></p>`:""):`<p class="empty">Nada está detenido por ti.</p>`;
 }
+function chainFila(l){const at=o=>o.job?`data-job="${o.job}"`:`data-tarea="${o.tarea}"`;const w=l.wait.who?P[l.wait.who]:null;
+    return `<div class="ch"><div class="node mine" ${at(l.mine)}><div class="t">${l.mine.t}</div><div class="m">${l.mine.m}${l.mine.d?`<span class="due ${l.mine.d.c}">${l.mine.d.l}</span>`:""}</div></div><div class="link"><span>${l.lbl}</span></div><div class="node wait" ${at(l.wait)}><div class="t">${l.wait.t}</div><div class="m">${w?`<span class="who"><i style="background:${w.c}">${w.id}</i>${w.n}</span>`:""}<span>${l.wait.m}</span></div></div></div>`}
 
 /* ── Salidas ── */
 function donut(done,tot){const r=24,c=2*Math.PI*r,off=c*(1-(tot?done/tot:0));return `<svg viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="${r}" fill="none" stroke="rgba(143,155,255,.14)" stroke-width="7"/><circle class="arc" cx="31" cy="31" r="${r}" fill="none" stroke="var(--teal)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 31 31)"/><text x="31" y="36" text-anchor="middle" font-size="14">${done}/${tot}</text></svg>`}
@@ -1058,19 +1194,19 @@ function renderOut(){
 
 function renderTicker(){const s=feed.slice(0,8).map(f=>`<span><time>${hhmm(f.t)}</time>${f.x}</span>`).join("");$("tk").innerHTML=s+s}
 function tick(){const p=cl();$("clock").textContent=fmtMin(p.min)}
-function all(){renderHero();renderFloor();renderGantt();renderChain();renderOut();renderTicker();tick()}
+function all(){renderHero();renderFloor();renderGantt();renderChain();renderOut();renderTicker();tick();if(ultimaKpi&&$("drawer").classList.contains("on")&&$("drawer").classList.contains("ancho"))abrirKpi(ultimaKpi,true)}
 
 /* ── Detalle ── */
-function openJob(id){const j=jobs[id];if(!j)return;const her=hermanos(id);const miss=[!j.pedido&&"N° de pedido",!j.cliente&&"Cliente",!j.tipoEntrega&&"Envío o retiro"].filter(Boolean);
+function openJob(id,desdeLista){const j=jobs[id];if(!j)return;$("drawer").classList.remove("ancho");const her=hermanos(id);const miss=[!j.pedido&&"N° de pedido",!j.cliente&&"Cliente",!j.tipoEntrega&&"Envío o retiro"].filter(Boolean);
   const leg=[j.pedido||'<span class="miss">N° de pedido</span>',j.cliente?esc(j.cliente):'<span class="miss">Cliente</span>',j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):'<span class="miss">Envío o retiro</span>'];if(her.length)leg.push("SALE JUNTO CON "+her.map(refHtml).join(", "));
   const plain=leg.join(" · ").replace(/<[^>]+>/g,"");const d=due(j.fechaLimite,j.estado);
-  $("dr-t").innerHTML=`<span class="eyebrow">${j.pedido?esc(j.pedido):"Sin n° de pedido"}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="pill" style="--c:${STC[j.estado]}">${ST[j.estado]}</span>${tp(j.tipoDtf)}<span class="due ${d.c}">${d.l}</span></div>`;
+  $("dr-t").innerHTML=`${desdeLista&&ultimaKpi?`<button type="button" class="volver" data-kpi="${ultimaKpi}">‹ Volver a la lista</button>`:""}<span class="eyebrow">${j.pedido?esc(j.pedido):"Sin n° de pedido"}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="pill" style="--c:${STC[j.estado]}">${ST[j.estado]}</span>${tp(j.tipoDtf)}<span class="due ${d.c}">${d.l}</span></div>`;
   $("dr-b").innerHTML=`<div class="leg"><span class="eyebrow" style="color:${miss.length?"var(--bad)":"var(--good)"}">Leyenda ${miss.length?"incompleta":"completa"}</span><div class="txt">${leg.join(" · ")}</div>${miss.length?"":'<button type="button" id="cp">Copiar leyenda</button>'}</div><dl class="kv"><dt>Producto</dt><dd>${esc(j.tipoDtf)} · ${cant(j)}</dd><dt>Responsable</dt><dd>${esc((j.responsables||[]).join(", ")||"—")}</dd><dt>Máquina</dt><dd>${rutaMaq(j)}</dd><dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd><dt>A impresión</dt><dd>${j.impresionAt?hhmm(j.impresionAt):"—"}</dd><dt>Listo</dt><dd>${j.listaAt?hhmm(j.listaAt):"—"}</dd><dt>Vinculados</dt><dd>${her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul-2)">${refHtml(h)}</a> · ${ST[jobs[h].estado]}`).join("<br>")||"—"}</dd></dl>`;
   const b=$("cp");if(b)b.onclick=()=>{try{navigator.clipboard.writeText(plain).then(()=>toast("Leyenda copiada"),()=>toast(plain))}catch(e){toast(plain)}};show()}
-function openTarea(k){const t=tareas[k];if(!t)return;$("dr-t").innerHTML=`<span class="eyebrow">Tarea interna</span><h3>${esc(t.nombre)}</h3>`;$("dr-b").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${P[t.a].n}</dd><dt>Estado</dt><dd>${{pendiente:"Pendiente",en_curso:"En curso",hecha:"Hecha"}[t.estado]}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul-2)">${refHtml(t.pedidoId)}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl>`;show()}
+function openTarea(k){const t=tareas[k];if(!t)return;$("drawer").classList.remove("ancho");$("dr-t").innerHTML=`<span class="eyebrow">Tarea interna</span><h3>${esc(t.nombre)}</h3>`;$("dr-b").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${P[t.a].n}</dd><dt>Estado</dt><dd>${{pendiente:"Pendiente",en_curso:"En curso",hecha:"Hecha"}[t.estado]}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul-2)">${refHtml(t.pedidoId)}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl>`;show()}
 function show(){$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("scrim").classList.add("on");$("dr-x").focus()}
-function hide(){$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");$("scrim").classList.remove("on")}
-document.addEventListener("click",e=>{if(!e.target.closest(".v2"))return;const j=e.target.closest("[data-job]");if(j){e.preventDefault();openJob(j.dataset.job);return}const t=e.target.closest("[data-tarea]");if(t){e.preventDefault();openTarea(t.dataset.tarea)}});
+function hide(){ultimaKpi=null;$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");$("scrim").classList.remove("on")}
+document.addEventListener("click",e=>{if(!e.target.closest(".v2"))return;const k=e.target.closest("[data-kpi]");if(k){e.preventDefault();abrirKpi(k.dataset.kpi);return}const j=e.target.closest("[data-job]");if(j){e.preventDefault();openJob(j.dataset.job,!!j.closest(".lst"));return}const t=e.target.closest("[data-tarea]");if(t){e.preventDefault();openTarea(t.dataset.tarea)}});
 $("dr-x").onclick=hide;$("scrim").onclick=hide;document.addEventListener("keydown",e=>{if(e.key==="Escape")hide()});
 let tt;function toast(s){$("toast-t").textContent=s;$("toast").classList.add("on");clearTimeout(tt);tt=setTimeout(()=>$("toast").classList.remove("on"),3400)}
 
@@ -1360,7 +1496,7 @@ function guardarHitos(cambios){
   return guardarRutina(h).then(()=>{toast("Rutina guardada");return true}).catch(e=>{toast("No se pudo guardar la rutina: "+(e&&e.message||e));return false}).finally(()=>window.V1&&window.V1.render(false));
 }
 // Arrastrar un punto: pasos de 5 min; si casi no se movió, abre el editor en esa hora
-$("track").addEventListener("pointerdown",e=>{const mi=e.target.closest(".mile");if(!mi||e.button>0)return;e.preventDefault();
+$("track").addEventListener("pointerdown",e=>{const mi=e.target.closest(".mile");if(!mi||e.button>0||document.body.classList.contains("rut-ro"))return;e.preventDefault();
   railDrag={k:mi.dataset.k,el:mi,x0:e.clientX,t:+mi.dataset.t,t0:+mi.dataset.t,moved:false};mi.setPointerCapture(e.pointerId)});
 $("track").addEventListener("pointermove",e=>{const d=railDrag;if(!d)return;if(!d.moved&&Math.abs(e.clientX-d.x0)<4)return;
   if(!d.moved){d.moved=true;d.el.classList.add("drag");d.el.style.transform="translateX(-50%)";d.el.classList.remove("al-l","al-r")}
