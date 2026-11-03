@@ -168,7 +168,7 @@ button{font:inherit;color:inherit}
 .v2 .oc b{font-family:var(--f-display);font-weight:600;font-size:14px;display:block}
 .v2 .oc span{font-size:12px;color:var(--ink-3)}
 .v2 .oc .ids{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.v2 .oc .ids a{font-family:var(--f-display);font-weight:600;font-size:10.5px;border-radius:5px;padding:1px 6px;text-decoration:none;color:var(--ink-2);background:rgba(255,255,255,.06)}
+.v2 .oc .ids a{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--f-display);font-weight:600;font-size:10.5px;border-radius:5px;padding:1px 6px;text-decoration:none;color:var(--ink-2);background:rgba(255,255,255,.06)}
 .v2 .oc .ids a.ok{color:var(--good);background:var(--good-bg)}
 .v2 .mts{margin-top:14px;border-top:1px solid var(--line-2);padding-top:14px}
 .v2 .mts-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;gap:2px;margin-top:8px}
@@ -388,16 +388,16 @@ body.tv .wrap{max-width:none}
 .v1 .prog{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin:6px 0 6px}
 .v1 .prog i{display:block;height:100%;background:var(--teal);border-radius:4px;transition:width .6s}
 .v1 .chips{display:flex;flex-wrap:wrap;gap:5px}
-.v1 .chip{font-family:var(--f-display);font-weight:600;font-size:11px;border-radius:6px;padding:2px 7px;cursor:pointer;border:1px solid var(--line);color:var(--ink-2);background:transparent}
+.v1 .chip{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--f-display);font-weight:600;font-size:11px;border-radius:6px;padding:2px 7px;cursor:pointer;border:1px solid var(--line);color:var(--ink-2);background:transparent}
 .v1 .chip.ok{background:var(--good-bg);border-color:transparent;color:var(--good)}
 .v1 .mt{padding:0 16px 16px;display:grid;gap:12px}
 .v1 .mt-big{display:flex;align-items:baseline;gap:8px}
 .v1 .mt-big b{font-family:var(--f-display);font-weight:600;font-size:34px;font-variant-numeric:tabular-nums;line-height:1}
 .v1 .mt-big span{color:var(--ink-3);font-size:13px}
-.v1 .mrow{display:grid;grid-template-columns:90px minmax(0,1fr) 54px;gap:10px;align-items:center;font-size:12px}
+.v1 .mrow{display:grid;grid-template-columns:minmax(0,90px) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12px}
 .v1 .mrow .bar{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
 .v1 .mrow .bar i{display:block;height:100%;border-radius:5px;transition:width .6s}
-.v1 .mrow .v{text-align:right;font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums}
+.v1 .mrow .v{text-align:right;white-space:nowrap;font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums}
 .v1 .mt-note{font-size:12px;color:var(--ink-3);border-top:1px solid var(--line-2);padding-top:10px}
 .v1 .feed{list-style:none;margin:0;padding:0 16px 14px;display:grid;gap:0;max-height:330px;overflow:auto}
 .v1 .fe{display:grid;grid-template-columns:44px 26px minmax(0,1fr);gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line-2)}
@@ -787,7 +787,7 @@ window.DATA={jobs:{},tareas:{},feed:[],semanas:[],semanaPct:null,tareasError:fal
         const t=j[k]; if(!t||ymd(new Date(t))!==H)continue;
         const by=j[kb]; const a=idDe(by)||"?";
         const nombre=a==="SH"?"Shopify":nombreCorto(by);
-        const txt=a==="SH"&&k==="createdAt"?`<b>Shopify</b> importó <b>${esc(j.pedido||id)}</b> · ${esc(j.tipoDtf||"")}`:`<b>${esc(nombre)}</b> ${verbo} <b>${esc(id)}</b> · ${esc(j.cliente||"")}`;
+        const txt=a==="SH"&&k==="createdAt"?`<b>Shopify</b> importó <b>${esc(j.pedido||j.cliente||"un pedido")}</b> · ${esc(j.tipoDtf||"")}`:`<b>${esc(nombre)}</b> ${verbo} ${j.pedido?`<b>${esc(j.pedido)}</b> · `:""}${esc(j.cliente||"")}`;
         ev.push({t,a,x:txt});
       }
     }
@@ -866,13 +866,17 @@ const ZONAS=[
 const MAQ_DE_TIPO=t=>{t=t||"";if(/^DTF (Textil|Flúor)/.test(t))return "dtf";if(/^DTF UV/.test(t)||t==="Stickers UV")return "ucjv";return {"Medallas":"ujf","Pines":"oric","Imanes":"ujf","Llaveros":"co2a","Insignias / Parches":"iecho","Kit Corporativo":"mesa","Pendón Roller":"pc"}[t]};
 
 const jobs=DATA.jobs, tareas=DATA.tareas, feed=DATA.feed;
+const numDe=id=>String((jobs[id]&&jobs[id].pedido)||"").trim(); // «# Pedido» que escribe ventas o el n° de Shopify: los TG-xxxx no se muestran (José, 02-11-2026)
+const numHtml=id=>esc(numDe(id));
+const refHtml=id=>numHtml(id)||esc((jobs[id]&&jobs[id].cliente)||"otro pedido"); // número, o el cliente si no tiene
+const m2=n=>String(Math.round((+n||0)*100)/100).replace(".",","); // máximo 2 decimales
 
 const dueno=j=>RESP[j.responsable]||null;
 const open=()=>Object.entries(jobs).filter(([,j])=>j.estado!=="entregado");
 const atrasado=j=>!!j.fechaLimite&&j.fechaLimite<HOY&&j.estado!=="entregado"&&!(j.estado==="listo"&&j.tipoEntrega==="Retiro");
 const venceHoy=j=>j.fechaLimite===HOY&&j.estado!=="entregado"&&!(j.estado==="listo"&&j.tipoEntrega==="Retiro");
 const due=(f,e)=>{if(!f)return{c:"",l:"Sin fecha"};const d=dDiff(f,HOY);if(d<0)return{c:"late",l:`${e==="listo"?"Venció":"Atrasado"} ${-d} d`};if(d===0)return{c:"today",l:"Hoy"};if(d===1)return{c:"",l:"Mañana"};return{c:"",l:`En ${d} d`}};
-const cant=j=>`${String(j.cantidad).replace(".",",")} ${UNIT(j.tipoDtf)}`;
+const cant=j=>`${m2(j.cantidad)} ${UNIT(j.tipoDtf)}`;
 const tp=t=>`<span class="type" style="--tc:${TIPO_COLOR[t]||"#6B7BB8"}">${esc(t)}</span>`;
 const el=iso=>{const m=Math.max(0,Math.floor((Date.now()-new Date(iso))/60000));return m<60?`${m} min`:`${Math.floor(m/60)} h ${String(m%60).padStart(2,"0")}`};
 const hermanos=id=>{const o=[];(jobs[id].tambienCompro||[]).forEach(t=>jobs[t.pedido]&&o.push(t.pedido));Object.entries(jobs).forEach(([k,j])=>{if(k!==id&&(j.tambienCompro||[]).some(t=>t.pedido===id)&&!o.includes(k))o.push(k)});return o};
@@ -895,7 +899,7 @@ function renderHero(){
   const cap=ab.filter(j=>j.estado!=="listo").length;
   $("fecha").textContent=new Intl.DateTimeFormat("es-CL",{timeZone:TZ,weekday:"long",day:"numeric",month:"long"}).format(new Date());
   $("headline").innerHTML=`${run} trabajos en máquina, <span class="${bloq?"r":""}">${bloq} esperando por ti</span> y <em>${listosHoy} de ${hoyL.length}</em> salidas de hoy listas.`;
-  $("subline").textContent=atr?`${atr} pedidos atrasados. El más antiguo es de ${Object.entries(jobs).filter(([,j])=>atrasado(j)).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1).map(([k,j])=>`${j.cliente} (${k})`)[0]}.`:"Nada atrasado.";
+  $("subline").textContent=atr?`${atr} pedidos atrasados. El más antiguo es de ${Object.entries(jobs).filter(([,j])=>atrasado(j)).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1).map(([k,j])=>`${j.cliente}${j.pedido?` (${j.pedido})`:""}`)[0]}.`:"Nada atrasado.";
   const R=[
     {l:"Salidas de hoy",s:`${listosHoy} de ${hoyL.length} listas`,svg:ring(hoyL.length?listosHoy/hoyL.length:0,"var(--teal)",`${hoyL.length?Math.round(listosHoy/hoyL.length*100):0}%`)},
     {l:"A tiempo · semana",s:DATA.semanaPct==null?"Sin entregas esta semana":"Meta 90%",svg:ring((DATA.semanaPct||0)/100,(DATA.semanaPct||0)>=90?"var(--teal)":"var(--warn)",DATA.semanaPct==null?"—":DATA.semanaPct+"%")},
@@ -920,14 +924,14 @@ function renderFloor(){
     if(atr)sem={c:"bad",l:`${atr} atrasado${atr>1?"s":""}`,v:"var(--bad)"};
     const maqs=z.maq.map(m=>{
       const jj=enMaquina(m.id);
-      if(z.owner==="AL"&&tCurso)return `<div class="mc run ${m.wide?"wide":""}" data-tarea="${Object.keys(tareas).find(k=>tareas[k]===tCurso)}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(tCurso.nombre)}</span><span class="meta">Pedido ${tCurso.pedidoId||"—"}</span><span class="tm"><span>${el(tCurso.ini)}</span></span></div>`;
+      if(z.owner==="AL"&&tCurso)return `<div class="mc run ${m.wide?"wide":""}" data-tarea="${Object.keys(tareas).find(k=>tareas[k]===tCurso)}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(tCurso.nombre)}</span><span class="meta">Pedido ${tCurso.pedidoId?refHtml(tCurso.pedidoId):"—"}</span><span class="tm"><span>${el(tCurso.ini)}</span></span></div>`;
       if(!jj.length){const sig=mios.filter(([,j])=>MAQ_DE_TIPO(j.tipoDtf)===m.id&&ORDEN.indexOf(j.estado)<3).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1)[0];
-        return `<div class="mc ${m.wide?"wide":""}"><span class="mn">${m.n}<i></i></span><span class="idle">${sig?`Libre · sigue <b>${sig[0]}</b>`:"Libre"}</span></div>`;}
+        return `<div class="mc ${m.wide?"wide":""}"><span class="mn">${m.n}<i></i></span><span class="idle">${sig?`Libre · sigue <b>${refHtml(sig[0])}</b>`:"Libre"}</span></div>`;}
       const [id,j]=jj[0];const desde=desdeDe(j);const opId=j.estado==="maquilado"?"IP":j.impresionBy;const mins=((Date.now()-new Date(desde))/60000)||0;const pct=Math.min(95,mins/(j.desatendida?240:120)*100);
       const solo=colacion&&!j.desatendida;
-      return `<div class="mc run ${solo?"alone":""} ${m.wide?"wide":""}" data-job="${id}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(j.cliente)}</span><span class="meta">${id} · ${tp(j.tipoDtf)} ${cant(j)}</span><span class="tm"><span>${el(desde)}</span><span class="bar"><b style="width:${pct}%"></b></span></span>${solo?`<span class="meta" style="color:var(--bad);font-weight:600">¿Quién queda a cargo?</span>`:j.desatendida?`<span class="meta">Corre sola · revisar al volver</span>`:""}${jj.length>1?`<span class="meta">+${jj.length-1} más en esta máquina</span>`:""}<span class="op" style="background:${P[opId]?.c||"#545B7E"}">${esc(opId||"?")}</span></div>`;
+      return `<div class="mc run ${solo?"alone":""} ${m.wide?"wide":""}" data-job="${id}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(j.cliente)}</span><span class="meta">${numDe(id)?numHtml(id)+" · ":""}${tp(j.tipoDtf)} ${cant(j)}</span><span class="tm"><span>${el(desde)}</span><span class="bar"><b style="width:${pct}%"></b></span></span>${solo?`<span class="meta" style="color:var(--bad);font-weight:600">¿Quién queda a cargo?</span>`:j.desatendida?`<span class="meta">Corre sola · revisar al volver</span>`:""}${jj.length>1?`<span class="meta">+${jj.length-1} más en esta máquina</span>`:""}<span class="op" style="background:${P[opId]?.c||"#545B7E"}">${esc(opId||"?")}</span></div>`;
     }).join("");
-    const cola=[...mios.filter(([,j])=>!["en_produccion","maquilado","listo"].includes(j.estado)).map(([k,j])=>({k,t:`<em>${k}</em>${esc(j.cliente||"(sin cliente)")}`,f:j.fechaLimite,e:j.estado,job:1})),
+    const cola=[...mios.filter(([,j])=>!["en_produccion","maquilado","listo"].includes(j.estado)).map(([k,j])=>({k,t:`${numDe(k)?`<em>${numHtml(k)}</em>`:""}${esc(j.cliente||"(sin cliente)")}`,f:j.fechaLimite,e:j.estado,job:1})),
       ...Object.entries(tareas).filter(([,t])=>t.a===z.owner&&t.estado==="pendiente").map(([k,t])=>({k,t:`☐ ${esc(t.nombre)}`,f:t.f,e:""}))]
       .sort((a,b)=>(a.f||"9")<(b.f||"9")?-1:(a.f||"9")>(b.f||"9")?1:0).slice(0,3);
     const metros=mios.filter(([,j])=>UNIT(j.tipoDtf)==="m"&&ORDEN.indexOf(j.estado)<4).reduce((s,[,j])=>s+j.cantidad,0);
@@ -948,8 +952,8 @@ function renderGantt(){
     const bl=[];
     Object.entries(jobs).forEach(([id,j])=>{
       const deHoy=t=>t&&cl(new Date(t)).ymd===HOY;
-      if(j.impresionBy===p.id&&deHoy(j.impresionAt)){const a=minOf(j.impresionAt),fin=deHoy(j.maquiladoAt)?j.maquiladoAt:(deHoy(j.listaAt)?j.listaAt:null);const b=fin?minOf(fin):(j.estado==="en_produccion"?now:a+10);bl.push({a,b,cur:j.estado==="en_produccion",job:id,t:j.cliente,s:`${id} · ${cant(j)}`,c:TIPO_COLOR[j.tipoDtf]})}
-      if(p.id==="IP"&&deHoy(j.maquiladoAt)){const a=minOf(j.maquiladoAt),b=deHoy(j.listaAt)?minOf(j.listaAt):(j.estado==="maquilado"?now:a+10);bl.push({a,b,cur:j.estado==="maquilado",job:id,t:j.cliente,s:`Maquila · ${id}`,c:"#0E7C86"})}
+      if(j.impresionBy===p.id&&deHoy(j.impresionAt)){const a=minOf(j.impresionAt),fin=deHoy(j.maquiladoAt)?j.maquiladoAt:(deHoy(j.listaAt)?j.listaAt:null);const b=fin?minOf(fin):(j.estado==="en_produccion"?now:a+10);bl.push({a,b,cur:j.estado==="en_produccion",job:id,t:j.cliente,s:[numDe(id),cant(j)].filter(Boolean).join(" · "),c:TIPO_COLOR[j.tipoDtf]})}
+      if(p.id==="IP"&&deHoy(j.maquiladoAt)){const a=minOf(j.maquiladoAt),b=deHoy(j.listaAt)?minOf(j.listaAt):(j.estado==="maquilado"?now:a+10);bl.push({a,b,cur:j.estado==="maquilado",job:id,t:j.cliente,s:"Maquila"+(numDe(id)?" · "+numDe(id):""),c:"#0E7C86"})}
     });
     Object.entries(tareas).forEach(([k,t])=>{if(t.a===p.id&&t.ini&&cl(new Date(t.ini)).ymd===HOY){const a=minOf(t.ini),b=t.fin?minOf(t.fin):now;bl.push({a,b,cur:t.estado==="en_curso",tarea:k,t:t.nombre,s:"Tarea",task:1})}});
     bl.sort((u,v)=>u.a-v.a);
@@ -969,9 +973,9 @@ function renderGantt(){
 function chainItems(){
   const L=[];
   open().forEach(([id,j])=>{if(dueno(j)!=="JP"||["listo","entregado"].includes(j.estado))return;
-    hermanos(id).filter(h=>jobs[h].estado==="listo").forEach(h=>L.push({mine:{job:id,t:`<em>${id}</em>${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"BLOQUEA",wait:{job:h,t:`<em>${h}</em>${esc(jobs[h].cliente)}`,m:`${tp(jobs[h].tipoDtf)} ya listo · espera para salir junto por ${ENTREGA[jobs[h].tipoEntrega]}`,who:dueno(jobs[h])}}))});
-  Object.entries(tareas).forEach(([k,t])=>{if(t.a==="JP"&&t.estado!=="hecha"&&t.bloquea)L.push({mine:{tarea:k,t:esc(t.nombre),m:`Tarea · pedido ${t.pedidoId}`,d:due(t.f)},lbl:"DETIENE",wait:{tarea:k,t:esc(t.bloquea.txt),m:"Tirada en pausa hasta tu visto bueno",who:t.bloquea.who}})});
-  open().forEach(([id,j])=>{if(dueno(j)==="JP"&&atrasado(j)&&!L.some(l=>l.mine.job===id))L.push({mine:{job:id,t:`<em>${id}</em>${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"ATRASA",wait:{job:id,t:`Cliente: ${esc(j.cliente)}`,m:`Esperaba su pedido el ${j.fechaLimite.slice(8)}/${j.fechaLimite.slice(5,7)} · ${ENTREGA[j.tipoEntrega]}`}})});
+    hermanos(id).filter(h=>jobs[h].estado==="listo").forEach(h=>L.push({mine:{job:id,t:`${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"BLOQUEA",wait:{job:h,t:`${numDe(h)?`<em>${numHtml(h)}</em>`:""}${esc(jobs[h].cliente)}`,m:`${tp(jobs[h].tipoDtf)} ya listo · espera para salir junto por ${ENTREGA[jobs[h].tipoEntrega]}`,who:dueno(jobs[h])}}))});
+  Object.entries(tareas).forEach(([k,t])=>{if(t.a==="JP"&&t.estado!=="hecha"&&t.bloquea)L.push({mine:{tarea:k,t:esc(t.nombre),m:`Tarea · pedido ${t.pedidoId?refHtml(t.pedidoId):"—"}`,d:due(t.f)},lbl:"DETIENE",wait:{tarea:k,t:esc(t.bloquea.txt),m:"Tirada en pausa hasta tu visto bueno",who:t.bloquea.who}})});
+  open().forEach(([id,j])=>{if(dueno(j)==="JP"&&atrasado(j)&&!L.some(l=>l.mine.job===id))L.push({mine:{job:id,t:`${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"ATRASA",wait:{job:id,t:`Cliente: ${esc(j.cliente)}`,m:`Esperaba su pedido el ${j.fechaLimite.slice(8)}/${j.fechaLimite.slice(5,7)} · ${ENTREGA[j.tipoEntrega]}`}})});
   return L;
 }
 function renderChain(){
@@ -986,12 +990,12 @@ function renderOut(){
   const hoy=Object.entries(jobs).filter(([,j])=>(j.estado!=="entregado"&&(j.fechaLimite===HOY||atrasado(j)))||(j.estado==="entregado"&&j.entregadoAt&&cl(new Date(j.entregadoAt)).ymd===HOY));
   let ok=0;
   $("out").innerHTML=["Retiro","OTS","Bluexpress","Chilexpress"].map(g=>{const L=hoy.filter(([,j])=>j.tipoEntrega===g);if(!L.length)return"";const d=L.filter(([,j])=>["listo","entregado"].includes(j.estado)).length;ok+=d;
-    return `<div class="oc">${donut(d,L.length)}<div style="min-width:0"><b>${ENTREGA[g]}</b><span>${L.length-d?`Faltan ${L.length-d}`:"Todo listo"}</span><div class="ids">${L.map(([id,j])=>`<a href="#" data-job="${id}" class="${["listo","entregado"].includes(j.estado)?"ok":""}">${id}${j.estado==="entregado"?" ✓":""}</a>`).join("")}</div></div></div>`}).join("");
+    return `<div class="oc">${donut(d,L.length)}<div style="min-width:0"><b>${ENTREGA[g]}</b><span>${L.length-d?`Faltan ${L.length-d}`:"Todo listo"}</span><div class="ids">${L.map(([id,j])=>`<a href="#" data-job="${id}" class="${["listo","entregado"].includes(j.estado)?"ok":""}" title="${esc(j.cliente)}">${refHtml(id)}${j.estado==="entregado"?" ✓":""}</a>`).join("")}</div></div></div>`}).join("");
   $("out-meta").textContent=`${ok} de ${hoy.length} listas`;
   const T=[["DTF Textil","#4063F9"],["DTF UV","#1C7A63"],["DTF Flúor","#C026D3"]];
   const v=T.map(([t])=>open().filter(([,j])=>j.tipoDtf.startsWith(t)&&ORDEN.indexOf(j.estado)<4).reduce((s,[,j])=>s+j.cantidad,0));
   const tot=v.reduce((a,b)=>a+b,0);
-  $("mts").innerHTML=`<div class="mts-h"><span class="eyebrow">Metros DTF por imprimir</span><b>${String(tot).replace(".",",")} m</b></div><div class="mts-bar">${T.map(([t,c],i)=>v[i]?`<span style="flex-grow:${v[i]};background:${c}" title="${t}: ${v[i]} m">${v[i]/tot>.12?`${t.replace("DTF ","")} ${String(v[i]).replace(".",",")}`:""}</span>`:"").join("")}</div>`;
+  $("mts").innerHTML=`<div class="mts-h"><span class="eyebrow">Metros DTF por imprimir</span><b>${m2(tot)} m</b></div><div class="mts-bar">${T.map(([t,c],i)=>v[i]?`<span style="flex-grow:${v[i]};background:${c}" title="${t}: ${m2(v[i])} m">${v[i]/tot>.12?`${t.replace("DTF ","")} ${m2(v[i])}`:""}</span>`:"").join("")}</div>`;
 }
 
 function renderTicker(){const s=feed.slice(0,8).map(f=>`<span><time>${hhmm(f.t)}</time>${f.x}</span>`).join("");$("tk").innerHTML=s+s}
@@ -1000,12 +1004,12 @@ function all(){renderHero();renderFloor();renderGantt();renderChain();renderOut(
 
 /* ── Detalle ── */
 function openJob(id){const j=jobs[id];if(!j)return;const her=hermanos(id);const miss=[!j.pedido&&"N° de pedido",!j.cliente&&"Cliente",!j.tipoEntrega&&"Envío o retiro"].filter(Boolean);
-  const leg=[j.pedido||'<span class="miss">N° de pedido</span>',j.cliente?esc(j.cliente):'<span class="miss">Cliente</span>',j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):'<span class="miss">Envío o retiro</span>'];if(her.length)leg.push("SALE JUNTO CON "+her.join(", "));
+  const leg=[j.pedido||'<span class="miss">N° de pedido</span>',j.cliente?esc(j.cliente):'<span class="miss">Cliente</span>',j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):'<span class="miss">Envío o retiro</span>'];if(her.length)leg.push("SALE JUNTO CON "+her.map(refHtml).join(", "));
   const plain=leg.join(" · ").replace(/<[^>]+>/g,"");const d=due(j.fechaLimite,j.estado);
-  $("dr-t").innerHTML=`<span class="eyebrow">${id} · ${esc(j.pedido)}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="pill" style="--c:${STC[j.estado]}">${ST[j.estado]}</span>${tp(j.tipoDtf)}<span class="due ${d.c}">${d.l}</span></div>`;
-  $("dr-b").innerHTML=`<div class="leg"><span class="eyebrow" style="color:${miss.length?"var(--bad)":"var(--good)"}">Leyenda ${miss.length?"incompleta":"completa"}</span><div class="txt">${leg.join(" · ")}</div>${miss.length?"":'<button type="button" id="cp">Copiar leyenda</button>'}</div><dl class="kv"><dt>Producto</dt><dd>${esc(j.tipoDtf)} · ${cant(j)}</dd><dt>Responsable</dt><dd>${esc(j.responsable||"—")}</dd><dt>Máquina</dt><dd>${ZONAS.flatMap(z=>z.maq).find(m=>m.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)))?.n||"—"}</dd><dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd><dt>A impresión</dt><dd>${j.impresionAt?hhmm(j.impresionAt):"—"}</dd><dt>Listo</dt><dd>${j.listaAt?hhmm(j.listaAt):"—"}</dd><dt>Vinculados</dt><dd>${her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul-2)">${h}</a> · ${ST[jobs[h].estado]}`).join("<br>")||"—"}</dd></dl>`;
+  $("dr-t").innerHTML=`<span class="eyebrow">${j.pedido?esc(j.pedido):"Sin n° de pedido"}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="pill" style="--c:${STC[j.estado]}">${ST[j.estado]}</span>${tp(j.tipoDtf)}<span class="due ${d.c}">${d.l}</span></div>`;
+  $("dr-b").innerHTML=`<div class="leg"><span class="eyebrow" style="color:${miss.length?"var(--bad)":"var(--good)"}">Leyenda ${miss.length?"incompleta":"completa"}</span><div class="txt">${leg.join(" · ")}</div>${miss.length?"":'<button type="button" id="cp">Copiar leyenda</button>'}</div><dl class="kv"><dt>Producto</dt><dd>${esc(j.tipoDtf)} · ${cant(j)}</dd><dt>Responsable</dt><dd>${esc(j.responsable||"—")}</dd><dt>Máquina</dt><dd>${ZONAS.flatMap(z=>z.maq).find(m=>m.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)))?.n||"—"}</dd><dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd><dt>A impresión</dt><dd>${j.impresionAt?hhmm(j.impresionAt):"—"}</dd><dt>Listo</dt><dd>${j.listaAt?hhmm(j.listaAt):"—"}</dd><dt>Vinculados</dt><dd>${her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul-2)">${refHtml(h)}</a> · ${ST[jobs[h].estado]}`).join("<br>")||"—"}</dd></dl>`;
   const b=$("cp");if(b)b.onclick=()=>{try{navigator.clipboard.writeText(plain).then(()=>toast("Leyenda copiada"),()=>toast(plain))}catch(e){toast(plain)}};show()}
-function openTarea(k){const t=tareas[k];if(!t)return;$("dr-t").innerHTML=`<span class="eyebrow">Tarea interna</span><h3>${esc(t.nombre)}</h3>`;$("dr-b").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${P[t.a].n}</dd><dt>Estado</dt><dd>${{pendiente:"Pendiente",en_curso:"En curso",hecha:"Hecha"}[t.estado]}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul-2)">${t.pedidoId}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl>`;show()}
+function openTarea(k){const t=tareas[k];if(!t)return;$("dr-t").innerHTML=`<span class="eyebrow">Tarea interna</span><h3>${esc(t.nombre)}</h3>`;$("dr-b").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${P[t.a].n}</dd><dt>Estado</dt><dd>${{pendiente:"Pendiente",en_curso:"En curso",hecha:"Hecha"}[t.estado]}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul-2)">${refHtml(t.pedidoId)}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl>`;show()}
 function show(){$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("scrim").classList.add("on");$("dr-x").focus()}
 function hide(){$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");$("scrim").classList.remove("on")}
 document.addEventListener("click",e=>{if(!e.target.closest(".v2"))return;const j=e.target.closest("[data-job]");if(j){e.preventDefault();openJob(j.dataset.job);return}const t=e.target.closest("[data-tarea]");if(t){e.preventDefault();openTarea(t.dataset.tarea)}});
@@ -1068,6 +1072,10 @@ const PERS=Object.fromEntries(TEAM.map(p=>[p.id,p]));
 PERS.SH={id:"SH",nombre:"Shopify",color:"#5A63C4"};
 
 const jobs=DATA.jobs, tareas=DATA.tareas, feed=DATA.feed;
+const numDe=id=>String((jobs[id]&&jobs[id].pedido)||"").trim(); // «# Pedido» que escribe ventas o el n° de Shopify: los TG-xxxx no se muestran (José, 02-11-2026)
+const numHtml=id=>esc(numDe(id));
+const refHtml=id=>numHtml(id)||esc((jobs[id]&&jobs[id].cliente)||"otro pedido"); // número, o el cliente si no tiene
+const m2=n=>String(Math.round((+n||0)*100)/100).replace(".",","); // máximo 2 decimales
 /* ───────── Lógica (igual que alertaPred / esEstancado del tracker) ───────── */
 const abiertos=()=>Object.entries(jobs).filter(([,j])=>j.estado!=="entregado");
 const esAtrasado=j=>!!j.fechaLimite&&j.estado!=="entregado"&&!(j.estado==="listo"&&j.tipoEntrega==="Retiro")&&j.fechaLimite<HOY;
@@ -1092,7 +1100,7 @@ const PRIO_W={urgente:0,alta:1,normal:2,baja:3};
 const sortKey=x=>[x.f||"9999",PRIO_W[x.prio||"normal"]];
 const cmp=(a,b)=>{const A=sortKey(a),B=sortKey(b);return A[0]<B[0]?-1:A[0]>B[0]?1:A[1]-B[1]};
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const fmtCant=j=>`${String(j.cantidad).replace(".",",")} ${UNIT(j.tipoDtf)==="m"?"m":"u"}`;
+const fmtCant=j=>`${m2(j.cantidad)} ${UNIT(j.tipoDtf)==="m"?"m":"u"}`;
 const typePill=t=>`<span class="type" style="--tc:${TIPO_COLOR[t]||"#6B7BB8"}">${esc(t)}</span>`;
 const stPill=e=>`<span class="pill p-${e}">${ST[e]}</span>`;
 const elapsed=iso=>{const m=Math.max(0,Math.floor((Date.now()-new Date(iso))/60000));return m<60?`${m} min`:`${Math.floor(m/60)} h ${String(m%60).padStart(2,"0")}`};
@@ -1131,7 +1139,7 @@ function renderKPIs(){
     {k:"hoy",l:"Vencen hoy",v:hoy,s:"Sin entregar todavía",c:hoy?"warn":"good"},
     {k:"lis",l:"Listos",v:listos,s:"Para retiro o despacho",c:""},
     {k:"pct",l:"A tiempo · semana",v:pct==null?"—":pct+"%",s:pct==null?"Sin entregas esta semana":"Meta 90%",c:pct==null?"":pct>=90?"good":"warn",extra:spark},
-    {k:"mts",l:"Metros DTF en cola",v:String(Math.round(mts*10)/10).replace(".",","),s:"Por imprimir",c:""},
+    {k:"mts",l:"Metros DTF en cola",v:m2(mts),s:"Por imprimir",c:""},
   ];
   $("kpis").innerHTML=K.map(x=>`<div class="card kpi ${x.c}" id="a-k-${x.k}"><span class="eyebrow"><i class="dot"></i>${x.l}</span><span class="v">${x.v}</span><span class="s">${x.s}</span>${x.extra||""}</div>`).join("");
   K.forEach(x=>setFlash($("k-"+x.k),"k"+x.k,x.v));
@@ -1165,7 +1173,7 @@ function renderDep(){
     let sev="",blk=[];
     if(x.kind==="job"){
       if(esAtrasado(x.j))sev="bad";else if(venceHoy(x.j))sev="warn";
-      bloqueos(x.id).forEach(b=>blk.push(`Bloquea el despacho de ${b.id} (${b.j.tipoDtf}, ya listo)`));
+      bloqueos(x.id).forEach(b=>blk.push(`Bloquea el despacho de ${numDe(b.id)||b.j.cliente||"otro pedido"} (${b.j.tipoDtf}, ya listo)`));
     }else{
       if(x.t.fechaLimite&&x.t.fechaLimite<HOY)sev="bad";else if(x.t.fechaLimite===HOY)sev="warn";
       if(x.t.bloquea)blk.push(x.t.bloquea.txt);
@@ -1176,10 +1184,10 @@ function renderDep(){
   const nBlk=its.filter(x=>x.blk.length).length;
   const nHoy=its.filter(x=>x.f&&x.f<=HOY).length;
   const ah=ahoraDe("JP");
-  $("dep-sum").innerHTML=`<div class="hot"><b>${nBlk}</b> bloquean a otros</div><div><b>${nHoy}</b> para hoy o atrasados</div><div><b>${its.length}</b> en total</div>${ah?`<div>Ahora: <b style="font-size:15px">${ah.kind==="job"?ah.id:esc(ah.t.nombre)}</b></div>`:""}`;
+  $("dep-sum").innerHTML=`<div class="hot"><b>${nBlk}</b> bloquean a otros</div><div><b>${nHoy}</b> para hoy o atrasados</div><div><b>${its.length}</b> en total</div>${ah?`<div>Ahora: <b style="font-size:15px">${ah.kind==="job"?refHtml(ah.id):esc(ah.t.nombre)}</b></div>`:""}`;
   $("dep-list").innerHTML=its.slice(0,7).map(x=>{
     if(x.kind==="job"){const j=x.j,d=due(j.fechaLimite,j.estado);
-      return `<li class="item" data-job="${x.id}"><span class="sev ${x.sev}"></span><div class="it-main"><div class="it-top"><span class="it-id">${x.id}</span>${j.origen==="reimpresion"?'<span class="urg">URG-REIMPRESIÓN</span>':""}<span class="it-name">${esc(j.cliente)}</span></div><div class="it-sub">${typePill(j.tipoDtf)}<span>${fmtCant(j)}</span><span class="ent">· ${ENTREGA[j.tipoEntrega]||"Sin entrega"}</span></div>${x.blk.map(b=>`<span class="block">⛓ ${esc(b)}</span>`).join("")}</div><div class="it-right">${stPill(j.estado)}<span class="due ${d.c}">${d.l}</span></div></li>`;}
+      return `<li class="item" data-job="${x.id}"><span class="sev ${x.sev}"></span><div class="it-main"><div class="it-top">${numDe(x.id)?`<span class="it-id">${numHtml(x.id)}</span>`:""}${j.origen==="reimpresion"?'<span class="urg">URG-REIMPRESIÓN</span>':""}<span class="it-name">${esc(j.cliente)}</span></div><div class="it-sub">${typePill(j.tipoDtf)}<span>${fmtCant(j)}</span><span class="ent">· ${ENTREGA[j.tipoEntrega]||"Sin entrega"}</span></div>${x.blk.map(b=>`<span class="block">⛓ ${esc(b)}</span>`).join("")}</div><div class="it-right">${stPill(j.estado)}<span class="due ${d.c}">${d.l}</span></div></li>`;}
     const t=x.t,d=due(t.fechaLimite);
     return `<li class="item" data-tarea="${x.id}"><span class="sev ${x.sev}"></span><div class="it-main"><div class="it-top"><span class="it-id" style="color:var(--ink-3)">Tarea</span><span class="it-name">${esc(t.nombre)}</span></div><div class="it-sub">${t.pedidoId?`<span>Pedido ${t.pedidoId}</span>`:"<span>Interna</span>"}${t.prioridad==="urgente"?'<span class="urg">URGENTE</span>':""}</div>${x.blk.map(b=>`<span class="block">⛓ ${esc(b)}</span>`).join("")}</div><div class="it-right"><span class="pill p-tarea">${t.estado==="en_curso"?"En curso":"Pendiente"}</span><span class="due ${d.c}">${d.l}</span></div></li>`;
   }).join("");
@@ -1188,13 +1196,13 @@ function renderDep(){
 function renderAlerts(){
   const A=[];
   abiertos().forEach(([id,j])=>{
-    if(esAtrasado(j))A.push({s:"bad",w:0,id,ic:"!",b:`${id} atrasado`,x:`${esc(j.cliente)} · ${j.tipoDtf} · ${ST[j.estado]} · resp. ${PERS[duenoDe(j)]?.nombre||"sin responsable"}`});
-    if(venceHoy(j)&&ORDEN.indexOf(j.estado)<3)A.push({s:"warn",w:2,id,ic:"◷",b:`${id} vence hoy y no ha entrado a impresión`,x:`${esc(j.cliente)} · ${j.tipoDtf} ${fmtCant(j)} · ${ST[j.estado]}`});
-    if(esEstancado(j))A.push({s:"warn",w:3,id,ic:"≡",b:`${id} lleva más de 2 días en «${ST[j.estado]}»`,x:`${esc(j.cliente)} · ${j.tipoDtf} · pre-prensa`});
-    if(sinDoc(j))A.push({s:"info",w:5,id,ic:"$",b:`${id} listo sin boleta ni factura`,x:`${esc(j.cliente)} · avisar a ventas antes de entregar`});
-    const miss=faltantes(j);if(miss.length&&ORDEN.indexOf(j.estado)<=2)A.push({s:"warn",w:4,id,ic:"✎",b:`${id}: leyenda incompleta`,x:`Falta ${miss.join(" y ")}`});
+    if(esAtrasado(j))A.push({s:"bad",w:0,id,ic:"!",b:`${refHtml(id)} atrasado`,x:`${esc(j.cliente)} · ${j.tipoDtf} · ${ST[j.estado]} · resp. ${PERS[duenoDe(j)]?.nombre||"sin responsable"}`});
+    if(venceHoy(j)&&ORDEN.indexOf(j.estado)<3)A.push({s:"warn",w:2,id,ic:"◷",b:`${refHtml(id)} vence hoy y no ha entrado a impresión`,x:`${esc(j.cliente)} · ${j.tipoDtf} ${fmtCant(j)} · ${ST[j.estado]}`});
+    if(esEstancado(j))A.push({s:"warn",w:3,id,ic:"≡",b:`${refHtml(id)} lleva más de 2 días en «${ST[j.estado]}»`,x:`${esc(j.cliente)} · ${j.tipoDtf} · pre-prensa`});
+    if(sinDoc(j))A.push({s:"info",w:5,id,ic:"$",b:`${refHtml(id)} listo sin boleta ni factura`,x:`${esc(j.cliente)} · avisar a ventas antes de entregar`});
+    const miss=faltantes(j);if(miss.length&&ORDEN.indexOf(j.estado)<=2)A.push({s:"warn",w:4,id,ic:"✎",b:`${refHtml(id)}: leyenda incompleta`,x:`Falta ${miss.join(" y ")}`});
   });
-  abiertos().forEach(([id,j])=>{ if(j.estado==="listo"){ bloqueosInversos(id).forEach(o=>A.push({s:"bad",w:1,id,ic:"⛓",b:`${id} listo, pero su pedido vinculado no`,x:`${o} (${jobs[o].tipoDtf}) sigue en «${ST[jobs[o].estado]}» · resp. ${PERS[duenoDe(jobs[o])]?.nombre||"—"}`})); } });
+  abiertos().forEach(([id,j])=>{ if(j.estado==="listo"){ bloqueosInversos(id).forEach(o=>A.push({s:"bad",w:1,id,ic:"⛓",b:`${refHtml(id)} listo, pero su pedido vinculado no`,x:`${refHtml(o)} (${jobs[o].tipoDtf}) sigue en «${ST[jobs[o].estado]}» · resp. ${PERS[duenoDe(jobs[o])]?.nombre||"—"}`})); } });
   const p=partsCL();
   if(p.min>=11*60+45&&p.min<=13*60+30){const imp=abiertos().filter(([,j])=>j.estado==="en_produccion").length;A.push({s:"info",w:1.5,ic:"⏸",b:"Chequeo antes de colación",x:`${imp} trabajos en impresión: confirma quién queda a cargo de cada máquina`});}
   A.sort((a,b)=>a.w-b.w);
@@ -1220,15 +1228,15 @@ function renderTeam(){
     const mini=ORDEN.filter(e=>counts[e]).map(e=>`<span style="flex-grow:${counts[e]};background:var(${ST_VAR[e]})" title="${ST[e]}: ${counts[e]}"></span>`).join("")+(nT?`<span style="flex-grow:${nT};background:var(--line)" title="Tareas: ${nT}"></span>`:"");
     const miniL=ORDEN.filter(e=>counts[e]).map(e=>`<span><b>${counts[e]}</b> ${ST[e].replace("Enviado a ","")}</span>`).join("")+(nT?`<span><b>${nT}</b> tarea${nT>1?"s":""}</span>`:"");
     let now;
-    if(ah&&ah.kind==="job"){const j=ah.j;now=`<div class="now" data-job="${ah.id}"><span class="eyebrow"><span>Ahora · ${ah.id}</span><span class="timer" data-since="${ah.desde}">${elapsed(ah.desde)}</span></span><span class="t">${esc(j.cliente)}</span><span class="m">${typePill(j.tipoDtf)}<span>${fmtCant(j)}</span>${(()=>{const d=due(j.fechaLimite,j.estado);return `<span class="due ${d.c}">${d.l}</span>`})()}</span></div>`}
+    if(ah&&ah.kind==="job"){const j=ah.j;now=`<div class="now" data-job="${ah.id}"><span class="eyebrow"><span>Ahora${numDe(ah.id)?" · "+numHtml(ah.id):""}</span><span class="timer" data-since="${ah.desde}">${elapsed(ah.desde)}</span></span><span class="t">${esc(j.cliente)}</span><span class="m">${typePill(j.tipoDtf)}<span>${fmtCant(j)}</span>${(()=>{const d=due(j.fechaLimite,j.estado);return `<span class="due ${d.c}">${d.l}</span>`})()}</span></div>`}
     else if(ah){now=`<div class="now" data-tarea="${ah.id}"><span class="eyebrow"><span>Ahora · tarea</span><span class="timer" data-since="${ah.desde}">${elapsed(ah.desde)}</span></span><span class="t">${esc(ah.t.nombre)}</span><span class="m">${ah.t.pedidoId?`Pedido ${ah.t.pedidoId}`:"Tarea interna"}</span></div>`}
-    else now=`<div class="now idle"><span class="eyebrow"><span>Ahora</span></span><span class="t">Sin nada en curso</span><span class="m">${cola.length?`Le sigue: ${esc(cola[0].kind==="job"?cola[0].id+" · "+cola[0].j.cliente:cola[0].t.nombre)}`:"Cola vacía: asígnale una tarea"}</span></div>`;
+    else now=`<div class="now idle"><span class="eyebrow"><span>Ahora</span></span><span class="t">Sin nada en curso</span><span class="m">${cola.length?`Le sigue: ${esc(cola[0].kind==="job"?[numDe(cola[0].id),cola[0].j.cliente].filter(Boolean).join(" · "):cola[0].t.nombre)}`:"Cola vacía: asígnale una tarea"}</span></div>`;
     const q=cola.slice(0,4).map(x=>{
-      if(x.kind==="job"){const d=due(x.j.fechaLimite,x.j.estado);return `<li class="qi" data-job="${x.id}"><div style="min-width:0"><div class="n"><em>${x.id}</em>${esc(x.j.cliente||"(sin cliente)")}</div><div class="sub">${typePill(x.j.tipoDtf)}<span>${fmtCant(x.j)}</span></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="pill p-${x.j.estado}">${ST[x.j.estado].replace("Enviado a ","")}</span><span class="due ${d.c}">${d.l}</span></div></li>`}
+      if(x.kind==="job"){const d=due(x.j.fechaLimite,x.j.estado);return `<li class="qi" data-job="${x.id}"><div style="min-width:0"><div class="n">${numDe(x.id)?`<em>${numHtml(x.id)}</em>`:""}${esc(x.j.cliente||"(sin cliente)")}</div><div class="sub">${typePill(x.j.tipoDtf)}<span>${fmtCant(x.j)}</span></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="pill p-${x.j.estado}">${ST[x.j.estado].replace("Enviado a ","")}</span><span class="due ${d.c}">${d.l}</span></div></li>`}
       const d=due(x.t.fechaLimite);return `<li class="qi" data-tarea="${x.id}"><div style="min-width:0"><div class="n"><span class="tk">☐</span>${esc(x.t.nombre)}</div><div class="sub">${x.t.recurrente?`<span>↻ ${x.t.recurrente}</span>`:x.t.pedidoId?`<span>Pedido ${x.t.pedidoId}</span>`:"<span>Tarea interna</span>"}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="pill p-tarea">Tarea</span><span class="due ${d.c}">${d.l}</span></div></li>`;
     }).join("");
     const mts=its.filter(x=>x.kind==="job"&&UNIT(x.j.tipoDtf)==="m"&&ORDEN.indexOf(x.j.estado)<4).reduce((s,x)=>s+x.j.cantidad,0);
-    const foot=p.id==="MG"?`<span>DTF por imprimir</span><b>${String(mts).replace(".",",")} m</b>`:p.id==="AL"?`<span>Bandeja Shopify</span><b>${counts.pedidos_shopify} por revisar</b>`:p.id==="IP"?`<span>Tareas en su cola</span><b>${nT}</b>`:`<span>Piezas en cama plana</span><b>${its.filter(x=>x.kind==="job").reduce((s,x)=>s+(UNIT(x.j.tipoDtf)==="u"?x.j.cantidad:0),0)} u</b>`;
+    const foot=p.id==="MG"?`<span>DTF por imprimir</span><b>${m2(mts)} m</b>`:p.id==="AL"?`<span>Bandeja Shopify</span><b>${counts.pedidos_shopify} por revisar</b>`:p.id==="IP"?`<span>Tareas en su cola</span><b>${nT}</b>`:`<span>Piezas en cama plana</span><b>${its.filter(x=>x.kind==="job").reduce((s,x)=>s+(UNIT(x.j.tipoDtf)==="u"?x.j.cantidad:0),0)} u</b>`;
     return `<article class="card pc" id="a-pc-${p.id}" style="--pc:${p.color};--sem:${sem.v}"><div class="pc-h"><span class="av">${p.id}</span><div class="who"><b>${p.nombre}</b><span>${p.rol}</span></div><span class="sem ${sem.c}">${sem.l}</span></div>${now}<div class="mini">${mini}</div><div class="mini-l">${miniL||"<span>Sin pedidos asignados</span>"}</div><ul class="q">${q||'<li class="foot" style="padding:10px">Nada en cola</li>'}</ul>${cola.length>4?`<div class="src">+ ${cola.length-4} más en cola</div>`:""}<div class="pc-f">${foot}</div></article>`;
   }).join("");
   TEAM.forEach(p=>{const el=$("pc-"+p.id);const ah=ahoraDe(p.id);setFlash(el,"pc"+p.id,ah?ah.id:"-")});
@@ -1241,7 +1249,7 @@ function renderDesp(){
   $("desp").innerHTML=G.map(g=>{
     const L=hoy.filter(([,j])=>j.tipoEntrega===g);if(!L.length)return "";
     const done=L.filter(([,j])=>["listo","entregado"].includes(j.estado)).length;tot+=L.length;ok+=done;
-    return `<div><div class="dg-h"><b>${ENTREGA[g]}</b><span>${done}/${L.length} listos</span></div><div class="prog"><i style="width:${Math.round(done/L.length*100)}%"></i></div><div class="chips">${L.map(([id,j])=>`<button type="button" class="chip ${["listo","entregado"].includes(j.estado)?"ok":""}" data-job="${id}" title="${esc(j.cliente)} · ${ST[j.estado]}">${id}${j.estado==="entregado"?" ✓":""}</button>`).join("")}</div></div>`;
+    return `<div><div class="dg-h"><b>${ENTREGA[g]}</b><span>${done}/${L.length} listos</span></div><div class="prog"><i style="width:${Math.round(done/L.length*100)}%"></i></div><div class="chips">${L.map(([id,j])=>`<button type="button" class="chip ${["listo","entregado"].includes(j.estado)?"ok":""}" data-job="${id}" title="${esc(j.cliente)} · ${ST[j.estado]}">${refHtml(id)}${j.estado==="entregado"?" ✓":""}</button>`).join("")}</div></div>`;
   }).join("");
   $("desp-meta").textContent=`${ok} de ${tot} listos`;
 }
@@ -1252,9 +1260,9 @@ function renderMetros(){
   const v=T.map(([t])=>pend.filter(j=>j.tipoDtf.startsWith(t)).reduce((s,j)=>s+j.cantidad,0));
   const tot=v.reduce((a,b)=>a+b,0),max=Math.max(...v,1);
   const imp=pend.filter(j=>j.estado==="en_produccion").reduce((s,j)=>s+j.cantidad,0);
-  $("metros").innerHTML=`<div class="mt-big"><b>${String(Math.round(tot*10)/10).replace(".",",")}</b><span>metros · ${pend.length} pedidos</span></div>`+
-    T.map(([t,c],i)=>`<div class="mrow"><span>${t}</span><span class="bar"><i style="width:${v[i]/max*100}%;background:${c}"></i></span><span class="v">${String(v[i]).replace(".",",")} m</span></div>`).join("")+
-    `<div class="mt-note">${String(imp).replace(".",",")} m imprimiéndose ahora en la Mimaki UCJV300. Sale de la columna «cantidad» de cada pedido en metros.</div>`;
+  $("metros").innerHTML=`<div class="mt-big"><b>${m2(tot)}</b><span>metros · ${pend.length} pedidos</span></div>`+
+    T.map(([t,c],i)=>`<div class="mrow"><span>${t}</span><span class="bar"><i style="width:${v[i]/max*100}%;background:${c}"></i></span><span class="v">${m2(v[i])} m</span></div>`).join("")+
+    `<div class="mt-note">${m2(imp)} m imprimiéndose ahora en la Mimaki UCJV300. Sale de la columna «cantidad» de cada pedido en metros.</div>`;
 }
 
 function renderFeed(newOne){
@@ -1286,11 +1294,11 @@ function openJob(id){
   const miss=faltantes(j);
   const her=hermanos(id);
   const leg=[j.pedido||'<span class="miss">N° de pedido</span>',j.cliente?esc(j.cliente):'<span class="miss">Cliente</span>',j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):'<span class="miss">Envío o retiro</span>'];
-  if(her.length)leg.push("SALE JUNTO CON "+her.join(", "));
-  const legPlain=[j.pedido,j.cliente,j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):"",her.length?"SALE JUNTO CON "+her.join(", "):""].filter(Boolean).join(" · ");
+  if(her.length)leg.push("SALE JUNTO CON "+her.map(refHtml).join(", "));
+  const legPlain=[j.pedido,j.cliente,j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):"",her.length?"SALE JUNTO CON "+her.map(h=>numDe(h)||jobs[h].cliente).join(", "):""].filter(Boolean).join(" · ");
   const pos=ORDEN.indexOf(j.estado);
   const hit={enviado_produccion:j.enviadoProdAt,en_produccion:j.impresionAt,maquilado:j.maquiladoAt,listo:j.listaAt,entregado:j.entregadoAt};
-  $("dr-title").innerHTML=`<span class="eyebrow">${id} · ${esc(j.pedido)}${j.origen==="shopify"?" · Shopify":""}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${stPill(j.estado)}${typePill(j.tipoDtf)}${(()=>{const d=due(j.fechaLimite,j.estado);return `<span class="due ${d.c}">${d.l}</span>`})()}</div>`;
+  $("dr-title").innerHTML=`<span class="eyebrow">${j.pedido?esc(j.pedido):"Sin n° de pedido"}${j.origen==="shopify"?" · Shopify":""}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${stPill(j.estado)}${typePill(j.tipoDtf)}${(()=>{const d=due(j.fechaLimite,j.estado);return `<span class="due ${d.c}">${d.l}</span>`})()}</div>`;
   $("dr-body").innerHTML=`
     <div class="legend-box"><div class="eyebrow"><span>Leyenda para el archivo</span><span style="color:${miss.length?"var(--bad)":"var(--good)"}">${miss.length?"Incompleta":"Completa"}</span></div><div class="legend-txt">${leg.join(" · ")}</div>${miss.length?"":`<button type="button" id="a-copy-leg">Copiar leyenda</button>`}</div>
     <dl class="kv">
@@ -1299,7 +1307,7 @@ function openJob(id){
       <dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd>
       <dt>Fecha límite</dt><dd>${j.fechaLimite||"—"}</dd>
       <dt>Boleta / factura</dt><dd>${j.documento==="SI"?"Emitida":j.documento==="NA"?"No aplica":"No emitida"}</dd>
-      <dt>Vinculados</dt><dd>${her.length?her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul)">${h}</a> · ${jobs[h].tipoDtf} · ${ST[jobs[h].estado]}`).join("<br>"):"—"}</dd>
+      <dt>Vinculados</dt><dd>${her.length?her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul)">${refHtml(h)}</a> · ${jobs[h].tipoDtf} · ${ST[jobs[h].estado]}`).join("<br>"):"—"}</dd>
     </dl>
     <div><div class="eyebrow" style="margin-bottom:6px">Recorrido</div><div class="steps">${ORDEN.slice(1).filter(e=>e!=="maquilado"||PERSONALIZADOS.includes(j.tipoDtf)||j.maquiladoAt).map(e=>{const idx=ORDEN.indexOf(e);const cls=idx<pos?"done":idx===pos?"cur":"";return `<div class="stp ${cls}"><i></i><span>${ST[e]}</span><span>${hit[e]?hhmm(hit[e]):""}</span></div>`}).join("")}</div></div>
     <p class="foot" style="text-align:left"><a href="/pedidos/" style="color:var(--azul)">Abrir Pedidos →</a> para editar este pedido. Esta vista solo lee.</p>`;
@@ -1309,7 +1317,7 @@ function openJob(id){
 function openTarea(id){
   const t=tareas[id];if(!t)return;const d=due(t.fechaLimite);
   $("dr-title").innerHTML=`<span class="eyebrow">Tarea interna${t.recurrente?" · se repite "+t.recurrente:""}</span><h3>${esc(t.nombre)}</h3><div style="display:flex;gap:6px;margin-top:8px"><span class="pill p-tarea">${t.estado==="en_curso"?"En curso":t.estado==="hecha"?"Hecha":"Pendiente"}</span><span class="due ${d.c}">${d.l}</span></div>`;
-  $("dr-body").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${t.asignados.map(a=>PERS[a].full).join(", ")}</dd><dt>Prioridad</dt><dd>${t.prioridad}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul)">${t.pedidoId}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl><p class="foot" style="text-align:left">Viene de tago_tareas, el módulo de tareas que ya existe en Pedidos.</p>`;
+  $("dr-body").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${t.asignados.map(a=>PERS[a].full).join(", ")}</dd><dt>Prioridad</dt><dd>${t.prioridad}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul)">${refHtml(t.pedidoId)}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl><p class="foot" style="text-align:left">Viene de tago_tareas, el módulo de tareas que ya existe en Pedidos.</p>`;
   openDrawer();
 }
 function openDrawer(){$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("scrim").classList.add("on");$("dr-x").focus()}
