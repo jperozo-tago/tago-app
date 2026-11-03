@@ -258,7 +258,7 @@
     },
     "tago_operaciones": {
       "rutina": {
-        ".read": "auth != null && auth.token.email == 'j.perozo@tago.cl'",
+        ".read": "auth != null && (auth.token.email == 'j.perozo@tago.cl' || auth.token.email == 'a.rodriguez@tago.cl')",
         ".write": "auth != null && auth.token.email == 'j.perozo@tago.cl'",
         "hitos": {
           "$k": {
