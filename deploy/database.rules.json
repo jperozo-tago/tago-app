@@ -256,6 +256,23 @@
         }
       }
     },
+    "tago_operaciones": {
+      "rutina": {
+        ".read": "auth != null && auth.token.email == 'j.perozo@tago.cl'",
+        ".write": "auth != null && auth.token.email == 'j.perozo@tago.cl'",
+        "hitos": {
+          "$k": {
+            ".validate": "$k.matches(/^[A-Za-z_]+$/) && newData.hasChildren(['t'])",
+            "t": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 1440" },
+            "dur": { ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 240" },
+            "$otro": { ".validate": false }
+          }
+        },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "updatedBy": { ".validate": "newData.isString()" },
+        "$otro": { ".validate": false }
+      }
+    },
     "$other": {
       ".read": false,
       ".write": false
