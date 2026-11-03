@@ -98,6 +98,8 @@ button{font:inherit;color:inherit}
 .v2 .mc .job{font-family:var(--f-display);font-weight:600;font-size:14px;line-height:1.2;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .v2 .mc .meta{font-size:11px;color:var(--ink-2);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .v2 .mc .idle{font-size:12px;color:var(--ink-3);margin-top:auto}
+.v2 .esp{font-size:11px;font-weight:600;color:var(--warn);white-space:nowrap}
+.v2 .mc .hace{font-size:11px;line-height:1.3;color:var(--ink-3)}
 .v2 .mc .idle b{color:var(--ink-2);font-family:var(--f-display);font-weight:600}
 .v2 .mc .tm{margin-top:auto;display:flex;align-items:center;gap:8px}
 .v2 .mc .tm span{font-family:var(--f-display);font-weight:600;font-size:12px;color:var(--teal-2);font-variant-numeric:tabular-nums}
@@ -396,6 +398,7 @@ body.tv .wrap{max-width:none}
 .v1 .qi:hover{background:var(--surface-2)}
 .v1 .qi .n{font-size:13px;font-family:var(--f-display);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .v1 .qi .n em{font-style:normal;color:var(--azul);font-weight:600;margin-right:5px}
+.v1 .esp{font-size:11px;font-weight:600;color:var(--warn);white-space:nowrap}
 .v1 .qi .n .tk{color:var(--ink-3);font-weight:600;margin-right:5px}
 .v1 .qi .sub{font-size:11px;color:var(--ink-3);display:flex;gap:6px;align-items:center;margin-top:2px}
 .v1 .pc-f{margin-top:auto;padding:10px 16px 14px;font-size:12px;color:var(--ink-3);display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line-2)}
@@ -772,6 +775,19 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
     String(j.tambienTexto||"").replace(/TG-\d{3,5}/g,m=>{ if(ids.has(m))out.add(m); });
     return [...out].map(p=>({pedido:p}));
   }
+  // Responsables: mismas reglas que Pedidos (responsablesDe), solo para pedidos creados desde el 03-11-2026.
+  // «responsable» puede traer varios nombres separados por coma.
+  const RESP_REGLAS_DESDE=Date.parse("2026-11-03T00:00:00-03:00");
+  const RESP_ID={Miguel:"MG","José":"JP",Jose:"JP",Ignacio:"IP",Allyson:"AL"};
+  const PERSONALIZADOS=new Set(["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"]);
+  function responsablesDe(j,estado){
+    const t=j.tipoDtf||"", r=String(j.responsable||"").trim(), reglas=!!j.createdAt&&new Date(j.createdAt).getTime()>=RESP_REGLAS_DESDE;
+    const man=(reglas&&j.origen==="shopify"&&r==="Allyson")?[]:r.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean), auto=[];
+    if(!reglas) return [...new Set(man)];
+    if(/^DTF (Textil|UV|Flúor)/.test(t)||t==="Stickers UV") auto.push("Miguel Gonzalez"); else if(estado==="pedidos_shopify"||estado==="recibido") auto.push("Allyson");
+    if((j.categoria||(PERSONALIZADOS.has(t)?"personalizados":""))==="personalizados") auto.push("José Perozo");
+    return [...new Set([...man,...auto])];
+  }
   function normalizaPedidos(){
     const H=hoy(), corte=addD(H,-60), ids=new Set(Object.keys(raw.pedidos||{})), out={};
     for(const [id,j] of Object.entries(raw.pedidos||{})){
@@ -779,7 +795,10 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
       const estado=ESTADOS.includes(j.estado)?j.estado:"recibido";
       const entregadoAt=j.entregadoAt||(j.aviso&&j.aviso.entregadoAt)||null;
       if(estado==="entregado"){ const d=entregadoAt?ymd(new Date(entregadoAt)):(j.fechaLimite||""); if(!d||d<corte)continue; } // solo los entregados recientes, para los indicadores
+      const responsables=responsablesDe(j,estado), personas=lista(j.personas);
+      let resps=[...new Set(responsables.map(n=>RESP_ID[n.split(" ")[0]]).filter(Boolean))]; if(!resps.length&&personas.length) resps=[personas[0]];
       out[id]={...j,
+        responsables, resps,
         estado, tipoDtf:j.tipoDtf||"Otro", cliente:j.cliente||"", pedido:j.pedido||"",
         cantidad:+j.cantidad||0, tipoEntrega:j.tipoEntrega||"", fechaLimite:j.fechaLimite||"",
         personas:lista(j.personas),
@@ -890,14 +909,17 @@ const TEAM=[
   {id:"AL",n:"Allyson",rol:"Pre-prensa",c:"#4063F9"}];
 const P=Object.fromEntries(TEAM.map(t=>[t.id,t]));P.SH={id:"SH",n:"Shopify",c:"#5A63C4"};
 const RESP={"Miguel Gonzalez":"MG","José Perozo":"JP","Ignacio Paredes":"IP","Allyson":"AL"};
-// Máquinas del taller por zona (dueño). Campo propuesto: pedido.maquina
+// Máquinas del taller por zona (dueño). Campo propuesto: pedido.maquina. «hace»: lo que se produce en cada una (José, 03-11-2026)
 const ZONAS=[
-  {owner:"MG",nombre:"DTF",maq:[{id:"dtf",n:"Impresora DTF Textil",wide:true},{id:"ucjv",n:"Mimaki UCJV300-160",wide:true}]},
-  {owner:"JP",nombre:"Camas planas y corte",maq:[{id:"ujf",n:"Mimaki UJF-6042"},{id:"oric",n:"ORIC"},{id:"co2a",n:"Láser CO2 · 1"},{id:"co2b",n:"Láser CO2 · 2"},{id:"iecho",n:"iEcho"},{id:"bambu",n:"Bambu Lab"}]},
+  {owner:"MG",nombre:"DTF",maq:[{id:"dtf",n:"Impresora DTF Textil",hace:"DTF Textil y Flúor"},{id:"dtfuv",n:"Impresora DTF UV",hace:"DTF UV"},{id:"ucjv",n:"Mimaki UCJV300-160",hace:"Stickers UV",wide:true}]},
+  {owner:"JP",nombre:"Camas planas y corte",maq:[{id:"ujf",n:"Mimaki UJF-6042",hace:"Impresión directa: pines, medallas, llaveros, imanes"},{id:"oric",n:"ORIC (cama plana)",hace:"Impresión de insignias y parches"},{id:"co2a",n:"Láser CO2 · 1",hace:"Corte de insignias, parches, medallas, pines, imanes y llaveros"},{id:"co2b",n:"Láser CO2 · 2",hace:"Corte de insignias, parches, medallas, pines, imanes y llaveros"},{id:"iecho",n:"iEcho"},{id:"bambu",n:"Bambu Lab"}]},
   {owner:"IP",nombre:"Láser y maquila",maq:[{id:"xtool",n:"xTool F2 Ultra"},{id:"fibra",n:"Fibra 50W"},{id:"mesa",n:"Estampado y armado",wide:true}]},
   {owner:"AL",nombre:"Pre-prensa",maq:[{id:"pc",n:"Diseño y archivos",wide:true}]},
 ];
-const MAQ_DE_TIPO=t=>{t=t||"";if(/^DTF (Textil|Flúor)/.test(t))return "dtf";if(/^DTF UV/.test(t)||t==="Stickers UV")return "ucjv";return {"Medallas":"ujf","Pines":"oric","Imanes":"ujf","Llaveros":"co2a","Insignias / Parches":"iecho","Kit Corporativo":"mesa","Pendón Roller":"pc"}[t]};
+// Máquina donde se imprime cada tipo (es la que ocupa el pedido en «Enviado a Impresión»); los personalizados después se cortan en el Láser CO2
+const MAQ_DE_TIPO=t=>{t=t||"";if(/^DTF (Textil|Flúor)/.test(t))return "dtf";if(/^DTF UV/.test(t))return "dtfuv";if(t==="Stickers UV")return "ucjv";return {"Medallas":"ujf","Pines":"ujf","Imanes":"ujf","Llaveros":"ujf","Insignias / Parches":"oric","Kit Corporativo":"mesa","Pendón Roller":"pc"}[t]};
+const CORTA_EN_CO2=new Set(["Insignias / Parches","Medallas","Pines","Imanes","Llaveros"]);
+const rutaMaq=j=>{const m=ZONAS.flatMap(z=>z.maq).find(x=>x.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)));return m?m.n+(CORTA_EN_CO2.has(j.tipoDtf)?" → Láser CO2 (corte)":""):"—"};
 
 const jobs=DATA.jobs, tareas=DATA.tareas, feed=DATA.feed;
 const numDe=id=>String((jobs[id]&&jobs[id].pedido)||"").trim(); // «# Pedido» que escribe ventas o el n° de Shopify: los TG-xxxx no se muestran (José, 02-11-2026)
@@ -905,7 +927,7 @@ const numHtml=id=>esc(numDe(id));
 const refHtml=id=>numHtml(id)||esc((jobs[id]&&jobs[id].cliente)||"otro pedido"); // número, o el cliente si no tiene
 const m2=n=>String(Math.round((+n||0)*100)/100).replace(".",","); // máximo 2 decimales
 
-const dueno=j=>RESP[j.responsable]||null;
+const esDeZona=(j,o)=>(j.resps||[]).includes(o); // un pedido puede ser de varias zonas (varios responsables)
 const open=()=>Object.entries(jobs).filter(([,j])=>j.estado!=="entregado");
 const atrasado=j=>!!j.fechaLimite&&j.fechaLimite<HOY&&j.estado!=="entregado"&&!(j.estado==="listo"&&j.tipoEntrega==="Retiro");
 const venceHoy=j=>j.fechaLimite===HOY&&j.estado!=="entregado"&&!(j.estado==="listo"&&j.tipoEntrega==="Retiro");
@@ -949,7 +971,7 @@ function enMaquina(mid){return open().filter(([,j])=>(j.estado==="en_produccion"
 function renderFloor(){
   $("floor").innerHTML=ZONAS.map(z=>{
     const p=P[z.owner];
-    const mios=open().filter(([,j])=>dueno(j)===z.owner);
+    const mios=open().filter(([,j])=>esDeZona(j,z.owner));
     const atr=mios.filter(([,j])=>atrasado(j)).length;
     const tCurso=Object.values(tareas).find(t=>t.a===z.owner&&t.estado==="en_curso");
     const activo=mios.some(([,j])=>(j.estado==="en_produccion"&&j.impresionBy===z.owner)||(j.estado==="maquilado"&&z.owner==="IP"))||tCurso;
@@ -960,16 +982,16 @@ function renderFloor(){
       const jj=enMaquina(m.id);
       if(z.owner==="AL"&&tCurso)return `<div class="mc run ${m.wide?"wide":""}" data-tarea="${Object.keys(tareas).find(k=>tareas[k]===tCurso)}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(tCurso.nombre)}</span><span class="meta">Pedido ${tCurso.pedidoId?refHtml(tCurso.pedidoId):"—"}</span><span class="tm"><span>${el(tCurso.ini)}</span></span></div>`;
       if(!jj.length){const sig=mios.filter(([,j])=>MAQ_DE_TIPO(j.tipoDtf)===m.id&&ORDEN.indexOf(j.estado)<3).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1)[0];
-        return `<div class="mc ${m.wide?"wide":""}"><span class="mn">${m.n}<i></i></span><span class="idle">${sig?`Libre · sigue <b>${refHtml(sig[0])}</b>`:"Libre"}</span></div>`;}
+        return `<div class="mc ${m.wide?"wide":""}"><span class="mn">${m.n}<i></i></span>${m.hace?`<span class="hace">${m.hace}</span>`:""}<span class="idle">${sig?`Libre · sigue <b>${refHtml(sig[0])}</b>`:"Libre"}</span></div>`;}
       const [id,j]=jj[0];const desde=desdeDe(j);const opId=j.estado==="maquilado"?"IP":j.impresionBy;const mins=((Date.now()-new Date(desde))/60000)||0;const pct=Math.min(95,mins/(j.desatendida?240:120)*100);
       const solo=colacion&&!j.desatendida;
       return `<div class="mc run ${solo?"alone":""} ${m.wide?"wide":""}" data-job="${id}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(j.cliente)}</span><span class="meta">${numDe(id)?numHtml(id)+" · ":""}${tp(j.tipoDtf)} ${cant(j)}</span><span class="tm"><span>${el(desde)}</span><span class="bar"><b style="width:${pct}%"></b></span></span>${solo?`<span class="meta" style="color:var(--bad);font-weight:600">¿Quién queda a cargo?</span>`:j.desatendida?`<span class="meta">Corre sola · revisar al volver</span>`:""}${jj.length>1?`<span class="meta">+${jj.length-1} más en esta máquina</span>`:""}<span class="op" style="background:${P[opId]?.c||"#545B7E"}">${esc(opId||"?")}</span></div>`;
     }).join("");
-    const cola=[...mios.filter(([,j])=>!["en_produccion","maquilado","listo"].includes(j.estado)).map(([k,j])=>({k,t:`${numDe(k)?`<em>${numHtml(k)}</em>`:""}${esc(j.cliente||"(sin cliente)")}`,f:j.fechaLimite,e:j.estado,job:1})),
+    const cola=[...mios.filter(([,j])=>!["en_produccion","maquilado","listo"].includes(j.estado)).map(([k,j])=>({k,t:`${numDe(k)?`<em>${numHtml(k)}</em>`:""}${esc(j.cliente||"(sin cliente)")}${(j.estado==="pedidos_shopify"||j.estado==="recibido")&&(j.resps||[]).includes("AL")?(z.owner!=="AL"?' <small class="esp">⏳ espera a Allyson</small>':((j.resps||[]).some(x=>x!=="AL")?' <small class="esp">→ luego '+esc((j.resps||[]).filter(x=>x!=="AL").map(x=>P[x]?P[x].n:x).join(", "))+'</small>':"")):""}`,f:j.fechaLimite,e:j.estado,job:1})),
       ...Object.entries(tareas).filter(([,t])=>t.a===z.owner&&t.estado==="pendiente").map(([k,t])=>({k,t:`☐ ${esc(t.nombre)}`,f:t.f,e:""}))]
       .sort((a,b)=>(a.f||"9")<(b.f||"9")?-1:(a.f||"9")>(b.f||"9")?1:0).slice(0,3);
     const metros=mios.filter(([,j])=>UNIT(j.tipoDtf)==="m"&&ORDEN.indexOf(j.estado)<4).reduce((s,[,j])=>s+j.cantidad,0);
-    const foot=z.owner==="MG"?`<span>DTF por imprimir</span><b>${String(metros).replace(".",",")} m</b>`:z.owner==="AL"?`<span>Bandeja Shopify</span><b>${mios.filter(([,j])=>j.estado==="pedidos_shopify").length} por revisar</b>`:`<span>En su cola</span><b>${mios.filter(([,j])=>ORDEN.indexOf(j.estado)<3).length} pedidos · ${Object.values(tareas).filter(t=>t.a===z.owner&&t.estado==="pendiente").length} tareas</b>`;
+    const foot=z.owner==="MG"?`<span>DTF por imprimir</span><b>${m2(metros)} m</b>`:z.owner==="AL"?`<span>Bandeja Shopify</span><b>${mios.filter(([,j])=>j.estado==="pedidos_shopify").length} por revisar</b>`:`<span>En su cola</span><b>${mios.filter(([,j])=>ORDEN.indexOf(j.estado)<3).length} pedidos · ${Object.values(tareas).filter(t=>t.a===z.owner&&t.estado==="pendiente").length} tareas</b>`;
     return `<article class="zone" id="z-${z.owner}"><div class="zone-h"><span class="av" style="--pc:${p.c};--sem:${sem.v}">${p.id}</span><div class="who"><b>${p.n}</b><span>${z.nombre}</span></div><span class="sem ${sem.c}">${sem.l}</span></div><div class="machines">${maqs}</div><div class="next"><span class="eyebrow">Le sigue</span>${cola.map(c=>{const d=due(c.f,c.e);return `<a href="#" ${c.job?`data-job="${c.k}"`:`data-tarea="${c.k}"`}><span>${c.t}</span><span class="due ${d.c}">${d.l}</span></a>`}).join("")||'<span class="empty">Nada en cola</span>'}</div><div class="zone-f">${foot}</div></article>`;
   }).join("");
 }
@@ -1008,10 +1030,10 @@ function renderGantt(){
 /* ── Cadena de bloqueos ── */
 function chainItems(){
   const L=[];
-  open().forEach(([id,j])=>{if(dueno(j)!=="JP"||["listo","entregado"].includes(j.estado))return;
-    hermanos(id).filter(h=>jobs[h].estado==="listo").forEach(h=>L.push({mine:{job:id,t:`${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"BLOQUEA",wait:{job:h,t:`${numDe(h)?`<em>${numHtml(h)}</em>`:""}${esc(jobs[h].cliente)}`,m:`${tp(jobs[h].tipoDtf)} ya listo · espera para salir junto por ${ENTREGA[jobs[h].tipoEntrega]}`,who:dueno(jobs[h])}}))});
+  open().forEach(([id,j])=>{if(!esDeZona(j,"JP")||["listo","entregado"].includes(j.estado))return;
+    hermanos(id).filter(h=>jobs[h].estado==="listo").forEach(h=>L.push({mine:{job:id,t:`${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"BLOQUEA",wait:{job:h,t:`${numDe(h)?`<em>${numHtml(h)}</em>`:""}${esc(jobs[h].cliente)}`,m:`${tp(jobs[h].tipoDtf)} ya listo · espera para salir junto por ${ENTREGA[jobs[h].tipoEntrega]}`,who:(jobs[h].resps||[])[0]||null}}))});
   Object.entries(tareas).forEach(([k,t])=>{if(t.a==="JP"&&t.estado!=="hecha"&&t.bloquea)L.push({mine:{tarea:k,t:esc(t.nombre),m:`Tarea · pedido ${t.pedidoId?refHtml(t.pedidoId):"—"}`,d:due(t.f)},lbl:"DETIENE",wait:{tarea:k,t:esc(t.bloquea.txt),m:"Tirada en pausa hasta tu visto bueno",who:t.bloquea.who}})});
-  open().forEach(([id,j])=>{if(dueno(j)==="JP"&&atrasado(j)&&!L.some(l=>l.mine.job===id))L.push({mine:{job:id,t:`${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"ATRASA",wait:{job:id,t:`Cliente: ${esc(j.cliente)}`,m:`Esperaba su pedido el ${j.fechaLimite.slice(8)}/${j.fechaLimite.slice(5,7)} · ${ENTREGA[j.tipoEntrega]}`}})});
+  open().forEach(([id,j])=>{if(esDeZona(j,"JP")&&atrasado(j)&&!L.some(l=>l.mine.job===id))L.push({mine:{job:id,t:`${numDe(id)?`<em>${numHtml(id)}</em>`:""}${esc(j.cliente)}`,m:`${tp(j.tipoDtf)} ${cant(j)} · ${ST[j.estado]}`,d:due(j.fechaLimite,j.estado)},lbl:"ATRASA",wait:{job:id,t:`Cliente: ${esc(j.cliente)}`,m:`Esperaba su pedido el ${j.fechaLimite.slice(8)}/${j.fechaLimite.slice(5,7)} · ${ENTREGA[j.tipoEntrega]}`}})});
   return L;
 }
 function renderChain(){
@@ -1043,7 +1065,7 @@ function openJob(id){const j=jobs[id];if(!j)return;const her=hermanos(id);const 
   const leg=[j.pedido||'<span class="miss">N° de pedido</span>',j.cliente?esc(j.cliente):'<span class="miss">Cliente</span>',j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):'<span class="miss">Envío o retiro</span>'];if(her.length)leg.push("SALE JUNTO CON "+her.map(refHtml).join(", "));
   const plain=leg.join(" · ").replace(/<[^>]+>/g,"");const d=due(j.fechaLimite,j.estado);
   $("dr-t").innerHTML=`<span class="eyebrow">${j.pedido?esc(j.pedido):"Sin n° de pedido"}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="pill" style="--c:${STC[j.estado]}">${ST[j.estado]}</span>${tp(j.tipoDtf)}<span class="due ${d.c}">${d.l}</span></div>`;
-  $("dr-b").innerHTML=`<div class="leg"><span class="eyebrow" style="color:${miss.length?"var(--bad)":"var(--good)"}">Leyenda ${miss.length?"incompleta":"completa"}</span><div class="txt">${leg.join(" · ")}</div>${miss.length?"":'<button type="button" id="cp">Copiar leyenda</button>'}</div><dl class="kv"><dt>Producto</dt><dd>${esc(j.tipoDtf)} · ${cant(j)}</dd><dt>Responsable</dt><dd>${esc(j.responsable||"—")}</dd><dt>Máquina</dt><dd>${ZONAS.flatMap(z=>z.maq).find(m=>m.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)))?.n||"—"}</dd><dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd><dt>A impresión</dt><dd>${j.impresionAt?hhmm(j.impresionAt):"—"}</dd><dt>Listo</dt><dd>${j.listaAt?hhmm(j.listaAt):"—"}</dd><dt>Vinculados</dt><dd>${her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul-2)">${refHtml(h)}</a> · ${ST[jobs[h].estado]}`).join("<br>")||"—"}</dd></dl>`;
+  $("dr-b").innerHTML=`<div class="leg"><span class="eyebrow" style="color:${miss.length?"var(--bad)":"var(--good)"}">Leyenda ${miss.length?"incompleta":"completa"}</span><div class="txt">${leg.join(" · ")}</div>${miss.length?"":'<button type="button" id="cp">Copiar leyenda</button>'}</div><dl class="kv"><dt>Producto</dt><dd>${esc(j.tipoDtf)} · ${cant(j)}</dd><dt>Responsable</dt><dd>${esc((j.responsables||[]).join(", ")||"—")}</dd><dt>Máquina</dt><dd>${rutaMaq(j)}</dd><dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd><dt>A impresión</dt><dd>${j.impresionAt?hhmm(j.impresionAt):"—"}</dd><dt>Listo</dt><dd>${j.listaAt?hhmm(j.listaAt):"—"}</dd><dt>Vinculados</dt><dd>${her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul-2)">${refHtml(h)}</a> · ${ST[jobs[h].estado]}`).join("<br>")||"—"}</dd></dl>`;
   const b=$("cp");if(b)b.onclick=()=>{try{navigator.clipboard.writeText(plain).then(()=>toast("Leyenda copiada"),()=>toast(plain))}catch(e){toast(plain)}};show()}
 function openTarea(k){const t=tareas[k];if(!t)return;$("dr-t").innerHTML=`<span class="eyebrow">Tarea interna</span><h3>${esc(t.nombre)}</h3>`;$("dr-b").innerHTML=`<dl class="kv"><dt>Asignada a</dt><dd>${P[t.a].n}</dd><dt>Estado</dt><dd>${{pendiente:"Pendiente",en_curso:"En curso",hecha:"Hecha"}[t.estado]}</dd><dt>Pedido</dt><dd>${t.pedidoId?`<a href="#" data-job="${t.pedidoId}" style="color:var(--azul-2)">${refHtml(t.pedidoId)}</a>`:"—"}</dd>${t.bloquea?`<dt>Si no se hace</dt><dd style="color:var(--bad)">${esc(t.bloquea.txt)}</dd>`:""}</dl>`;show()}
 function show(){$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("scrim").classList.add("on");$("dr-x").focus()}
@@ -1118,11 +1140,14 @@ const esAtrasado=j=>!!j.fechaLimite&&j.estado!=="entregado"&&!(j.estado==="listo
 const venceHoy=j=>j.fechaLimite===HOY&&j.estado!=="entregado"&&!(j.estado==="listo"&&j.tipoEntrega==="Retiro");
 const esEstancado=j=>(j.estado==="recibido"||j.estado==="pedidos_shopify")&&j.createdAt&&(Date.now()-new Date(j.createdAt))/86400000>2;
 const sinDoc=j=>["listo","entregado"].includes(j.estado)&&j.documento!=="SI"&&j.documento!=="NA";
-function duenoDe(j){
-  if(j.responsable){const f=j.responsable.split(" ")[0];const p=TEAM.find(t=>t.nombre===f);if(p)return p.id}
-  if(j.personas&&j.personas.length)return j.personas[0];
-  return null;
-}
+function duenoDe(j){return (j.resps||[])[0]||null}
+const esDe=(j,pid)=>(j.resps||[]).includes(pid);
+const respTxt=(j,vacio)=>(j.responsables||[]).map(n=>n.split(" ")[0]).join(", ")||vacio;
+// Pedido en pre-prensa con Allyson y alguien más: ese alguien espera los archivos de Allyson para empezar (José, 03-11-2026)
+const ENPRE=j=>j.estado==="pedidos_shopify"||j.estado==="recibido";
+function esperaHtml(j,pid){ const rs=j.resps||[]; if(!ENPRE(j)||!rs.includes("AL"))return "";
+  if(pid!=="AL")return '<span class="esp">⏳ espera a Allyson</span>';
+  const otros=rs.filter(x=>x!=="AL").map(x=>PERS[x]&&PERS[x].nombre).filter(Boolean); return otros.length?`<span class="esp">→ luego ${esc(otros.join(", "))}</span>`:""; }
 function due(f,estado){
   if(!f)return {c:"",l:"Sin fecha"};
   const d=diffDays(f,HOY);
@@ -1191,12 +1216,12 @@ function renderFlow(){
 }
 
 function itemsDe(pid){
-  const js=abiertos().filter(([,j])=>duenoDe(j)===pid).map(([id,j])=>({kind:"job",id,j,f:j.fechaLimite,prio:j.prioridad}));
+  const js=abiertos().filter(([,j])=>esDe(j,pid)).map(([id,j])=>({kind:"job",id,j,f:j.fechaLimite,prio:j.prioridad}));
   const ts=Object.entries(tareas).filter(([,t])=>t.asignados.includes(pid)&&t.estado!=="hecha").map(([id,t])=>({kind:"tarea",id,t,f:t.fechaLimite,prio:t.prioridad}));
   return [...js,...ts];
 }
 function ahoraDe(pid){
-  const enCurso=abiertos().filter(([,j])=>(j.estado==="en_produccion"&&(j.impresionBy===pid||(!j.impresionBy&&duenoDe(j)===pid)))||(j.estado==="maquilado"&&duenoDe(j)===pid))
+  const enCurso=abiertos().filter(([,j])=>(j.estado==="en_produccion"&&(j.impresionBy===pid||(!j.impresionBy&&esDe(j,pid))))||(j.estado==="maquilado"&&esDe(j,pid)))
     .sort((a,b)=>new Date(b[1].impresionAt)-new Date(a[1].impresionAt));
   if(enCurso.length)return {kind:"job",id:enCurso[0][0],j:enCurso[0][1],desde:(enCurso[0][1].estado==="maquilado"?(enCurso[0][1].maquiladoAt||enCurso[0][1].impresionAt):enCurso[0][1].impresionAt)||enCurso[0][1].updatedAt||enCurso[0][1].createdAt};
   const t=Object.entries(tareas).find(([,t])=>t.asignados.includes(pid)&&t.estado==="en_curso");
@@ -1223,7 +1248,7 @@ function renderDep(){
   $("dep-sum").innerHTML=`<div class="hot"><b>${nBlk}</b> bloquean a otros</div><div><b>${nHoy}</b> para hoy o atrasados</div><div><b>${its.length}</b> en total</div>${ah?`<div>Ahora: <b style="font-size:15px">${ah.kind==="job"?refHtml(ah.id):esc(ah.t.nombre)}</b></div>`:""}`;
   $("dep-list").innerHTML=its.slice(0,7).map(x=>{
     if(x.kind==="job"){const j=x.j,d=due(j.fechaLimite,j.estado);
-      return `<li class="item" data-job="${x.id}"><span class="sev ${x.sev}"></span><div class="it-main"><div class="it-top">${numDe(x.id)?`<span class="it-id">${numHtml(x.id)}</span>`:""}${j.origen==="reimpresion"?'<span class="urg">URG-REIMPRESIÓN</span>':""}<span class="it-name">${esc(j.cliente)}</span></div><div class="it-sub">${typePill(j.tipoDtf)}<span>${fmtCant(j)}</span><span class="ent">· ${ENTREGA[j.tipoEntrega]||"Sin entrega"}</span></div>${x.blk.map(b=>`<span class="block">⛓ ${esc(b)}</span>`).join("")}</div><div class="it-right">${stPill(j.estado)}<span class="due ${d.c}">${d.l}</span></div></li>`;}
+      return `<li class="item" data-job="${x.id}"><span class="sev ${x.sev}"></span><div class="it-main"><div class="it-top">${numDe(x.id)?`<span class="it-id">${numHtml(x.id)}</span>`:""}${j.origen==="reimpresion"?'<span class="urg">URG-REIMPRESIÓN</span>':""}<span class="it-name">${esc(j.cliente)}</span></div><div class="it-sub">${typePill(j.tipoDtf)}<span>${fmtCant(j)}</span>${esperaHtml(j,"JP")}<span class="ent">· ${ENTREGA[j.tipoEntrega]||"Sin entrega"}</span></div>${x.blk.map(b=>`<span class="block">⛓ ${esc(b)}</span>`).join("")}</div><div class="it-right">${stPill(j.estado)}<span class="due ${d.c}">${d.l}</span></div></li>`;}
     const t=x.t,d=due(t.fechaLimite);
     return `<li class="item" data-tarea="${x.id}"><span class="sev ${x.sev}"></span><div class="it-main"><div class="it-top"><span class="it-id" style="color:var(--ink-3)">Tarea</span><span class="it-name">${esc(t.nombre)}</span></div><div class="it-sub">${t.pedidoId?`<span>Pedido ${t.pedidoId}</span>`:"<span>Interna</span>"}${t.prioridad==="urgente"?'<span class="urg">URGENTE</span>':""}</div>${x.blk.map(b=>`<span class="block">⛓ ${esc(b)}</span>`).join("")}</div><div class="it-right"><span class="pill p-tarea">${t.estado==="en_curso"?"En curso":"Pendiente"}</span><span class="due ${d.c}">${d.l}</span></div></li>`;
   }).join("");
@@ -1232,13 +1257,13 @@ function renderDep(){
 function renderAlerts(){
   const A=[];
   abiertos().forEach(([id,j])=>{
-    if(esAtrasado(j))A.push({s:"bad",w:0,id,ic:"!",b:`${refHtml(id)} atrasado`,x:`${esc(j.cliente)} · ${j.tipoDtf} · ${ST[j.estado]} · resp. ${PERS[duenoDe(j)]?.nombre||"sin responsable"}`});
+    if(esAtrasado(j))A.push({s:"bad",w:0,id,ic:"!",b:`${refHtml(id)} atrasado`,x:`${esc(j.cliente)} · ${j.tipoDtf} · ${ST[j.estado]} · resp. ${esc(respTxt(j,"sin responsable"))}`});
     if(venceHoy(j)&&ORDEN.indexOf(j.estado)<3)A.push({s:"warn",w:2,id,ic:"◷",b:`${refHtml(id)} vence hoy y no ha entrado a impresión`,x:`${esc(j.cliente)} · ${j.tipoDtf} ${fmtCant(j)} · ${ST[j.estado]}`});
     if(esEstancado(j))A.push({s:"warn",w:3,id,ic:"≡",b:`${refHtml(id)} lleva más de 2 días en «${ST[j.estado]}»`,x:`${esc(j.cliente)} · ${j.tipoDtf} · pre-prensa`});
     if(sinDoc(j))A.push({s:"info",w:5,id,ic:"$",b:`${refHtml(id)} listo sin boleta ni factura`,x:`${esc(j.cliente)} · avisar a ventas antes de entregar`});
     const miss=faltantes(j);if(miss.length&&ORDEN.indexOf(j.estado)<=2)A.push({s:"warn",w:4,id,ic:"✎",b:`${refHtml(id)}: leyenda incompleta`,x:`Falta ${miss.join(" y ")}`});
   });
-  abiertos().forEach(([id,j])=>{ if(j.estado==="listo"){ bloqueosInversos(id).forEach(o=>A.push({s:"bad",w:1,id,ic:"⛓",b:`${refHtml(id)} listo, pero su pedido vinculado no`,x:`${refHtml(o)} (${jobs[o].tipoDtf}) sigue en «${ST[jobs[o].estado]}» · resp. ${PERS[duenoDe(jobs[o])]?.nombre||"—"}`})); } });
+  abiertos().forEach(([id,j])=>{ if(j.estado==="listo"){ bloqueosInversos(id).forEach(o=>A.push({s:"bad",w:1,id,ic:"⛓",b:`${refHtml(id)} listo, pero su pedido vinculado no`,x:`${refHtml(o)} (${jobs[o].tipoDtf}) sigue en «${ST[jobs[o].estado]}» · resp. ${esc(respTxt(jobs[o],"—"))}`})); } });
   const p=partsCL();
   rutina().filter(h=>h.dur&&p.min>=h.t-60&&p.min<=h.t+45).slice(0,1).forEach(h=>{const imp=abiertos().filter(([,j])=>j.estado==="en_produccion").length;A.push({s:"info",w:1.5,ic:"⏸",b:`Chequeo antes de la ${h.l.toLowerCase()} (${fmtM(h.t)})`,x:`${imp} trabajos en impresión: confirma quién queda a cargo de cada máquina`});});
   A.sort((a,b)=>a.w-b.w);
@@ -1268,7 +1293,7 @@ function renderTeam(){
     else if(ah){now=`<div class="now" data-tarea="${ah.id}"><span class="eyebrow"><span>Ahora · tarea</span><span class="timer" data-since="${ah.desde}">${elapsed(ah.desde)}</span></span><span class="t">${esc(ah.t.nombre)}</span><span class="m">${ah.t.pedidoId?`Pedido ${ah.t.pedidoId}`:"Tarea interna"}</span></div>`}
     else now=`<div class="now idle"><span class="eyebrow"><span>Ahora</span></span><span class="t">Sin nada en curso</span><span class="m">${cola.length?`Le sigue: ${esc(cola[0].kind==="job"?[numDe(cola[0].id),cola[0].j.cliente].filter(Boolean).join(" · "):cola[0].t.nombre)}`:"Cola vacía: asígnale una tarea"}</span></div>`;
     const q=cola.slice(0,4).map(x=>{
-      if(x.kind==="job"){const d=due(x.j.fechaLimite,x.j.estado);return `<li class="qi" data-job="${x.id}"><div style="min-width:0"><div class="n">${numDe(x.id)?`<em>${numHtml(x.id)}</em>`:""}${esc(x.j.cliente||"(sin cliente)")}</div><div class="sub">${typePill(x.j.tipoDtf)}<span>${fmtCant(x.j)}</span></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="pill p-${x.j.estado}">${ST[x.j.estado].replace("Enviado a ","")}</span><span class="due ${d.c}">${d.l}</span></div></li>`}
+      if(x.kind==="job"){const d=due(x.j.fechaLimite,x.j.estado);return `<li class="qi" data-job="${x.id}"><div style="min-width:0"><div class="n">${numDe(x.id)?`<em>${numHtml(x.id)}</em>`:""}${esc(x.j.cliente||"(sin cliente)")}</div><div class="sub">${typePill(x.j.tipoDtf)}<span>${fmtCant(x.j)}</span>${esperaHtml(x.j,p.id)}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="pill p-${x.j.estado}">${ST[x.j.estado].replace("Enviado a ","")}</span><span class="due ${d.c}">${d.l}</span></div></li>`}
       const d=due(x.t.fechaLimite);return `<li class="qi" data-tarea="${x.id}"><div style="min-width:0"><div class="n"><span class="tk">☐</span>${esc(x.t.nombre)}</div><div class="sub">${x.t.recurrente?`<span>↻ ${x.t.recurrente}</span>`:x.t.pedidoId?`<span>Pedido ${x.t.pedidoId}</span>`:"<span>Tarea interna</span>"}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="pill p-tarea">Tarea</span><span class="due ${d.c}">${d.l}</span></div></li>`;
     }).join("");
     const mts=its.filter(x=>x.kind==="job"&&UNIT(x.j.tipoDtf)==="m"&&ORDEN.indexOf(x.j.estado)<4).reduce((s,x)=>s+x.j.cantidad,0);
@@ -1298,7 +1323,7 @@ function renderMetros(){
   const imp=pend.filter(j=>j.estado==="en_produccion").reduce((s,j)=>s+j.cantidad,0);
   $("metros").innerHTML=`<div class="mt-big"><b>${m2(tot)}</b><span>metros · ${pend.length} pedidos</span></div>`+
     T.map(([t,c],i)=>`<div class="mrow"><span>${t}</span><span class="bar"><i style="width:${v[i]/max*100}%;background:${c}"></i></span><span class="v">${m2(v[i])} m</span></div>`).join("")+
-    `<div class="mt-note">${m2(imp)} m imprimiéndose ahora en la Mimaki UCJV300. Sale de la columna «cantidad» de cada pedido en metros.</div>`;
+    `<div class="mt-note">${m2(imp)} m imprimiéndose ahora en las impresoras DTF. Sale de la columna «cantidad» de cada pedido en metros.</div>`;
 }
 
 function renderFeed(newOne){
@@ -1378,7 +1403,7 @@ function openJob(id){
     <div class="legend-box"><div class="eyebrow"><span>Leyenda para el archivo</span><span style="color:${miss.length?"var(--bad)":"var(--good)"}">${miss.length?"Incompleta":"Completa"}</span></div><div class="legend-txt">${leg.join(" · ")}</div>${miss.length?"":`<button type="button" id="a-copy-leg">Copiar leyenda</button>`}</div>
     <dl class="kv">
       <dt>Producto</dt><dd>${esc(j.tipoDtf)} · ${fmtCant(j)}</dd>
-      <dt>Responsable</dt><dd>${esc(j.responsable||(j.personas||[]).map(x=>PERS[x]?.full).join(", ")||"Sin responsable")}</dd>
+      <dt>Responsable</dt><dd>${esc((j.responsables||[]).join(", ")||(j.personas||[]).map(x=>PERS[x]?.full).join(", ")||"Sin responsable")}</dd>
       <dt>Entrega</dt><dd>${ENTREGA[j.tipoEntrega]||'<span style="color:var(--bad)">Sin definir</span>'}</dd>
       <dt>Fecha límite</dt><dd>${j.fechaLimite||"—"}</dd>
       <dt>Boleta / factura</dt><dd>${j.documento==="SI"?"Emitida":j.documento==="NA"?"No aplica":"No emitida"}</dd>
