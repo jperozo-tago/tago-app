@@ -251,7 +251,27 @@ body.tv .wrap{max-width:none}
 .v1 .rail-top .greet{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,2.4vw,28px);margin:0}
 .v1 .rail-top .next{font-size:13px;color:var(--hdr-fg-2)}
 .v1 .rail-top .next b{color:var(--teal);font-family:var(--f-display);font-weight:600}
-.v1 .track{position:relative;height:46px}
+.v1 .track{position:relative;height:46px;touch-action:pan-y}
+.v1 .rail-r{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.v1 .rail-edit{font:inherit;font-size:12px;font-family:var(--f-display);font-weight:600;color:var(--hdr-fg);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 12px;cursor:pointer}
+.v1 .rail-edit:hover{background:rgba(255,255,255,.14)}
+.v1 .mile{cursor:grab;touch-action:none;user-select:none}
+.v1 .mile i{position:relative}
+.v1 .mile i::after{content:"";position:absolute;inset:-10px}
+.v1 .mile span{margin-top:calc(var(--row,0) * 28px)}
+.v1 .mile.drag{cursor:grabbing;z-index:2}
+.v1 .mile.drag i{background:var(--teal);border-color:#fff;box-shadow:0 0 0 6px rgba(73,206,171,.3)}
+.v1 .mile.drag span{display:flex;flex-direction:column}
+.v1 .rut-f{display:grid;gap:10px}
+.v1 .rut-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px}
+.v1 .rut-row>span:first-child{font-family:var(--f-display);font-weight:600}
+.v1 .rut-row input{font:inherit;font-family:var(--f-display);font-weight:600;color:var(--ink);background-color:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color-scheme:dark}
+.v1 .rut-row input[type=number]{width:64px}
+.v1 .rut-dur{grid-column:1/-1;display:flex;align-items:center;gap:8px;color:var(--ink-3);font-size:12px}
+.v1 .rut-nota{margin:0;font-size:12px;color:var(--ink-3)}
+.v1 .rut-acc{display:flex;gap:8px;flex-wrap:wrap}
+.v1 .rut-acc button{font:inherit;font-family:var(--f-display);font-weight:600;font-size:13px;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink-2)}
+.v1 .rut-acc .rut-ok{background:var(--azul);border-color:transparent;color:#fff}
 .v1 .track-line{position:absolute;left:0;right:0;top:12px;height:4px;border-radius:4px;background:rgba(255,255,255,.12)}
 .v1 .track-fill{position:absolute;left:0;top:12px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--azul),var(--teal))}
 .v1 .track-now{position:absolute;top:4px;width:2px;height:20px;background:var(--teal);border-radius:2px}
@@ -593,7 +613,7 @@ a.hbtn{text-decoration:none;color:var(--ink)}
   <div class="wrap">
     <div class="rail-top">
       <p class="greet" id="a-greet">Hola, José</p>
-      <span class="next" id="a-next-mile"></span>
+      <div class="rail-r"><span class="next" id="a-next-mile"></span><button type="button" class="rail-edit" id="a-rail-edit">Ajustar horarios</button></div>
     </div>
     <div class="track" id="a-track">
       <div class="track-line"></div>
@@ -667,8 +687,12 @@ a.hbtn{text-decoration:none;color:var(--ink)}
    ──────────────────────────────────────────────────────────────────────────
    · Entra con el mismo Google del ecosistema. Solo lo abre quien está en
      ACCESO_OPERACIONES (hoy, José). Para otra cuenta muestra «sin acceso».
-   · Escucha tago_pedidos, tago_tareas y tago_tareas_estados. Nunca escribe en
-     la base: no hay un solo set/update/push/remove en esta página.
+   · Escucha tago_pedidos, tago_tareas y tago_tareas_estados. Nunca escribe
+     pedidos ni tareas. Lo único que escribe es su propia configuración:
+     tago_operaciones/rutina (horas de apertura, planificación, reunión,
+     colación de Miguel y de Ignacio, cierre), que José ajusta arrastrando los
+     puntos de la barra o desde «Ajustar horarios» (02-11-2026). Solo José la
+     lee y la escribe (database.rules.json).
    · Normaliza cada pedido a la forma que usan las dos vistas (ids de persona
      como texto, hermanos de tambienCompro, hora de entrega) sobre una COPIA:
      los objetos de la base no se tocan.
@@ -676,7 +700,16 @@ a.hbtn{text-decoration:none;color:var(--ink)}
      enviadoProdAt, impresionAt, maquiladoAt, listaAt, entregadoAt y sus …By).
    ══════════════════════════════════════════════════════════════════════════ */
 const ACCESO_OPERACIONES=["j.perozo@tago.cl"];
-window.DATA={jobs:{},tareas:{},feed:[],semanas:[],semanaPct:null,tareasError:false,cargado:false};
+window.DATA={jobs:{},tareas:{},feed:[],semanas:[],semanaPct:null,tareasError:false,cargado:false,rutina:null};
+// Rutina del día: horas por defecto; lo guardado en tago_operaciones/rutina/hitos/<k> = {t (minutos desde 00:00), dur?} manda.
+window.RUTINA_DEF={apertura:{l:"Apertura",t:8*60+30},planificacion:{l:"Planificación",t:8*60+45},reunion:{l:"Reunión de pie",t:9*60},
+  colacion_MG:{l:"Colación Miguel",t:12*60+45,dur:60,quien:"MG"},colacion_IP:{l:"Colación Ignacio",t:13*60+45,dur:60,quien:"IP"},cierre:{l:"Cierre",t:17*60+30}};
+window.rutina=()=>{ const g=(DATA.rutina&&DATA.rutina.hitos)||{};
+  return Object.entries(RUTINA_DEF).map(([k,d])=>{ const v=g[k]||{}; const t=+v.t; return {k,...d,t:Number.isFinite(t)&&v.t!=null?t:d.t,dur:d.dur?(+v.dur||d.dur):0}; }).sort((a,b)=>a.t-b.t); };
+// colación de una persona; quien no tiene una propia (José, Allyson) usa la primera del día
+window.colacionDe=pid=>{ const cs=rutina().filter(h=>h.dur); return cs.find(h=>h.quien===pid)||cs[0]||null; };
+window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.rutina; DATA.rutina={...(antes||{}),hitos};
+  return firebase.database().ref("tago_operaciones/rutina").set({hitos,updatedAt:firebase.database.ServerValue.TIMESTAMP,updatedBy:(u&&u.email)||""}).catch(e=>{ DATA.rutina=antes; throw e; }); };
 (()=>{
   const FIREBASE_CONFIG={
     apiKey:"AIzaSyC_9mguXUm-Oo8v8FuqhesCNQ1mCEIc0zI", authDomain:"tago-app-489c1.firebaseapp.com",
@@ -728,6 +761,7 @@ window.DATA={jobs:{},tareas:{},feed:[],semanas:[],semanaPct:null,tareasError:fal
       entrada("cargando",/permission/i.test(e&&e.message||"")?"Tu cuenta no tiene permiso para leer los pedidos (tago_permitidos).":"No se pudieron leer los pedidos: "+(e&&e.message||e)); });
     escucha("tago_tareas_estados",s=>{ raw.estados=s.val()||{}; programa(); },()=>{});
     escucha("tago_tareas",s=>{ raw.tareas=s.val()||{}; DATA.tareasError=false; programa(); },()=>{ DATA.tareasError=true; raw.tareas={}; programa(); });
+    escucha("tago_operaciones/rutina",s=>{ DATA.rutina=s.val(); programa(); },()=>{});
     const con=firebase.database().ref(".info/connected"); const cb=con.on("value",s=>{ const live=$("live"); if(live){ live.classList.toggle("paused",!s.val()); const t=live.querySelector("span:last-child"); if(t) t.textContent=s.val()?"En vivo":"Sin conexión"; } }); escuchas.push([con,"value",cb]);
   });
 
@@ -943,11 +977,12 @@ function renderFloor(){
 /* ── Gantt ── */
 function renderGantt(){
   const now=cl().min;
-  const S=Math.min(8*60,Math.floor((now-600)/60)*60), E=Math.max(18*60+30,Math.ceil((now+40)/60)*60);
+  const R=rutina(), hit=k=>R.find(h=>h.k===k).t, aper=hit("apertura"), cie=hit("cierre");
+  const S=Math.min(Math.floor((aper-15)/60)*60,Math.floor((now-600)/60)*60), E=Math.max(Math.ceil((cie+60)/60)*60,Math.ceil((now+40)/60)*60);
   const x=m=>((m-S)/(E-S)*100);
   let hours="";for(let h=Math.ceil(S/60);h*60<=E;h++)hours+=`<span style="left:${x(h*60)}%">${String(h%24).padStart(2,"0")}:00</span>`;
   const grid=Array.from({length:Math.floor(E/60)-Math.ceil(S/60)+1},(_,i)=>`<span class="g-grid" style="left:${x((Math.ceil(S/60)+i)*60)}%"></span>`).join("");
-  const miles=[[8*60+45,"Planificación y reunión"],[12*60+45,"Colación"],[17*60+30,"Cierre"]].filter(([m])=>m>=S&&m<=E);
+  const miles=[];R.forEach(h=>{if(h.t<S||h.t>E)return;const u=miles[miles.length-1];if(u&&h.t-u[2]<=20){u[1]+=" · "+h.l;u[2]=h.t}else miles.push([h.t,h.l,h.t])}); // los muy juntos van en una sola etiqueta
   const rows=TEAM.map(p=>{
     const bl=[];
     Object.entries(jobs).forEach(([id,j])=>{
@@ -957,11 +992,12 @@ function renderGantt(){
     });
     Object.entries(tareas).forEach(([k,t])=>{if(t.a===p.id&&t.ini&&cl(new Date(t.ini)).ymd===HOY){const a=minOf(t.ini),b=t.fin?minOf(t.fin):now;bl.push({a,b,cur:t.estado==="en_curso",tarea:k,t:t.nombre,s:"Tarea",task:1})}});
     bl.sort((u,v)=>u.a-v.a);
-    // huecos > 25 min entre 9:00 y ahora (sin contar colación)
-    const gaps=[];let cur=Math.max(S,9*60);
-    bl.filter(b=>!b.bg).forEach(b=>{if(b.a-cur>25)gaps.push([cur,b.a]);cur=Math.max(cur,b.b)});
-    if(now-cur>25&&!bl.some(b=>b.cur&&!b.bg))gaps.push([cur,now]);
-    const gapsF=gaps.flatMap(([a,b])=>{const c0=12*60+45,c1=13*60+45;if(b<=c0||a>=c1)return[[a,b]];const o=[];if(c0-a>25)o.push([a,c0]);if(b-c1>25)o.push([c1,b]);return o});
+    // huecos > 25 min entre la reunión de pie y el cierre (o ahora), sin contar la colación de esa persona
+    const ini=hit("reunion"), fin=Math.min(now,cie), col=colacionDe(p.id);
+    const gaps=[];let cur=Math.max(S,ini);
+    bl.filter(b=>!b.bg).forEach(b=>{const a=Math.min(b.a,fin);if(a-cur>25)gaps.push([cur,a]);cur=Math.max(cur,b.b)});
+    if(fin-cur>25&&!bl.some(b=>b.cur&&!b.bg))gaps.push([cur,fin]);
+    const gapsF=gaps.flatMap(([a,b])=>{if(!col)return[[a,b]];const c0=col.t,c1=col.t+col.dur;if(b<=c0||a>=c1)return[[a,b]];const o=[];if(c0-a>25)o.push([a,c0]);if(b-c1>25)o.push([c1,b]);return o});
     const lane=bl.map(b=>`<div class="g-b ${b.task?"task":""} ${b.cur?"cur":""}" ${b.job?`data-job="${b.job}"`:`data-tarea="${b.tarea}"`} style="left:${x(b.a)}%;width:${Math.max(.6,x(b.b)-x(b.a))}%;--tc:${b.c||"#545B7E"};${b.bg?"top:30px;height:16px;opacity:.75":""}" title="${esc(b.t)} · ${fmtMin(b.a)}–${fmtMin(b.b)}"><b>${esc(b.t)}</b>${b.bg?"":`<span>${esc(b.s)} · ${fmtMin(b.a)}</span>`}</div>`).join("")+
       gapsF.map(([a,b])=>`<div class="g-gap" style="left:${x(a)}%;width:${x(b)-x(a)}%" title="Sin nada en curso ${fmtMin(a)}–${fmtMin(b)} (${b-a} min)"></div>`).join("");
     return `<div class="g-row"><div class="g-who"><span class="av" style="--pc:${p.c}">${p.id}</span>${p.n}</div><div class="g-lane">${grid}${lane}</div></div>`;
@@ -1204,7 +1240,7 @@ function renderAlerts(){
   });
   abiertos().forEach(([id,j])=>{ if(j.estado==="listo"){ bloqueosInversos(id).forEach(o=>A.push({s:"bad",w:1,id,ic:"⛓",b:`${refHtml(id)} listo, pero su pedido vinculado no`,x:`${refHtml(o)} (${jobs[o].tipoDtf}) sigue en «${ST[jobs[o].estado]}» · resp. ${PERS[duenoDe(jobs[o])]?.nombre||"—"}`})); } });
   const p=partsCL();
-  if(p.min>=11*60+45&&p.min<=13*60+30){const imp=abiertos().filter(([,j])=>j.estado==="en_produccion").length;A.push({s:"info",w:1.5,ic:"⏸",b:"Chequeo antes de colación",x:`${imp} trabajos en impresión: confirma quién queda a cargo de cada máquina`});}
+  rutina().filter(h=>h.dur&&p.min>=h.t-60&&p.min<=h.t+45).slice(0,1).forEach(h=>{const imp=abiertos().filter(([,j])=>j.estado==="en_produccion").length;A.push({s:"info",w:1.5,ic:"⏸",b:`Chequeo antes de la ${h.l.toLowerCase()} (${fmtM(h.t)})`,x:`${imp} trabajos en impresión: confirma quién queda a cargo de cada máquina`});});
   A.sort((a,b)=>a.w-b.w);
   $("al-count").textContent=A.length;
   $("alerts").innerHTML=A.slice(0,7).map(a=>`<li class="al ${a.s}" ${a.id?`data-job="${a.id}"`:""}><span class="ic">${a.ic}</span><div><b>${a.b}</b><span>${a.x}</span></div></li>`).join("")+(A.length>7?`<li class="foot" style="text-align:left;padding-left:4px">y ${A.length-7} más</li>`:"");
@@ -1269,19 +1305,58 @@ function renderFeed(newOne){
   $("feed").innerHTML=feed.slice(0,14).map((f,i)=>`<li class="fe ${newOne&&i===0?"new":""}"><time>${hhmm(f.t)}</time><span class="a" style="background:${PERS[f.a]?.color||"#545B7E"}">${f.a}</span><p>${f.x}</p></li>`).join("");
 }
 
+const fmtM=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+let railGeo={S:8*60,E:18*60}, railDrag=null;
 function renderRail(){
+  if(railDrag)return; // no repintar mientras se arrastra un punto
   const p=partsCL();
-  const M=[{t:8*60+45,l:"Planificación",h:"08:45"},{t:9*60,l:"Reunión de pie",h:"09:00"},{t:12*60+45,l:"Chequeo colación",h:"12:45"},{t:17*60+30,l:"Cierre",h:"17:30"}];
-  const S=8*60,E=18*60;const pos=m=>Math.min(100,Math.max(0,(m-S)/(E-S)*100));
-  const nx=M.find(m=>m.t>p.min);
+  const M=rutina().map(h=>({...h,h:fmtM(h.t)}));
+  const S=Math.floor((Math.min(...M.map(m=>m.t))-15)/30)*30, E=Math.ceil((Math.max(...M.map(m=>m.t))+30)/30)*30;railGeo={S,E};
+  const pos=m=>Math.min(100,Math.max(0,(m-S)/(E-S)*100));
+  const nx=M.find(m=>m.t>p.min), cie=M.find(m=>m.k==="cierre");
+  // etiquetas: si se tocan con la anterior bajan a otra fila (en el celular solo se ve la siguiente)
+  const W=$("track").clientWidth||1000, chico=matchMedia("(max-width:620px)").matches, filas=[];let nf=1;
+  M.forEach(m=>{const px=pos(m.t)/100*W,w=Math.max(56,m.l.length*6.4+10);m.al=px-w/2<0?"al-l":px+w/2>W?"al-r":"";
+    const x0=m.al==="al-l"?px-8:m.al==="al-r"?px-w+8:px-w/2;let r=0;if(!chico)while(filas[r]!=null&&filas[r]+10>x0)r++;filas[r]=x0+w;m.row=r;nf=Math.max(nf,r+1)});
+  $("track").style.height=(46+(nf-1)*28)+"px";
   $("track").innerHTML=`<div class="track-line"></div><div class="track-fill" style="width:${pos(p.min)}%"></div>`+
-    M.map((m,i)=>{const cls=m.t<=p.min?"done":(nx===m?"next":"");const al=i===0?"al-r":i===1?"al-l":"";const tr=i===0?"translateX(calc(-100% + 8px))":i===1?"translateX(-8px)":i===M.length-1?"translateX(-80%)":"translateX(-50%)";return `<div class="mile ${cls} ${al}" style="left:${pos(m.t)}%;transform:${tr}"><i></i><span><b>${m.h}</b>${m.l}</span></div>`}).join("")+
+    M.map(m=>{const cls=m.t<=p.min?"done":(nx===m?"next":"");const tr=m.al==="al-r"?"translateX(calc(-100% + 8px))":m.al==="al-l"?"translateX(-8px)":"translateX(-50%)";return `<div class="mile ${cls} ${m.al}" data-k="${m.k}" data-t="${m.t}" style="left:${pos(m.t)}%;transform:${tr};--row:${m.row}" title="${esc(m.l)} · ${m.h} · arrastra para mover, toca para editar"><i></i><span><b>${m.h}</b>${esc(m.l)}</span></div>`}).join("")+
     (p.min>=S&&p.min<=E?`<div class="track-now ${pos(p.min)>85?"end":""}" style="left:${pos(p.min)}%" data-t="${String(p.h).padStart(2,"0")}:${String(p.m).padStart(2,"0")}"></div>`:"");
-  if(nx){const d=nx.t-p.min;$("next-mile").innerHTML=`Siguiente: <b>${nx.l}</b> en ${d>=60?Math.floor(d/60)+" h "+(d%60)+" min":d+" min"}`}
-  else $("next-mile").innerHTML=p.min>=E?"Jornada cerrada · <b>revisa el cierre de las 17:30</b>":"";
+  if(nx){const d=nx.t-p.min;$("next-mile").innerHTML=`Siguiente: <b>${esc(nx.l)}</b> en ${d>=60?Math.floor(d/60)+" h "+(d%60)+" min":d+" min"}`}
+  else $("next-mile").innerHTML=p.min>=cie.t?`Jornada cerrada · <b>revisa el cierre de las ${cie.h}</b>`:"";
   const sal=p.h<12?"Buenos días":p.h<20?"Buenas tardes":"Buenas noches";
   const fecha=new Intl.DateTimeFormat("es-CL",{timeZone:TZ,weekday:"long",day:"numeric",month:"long"}).format(new Date());
   $("greet").textContent=`${sal}, José · ${fecha}`;
+}
+// Guardar la rutina: siempre el juego completo de horas, con los cambios encima
+function guardarHitos(cambios){
+  const h={};rutina().forEach(x=>{h[x.k]={t:x.t};if(x.dur)h[x.k].dur=x.dur});
+  Object.entries(cambios).forEach(([k,v])=>{if(h[k])Object.assign(h[k],v)});
+  return guardarRutina(h).then(()=>{toast("Rutina guardada");return true}).catch(e=>{toast("No se pudo guardar la rutina: "+(e&&e.message||e));return false}).finally(()=>window.V1&&window.V1.render(false));
+}
+// Arrastrar un punto: pasos de 5 min; si casi no se movió, abre el editor en esa hora
+$("track").addEventListener("pointerdown",e=>{const mi=e.target.closest(".mile");if(!mi||e.button>0)return;e.preventDefault();
+  railDrag={k:mi.dataset.k,el:mi,x0:e.clientX,t:+mi.dataset.t,t0:+mi.dataset.t,moved:false};mi.setPointerCapture(e.pointerId)});
+$("track").addEventListener("pointermove",e=>{const d=railDrag;if(!d)return;if(!d.moved&&Math.abs(e.clientX-d.x0)<4)return;
+  if(!d.moved){d.moved=true;d.el.classList.add("drag");d.el.style.transform="translateX(-50%)";d.el.classList.remove("al-l","al-r")}
+  const r=$("track").getBoundingClientRect(),{S,E}=railGeo,f=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+  d.t=Math.min(23*60+55,Math.max(0,Math.round((S+f*(E-S))/5)*5));d.el.style.left=((d.t-S)/(E-S)*100)+"%";d.el.querySelector("b").textContent=fmtM(d.t)});
+$("track").addEventListener("pointerup",()=>{const d=railDrag;if(!d)return;railDrag=null;
+  if(!d.moved){renderRail();abrirRutina(d.k);return}
+  if(d.t===d.t0){renderRail();return}
+  guardarHitos({[d.k]:{t:d.t}})});
+$("track").addEventListener("pointercancel",()=>{railDrag=null;renderRail()});
+$("rail-edit").addEventListener("click",()=>abrirRutina());
+function abrirRutina(foco){
+  const R=rutina();
+  $("dr-title").innerHTML=`<span class="eyebrow">Rutina del día</span><h3>Horarios</h3>`;
+  $("dr-body").innerHTML=`<form id="a-rut-f" class="rut-f">${R.map(h=>`<label class="rut-row"><span>${esc(h.l)}</span><input type="time" step="300" name="${h.k}" value="${fmtM(h.t)}" required>${h.dur?`<span class="rut-dur">Dura <input type="number" name="${h.k}__dur" min="15" max="180" step="5" value="${h.dur}"> min</span>`:""}</label>`).join("")}
+    <p class="rut-nota">También puedes arrastrar cada punto sobre la barra. Solo tú ves estos horarios y quedan iguales en tus otros dispositivos. La colación de cada uno define cuándo no se cuenta como «sin nada en curso» en «Hoy, persona por persona».</p>
+    <div class="rut-acc"><button type="submit" class="rut-ok">Guardar</button><button type="button" id="a-rut-def">Volver a las horas de siempre</button></div></form>`;
+  openDrawer();
+  const f=$("rut-f");if(foco&&f.elements[foco])setTimeout(()=>f.elements[foco].focus(),60);
+  f.onsubmit=e=>{e.preventDefault();const c={};R.forEach(h=>{const [hh,mm]=String(f.elements[h.k].value||"").split(":").map(Number);if(Number.isFinite(hh)&&Number.isFinite(mm))c[h.k]={t:hh*60+mm};if(h.dur){const v=Math.round(+f.elements[h.k+"__dur"].value/5)*5;(c[h.k]=c[h.k]||{}).dur=Math.max(15,Math.min(180,v||h.dur))}});guardarHitos(c).then(ok=>{if(ok)closeDrawer()})};
+  $("rut-def").onclick=()=>{const c={};Object.entries(RUTINA_DEF).forEach(([k,d])=>{c[k]={t:d.t};if(d.dur)c[k].dur=d.dur});guardarHitos(c).then(ok=>{if(ok)closeDrawer()})};
 }
 function tick(){
   document.querySelectorAll(".timer[data-since]").forEach(t=>t.textContent=elapsed(t.dataset.since));
