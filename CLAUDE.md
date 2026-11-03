@@ -74,6 +74,15 @@ Firestore).
     (`esDueno()`) agregan o quitan gente de cualquier grupo desde la cabecera («Integrantes») y ven
     en la barra lateral también los grupos en los que no están; el resto solo ve la lista. Cada cambio
     deja en `tago_mensajes` una línea `{sistema:true, autor, texto}` que se dibuja centrada.
+  - Robots que escriben en el chat (03-11-2026): la función `chatPublicar` (`deploy/functions/index.js`,
+    URL https://chatpublicar-prukg2gqfq-uc.a.run.app) recibe `POST` con cabecera `X-Clave` y cuerpo
+    `{"texto": "…"}` y deja el mensaje en UN grupo, con autor `{id:"ROBOT", nombre}`; Pedidos lo pinta
+    con avatar 🤖. La configuración está en la base, `tago_meta/robotChat: {clave, chat, nombre}` (sin
+    redesplegar): `chat` es el id del grupo, `clave` la que manda el robot (copia en
+    Data TAGO/informe/.chat_robot_clave). Rechaza dos mensajes con menos de un minuto entre sí. El primer
+    uso es el robot de prioridades de Grok (cada 2 h lee Vambe y ventas@tago.cl). Se despliega con
+    `firebase deploy --only functions:chatPublicar` desde `deploy/`; prueba local en
+    Data TAGO/.claude/sandbox/prueba-chat-robot.js.
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
 - `tago_tareas*` — módulo de tareas internas. `tago_tareas_estados/<id>` puede

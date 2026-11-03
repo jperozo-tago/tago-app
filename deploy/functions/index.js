@@ -120,3 +120,80 @@ exports.revisarArchivo = onRequest(
     for (const [i, url] of urls.entries()) resultados.push({ archivo_numero: i + 1, ...(await uno(url)) });
     res.status(200).json({ cantidad_de_archivos: urls.length, resultados });
   });
+
+// Entrada para robots al chat de Pedidos (03-11-2026). Un robot de afuera (el de prioridades que
+// Andreina arma en Grok: cada 2 h lee Vambe y ventas@tago.cl y escribe a quién responder primero)
+// deja su informe como un mensaje más en UN grupo del chat de Pedidos; la app lo muestra con avatar
+// de robot y avisa a los integrantes como con cualquier mensaje. Solo agrega mensajes: no lee, no
+// borra, no edita.
+//   POST https://chatpublicar-prukg2gqfq-uc.a.run.app   cabecera X-Clave: <clave>   cuerpo {"texto": "…"}
+//   (la clave también se acepta como «Authorization: Bearer <clave>» o dentro del JSON, en "clave")
+// La configuración vive en la base, en tago_meta/robotChat (no hace falta redesplegar para cambiarla):
+//   clave   la que manda el robot (copia en Data TAGO/informe/.chat_robot_clave)
+//   chat    id del grupo de tago_chats donde escribe (lo crea Andreina en la app)
+//   nombre  cómo se firma (por defecto «Robot de prioridades»)
+//   ultimo  lo anota la función: dos mensajes con menos de un minuto entre sí se rechazan (frena bucles)
+const admin = require("firebase-admin");
+if (!admin.apps.length) admin.initializeApp();
+const ROBOT_TOPE = 6000;         // caracteres por mensaje; lo que sobra se corta con «…»
+const ROBOT_PAUSA = 60 * 1000;   // mínimo entre mensajes del robot
+const ROBOT_ID = "ROBOT";        // Pedidos pinta este autor con el avatar 🤖
+
+const claveOk = (dada, esperada) => {
+  dada = String(dada || ""); esperada = String(esperada || "");
+  return esperada.length > 0 && dada.length === esperada.length && crypto.timingSafeEqual(Buffer.from(dada), Buffer.from(esperada));
+};
+const claveDe = (req) => {
+  const cab = String(req.get("X-Clave") || "");
+  if (cab) return cab;
+  const aut = String(req.get("Authorization") || "");
+  if (/^Bearer\s+/i.test(aut)) return aut.replace(/^Bearer\s+/i, "").trim();
+  return typeof req.body === "object" && req.body ? String(req.body.clave || "") : "";
+};
+// El cuerpo puede venir como JSON ({texto}, o mensaje/text/message si el robot se equivoca de
+// nombre), como texto plano, o como texto plano que en realidad es un JSON.
+const textoDe = (cuerpo) => {
+  if (typeof cuerpo === "string") {
+    const s = cuerpo.trim();
+    if (s.startsWith("{")) { try { return textoDe(JSON.parse(s)); } catch (e) { /* era texto con llaves */ } }
+    return s;
+  }
+  if (cuerpo && typeof cuerpo === "object") return String(cuerpo.texto ?? cuerpo.mensaje ?? cuerpo.text ?? cuerpo.message ?? "");
+  return "";
+};
+
+async function publicarComoRobot(db, cuerpo, clave, ahora = Date.now()) {
+  const cfg = (await db.ref("tago_meta/robotChat").once("value")).val() || {};
+  if (!cfg.clave || !cfg.chat) return { status: 503, body: { error: "falta configurar tago_meta/robotChat (clave y chat)" } };
+  if (!claveOk(clave, cfg.clave)) return { status: 401, body: { error: "clave inválida" } };
+  let texto = textoDe(cuerpo).replace(/\r\n/g, "\n").trim();
+  if (!texto) return { status: 400, body: { error: "falta el texto: manda un JSON {\"texto\": \"…\"}" } };
+  if (texto.length > ROBOT_TOPE) texto = texto.slice(0, ROBOT_TOPE - 1) + "…";
+  const chat = (await db.ref("tago_chats/" + cfg.chat).once("value")).val();
+  if (!chat || chat.tipo !== "grupal") return { status: 404, body: { error: "el grupo configurado en tago_meta/robotChat/chat no existe" } };
+  if (cfg.ultimo && ahora - cfg.ultimo < ROBOT_PAUSA) return { status: 429, body: { error: "espera un minuto entre mensajes" } };
+  const nombre = String(cfg.nombre || "Robot de prioridades");
+  const ref = db.ref("tago_mensajes/" + cfg.chat).push();
+  await ref.set({ autor: { id: ROBOT_ID, nombre }, texto, ts: ahora });
+  await db.ref().update({
+    ["tago_chats/" + cfg.chat + "/ultimoMensaje"]: { texto: texto.slice(0, 200), autorNombre: nombre, autorId: ROBOT_ID, ts: ahora },
+    "tago_meta/robotChat/ultimo": ahora,
+  });
+  return { status: 200, body: { ok: true, id: ref.key, grupo: chat.nombre || cfg.chat, caracteres: texto.length } };
+}
+
+exports.chatPublicar = onRequest(
+  { region: "us-central1", timeoutSeconds: 15, memory: "128MiB", maxInstances: 2 },
+  async (req, res) => {
+    if (req.method !== "POST") return res.status(405).json({ error: "solo POST, con cabecera X-Clave y cuerpo JSON {\"texto\": \"…\"}" });
+    try {
+      const r = await publicarComoRobot(admin.database(), req.body, claveDe(req));
+      console.log(r.status === 200 ? "publicado" : "rechazado", r.status, r.body.id || r.body.error);
+      res.status(r.status).json(r.body);
+    } catch (e) {
+      console.error("chatPublicar", e);
+      res.status(500).json({ error: "no se pudo publicar: " + e.message });
+    }
+  });
+// Para la prueba local (prueba-chat-robot.js en Data TAGO/.claude/sandbox): sin Firebase de verdad.
+exports._robot = { publicarComoRobot, claveDe, textoDe, ROBOT_TOPE, ROBOT_PAUSA };

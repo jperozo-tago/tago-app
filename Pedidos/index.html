@@ -252,6 +252,8 @@
     .av-sup{background:#F5A623;color:#07092E}
     .av-ger{background:#4063F9;color:#fff}
     .av-ceo{background:#F59E0B;color:#07092E}
+    .av-robot{background:#0B1447;color:#fff;font-size:15px}
+    .av-robot{background:#0B1447;color:#fff;font-size:15px}
 
     /* Badges */
     .badge{display:inline-block;border-radius:6px;font-size:11px;font-weight:600;padding:3px 8px;white-space:nowrap}
@@ -2923,7 +2925,7 @@ function renderChatMessages(){
     if(dia!==diaPrev){ html+=`<div class="chat-dia"><span>${dia}</span></div>`; diaPrev=dia; prevAutor=null; }
     if(m.sistema){ html+=`<div class="chat-dia chat-sistema"><span>${esc(m.texto||"")}</span></div>`; prevAutor=null; return; }
     if(!nuevosPuesto&&limite&&m.ts>limite&&m.autor?.id!==currentUser.id){ html+=`<div class="chat-nuevos"><span>Mensajes nuevos</span></div>`; nuevosPuesto=true; prevAutor=null; }
-    const p=EQUIPO.find(x=>x.id===m.autor?.id);
+    const p=EQUIPO.find(x=>x.id===m.autor?.id), robot=m.autor?.id==="ROBOT";
     const agrupado=prevAutor===m.autor?.id&&(m.ts-prevTs)<5*60*1000;
     const hora=d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
     const coincide=q&&((m.texto||"")+" "+(m.archivo?.nombre||"")).toLowerCase().includes(q); if(coincide) coincidencias++;
@@ -2934,9 +2936,9 @@ function renderChatMessages(){
     const mio=m.autor?.id===currentUser.id;
     const esGrupo=chatsMeta[currentChatId]?.tipo==="grupal";
     html+=`<div class="chat-m${mio?" mio":""}${agrupado?" agrupado":""}${coincide?" coincide":""}" id="msg-${id}" data-coincide="${coincide?coincidencias:""}" onclick="chatTocarMensaje(this,event)">
-      ${mio?"":`<div class="chat-m-av">${agrupado?"":`<div class="avatar ${p?p.avClass:"av-prod"}" title="${esc(m.autor?.nombre||"")}">${p?p.id:"?"}</div>`}</div>`}
+      ${mio?"":`<div class="chat-m-av">${agrupado?"":`<div class="avatar ${robot?"av-robot":p?p.avClass:"av-prod"}" title="${esc(m.autor?.nombre||"")}">${robot?"🤖":p?p.id:"?"}</div>`}</div>`}
       <div class="chat-m-cuerpo">
-        ${(mio||agrupado||!esGrupo)?"":`<div class="chat-m-head"><span class="chat-m-autor" style="color:${colorPersona(m.autor?.id)}">${esc(m.autor?.nombre||"?")}</span></div>`}
+        ${(mio||agrupado||!esGrupo)?"":`<div class="chat-m-head"><span class="chat-m-autor" style="color:${robot?"#0B1447":colorPersona(m.autor?.id)}">${esc(m.autor?.nombre||"?")}</span></div>`}
         ${m.imagen?`<div class="chat-m-img"><img src="${m.imagen}" alt="Imagen adjunta" title="Ver en grande" onclick="chatAbrirImagenMsg('${id}')"/></div>`:""}
         ${m.archivo?chatArchivoHtml(id,m.archivo):""}
         ${m.audio?`<div class="chat-m-audio-wrap">${ic("mic")}<audio controls preload="metadata" class="chat-m-audio" src="${m.audio}" onplay="this.playbackRate=chatVelocidadPref"></audio><button type="button" class="chat-audio-vel" onclick="chatVelocidadAudio()" title="Velocidad de reproducción">${chatFmtVel(chatVelocidadPref)}</button>${m.audioSeg?`<span class="chat-m-audio-seg">${chatFmtSeg(m.audioSeg)}</span>`:""}</div>`:""}
@@ -5077,7 +5079,8 @@ function chatAvisoEnPantalla(chatId,c){
   const donde=c.tipo==="grupal"?(c.nombre||"Grupo"):"";
   const el=document.createElement("div");
   el.className="chat-aviso"; el.setAttribute("role","status");
-  el.innerHTML=`<div class="avatar ${p?p.avClass:"av-prod"}">${p?p.id:"?"}</div>
+  const robot=m.autorId==="ROBOT";
+  el.innerHTML=`<div class="avatar ${robot?"av-robot":p?p.avClass:"av-prod"}">${robot?"🤖":p?p.id:"?"}</div>
     <div class="chat-aviso-txt"><div class="chat-aviso-quien">${esc(m.autorNombre||"Alguien")}${donde?` <span>· ${esc(donde)}</span>`:""}</div>
     <div class="chat-aviso-texto">${esc(String(m.texto||"").slice(0,160))}</div></div>
     <button class="chat-aviso-cerrar" title="Cerrar" aria-label="Cerrar aviso">✕</button>`;
