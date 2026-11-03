@@ -79,7 +79,11 @@ Firestore).
     `{"texto": "…"}` y deja el mensaje en UN grupo, con autor `{id:"ROBOT", nombre}`; Pedidos lo pinta
     con avatar 🤖. La configuración está en la base, `tago_meta/robotChat: {clave, chat, nombre}` (sin
     redesplegar): `chat` es el id del grupo, `clave` la que manda el robot (copia en
-    Data TAGO/informe/.chat_robot_clave). Rechaza dos mensajes con menos de un minuto entre sí. El primer
+    Data TAGO/informe/.chat_robot_clave). Rechaza dos mensajes con menos de un minuto entre sí. La misma
+    función lee el grupo: `GET /leer?desde=2026-11-03&limite=200` (misma cabecera) devuelve los mensajes
+    desde esa fecha en JSON (id, autor, texto, fecha, hora; sin imágenes ni audios, solo `adjunto`) y en cada
+    mensaje de una persona `publicacion`, el id del último informe del robot anterior. Para esa consulta las
+    reglas llevan `.indexOn: ["ts"]` en `tago_mensajes/$chatId` (se publican con `./deploy.sh --solo-reglas`). El primer
     uso es el robot de prioridades de Grok (cada 2 h lee Vambe y ventas@tago.cl). Se despliega con
     `firebase deploy --only functions:tago:chatPublicar` desde `deploy/`; prueba local en
     Data TAGO/.claude/sandbox/prueba-chat-robot.js. Por la política de la organización, la cuenta

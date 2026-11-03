@@ -30,7 +30,8 @@
     },
     "tago_mensajes": {
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
-      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()"
+      ".write": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",
+      "$chatId": { ".indexOn": ["ts"] }
     },
     "tago_pedido_comentarios": {
       ".read": "auth != null && root.child('tago_permitidos').child(auth.token.email.replace('.', '_')).exists()",

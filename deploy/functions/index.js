@@ -127,6 +127,7 @@ exports.revisarArchivo = onRequest(
 // de robot y avisa a los integrantes como con cualquier mensaje. Solo agrega mensajes: no lee, no
 // borra, no edita.
 //   POST https://chatpublicar-prukg2gqfq-uc.a.run.app   cabecera X-Clave: <clave>   cuerpo {"texto": "…"}
+//   GET  https://chatpublicar-prukg2gqfq-uc.a.run.app/leer?desde=2026-11-03   misma cabecera   (lee el grupo)
 //   (la clave también se acepta como «Authorization: Bearer <clave>» o dentro del JSON, en "clave")
 // La configuración vive en la base, en tago_meta/robotChat (no hace falta redesplegar para cambiarla):
 //   clave   la que manda el robot (copia en Data TAGO/informe/.chat_robot_clave)
@@ -189,18 +190,90 @@ async function publicarComoRobot(db, cuerpo, clave, ahora = Date.now()) {
   return { status: 200, body: { ok: true, id: ref.key, grupo: chat.nombre || cfg.chat, caracteres: texto.length } };
 }
 
+// Lectura (03-11-2026, lo pidió el robot de Grok): GET /leer?desde=<fecha>&limite=<n>, misma X-Clave, en la
+// misma función (así no hay que abrir otro servicio al público a mano en Cloud Run). Devuelve los mensajes
+// del mismo grupo desde esa fecha, en orden, solo texto y quién lo dijo (sin imágenes ni audios: se marca
+// «adjunto»), y en cada mensaje de una persona el id de la última publicación del robot anterior
+// («publicacion»), para que el robot sepa a qué informe contesta. El cliente al que se refiere va en el
+// texto: las vendedoras contestan con el número del punto y el nombre del cliente.
+//   desde   «2026-11-03» (desde las 00:00 de Chile), «2026-11-03T09:00:00-03:00» o milisegundos; por
+//           defecto, las últimas 24 h.   limite  cuántos como máximo (200 por defecto, tope 500).
+const LEER_TOPE = 500, LEER_POR_DEFECTO = 200;
+const ZONA = "America/Santiago";
+const partesChile = (ms) => {
+  const f = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZoneName: "longOffset" });
+  const o = {}; for (const x of f.formatToParts(new Date(ms))) o[x.type] = x.value;
+  if (o.hour === "24") o.hour = "00";
+  return o;   // year, month, day, hour, minute, second, timeZoneName («GMT-03:00»)
+};
+const isoChile = (ms) => { const o = partesChile(ms); return `${o.year}-${o.month}-${o.day}T${o.hour}:${o.minute}:${o.second}${o.timeZoneName.replace("GMT", "") || "-03:00"}`; };
+const fechaDesde = (v, ahora) => {
+  if (v === undefined || v === null || String(v).trim() === "") return ahora - 24 * 3600 * 1000;
+  v = String(v).trim();
+  if (/^\d{11,}$/.test(v)) return Number(v);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {                       // fecha sola: las 00:00 de ese día en Chile
+    const mediodiaUtc = Date.parse(v + "T12:00:00Z"); if (isNaN(mediodiaUtc)) return null;
+    const m = /GMT([+-])(\d{2}):(\d{2})/.exec(partesChile(mediodiaUtc).timeZoneName) || ["", "-", "03", "00"];
+    const desfase = (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) * 60000;
+    return Date.parse(v + "T00:00:00Z") - desfase;
+  }
+  const t = Date.parse(v); return isNaN(t) ? null : t;
+};
+const enOrden = (snap) => { const l = []; snap.forEach((h) => { l.push([h.key, h.val() || {}]); }); return l.sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0)); };
+
+async function leerComoRobot(db, params, clave, ahora = Date.now()) {
+  const cfg = (await leerConPlazo(db.ref("tago_meta/robotChat"))).val() || {};
+  if (!cfg.clave || !cfg.chat) return { status: 503, body: { error: "falta configurar tago_meta/robotChat (clave y chat)" } };
+  if (!claveOk(clave, cfg.clave)) return { status: 401, body: { error: "clave inválida" } };
+  const desde = fechaDesde(params.desde, ahora);
+  if (desde === null) return { status: 400, body: { error: "desde no es una fecha válida: usa 2026-11-03, 2026-11-03T09:00:00-03:00 o milisegundos" } };
+  const limite = Math.min(LEER_TOPE, Math.max(1, parseInt(params.limite, 10) || LEER_POR_DEFECTO));
+  const chat = (await leerConPlazo(db.ref("tago_chats/" + cfg.chat))).val();
+  if (!chat || chat.tipo !== "grupal") return { status: 404, body: { error: "el grupo configurado en tago_meta/robotChat/chat no existe" } };
+  const ref = db.ref("tago_mensajes/" + cfg.chat);
+  const crudos = enOrden(await leerConPlazo(ref.orderByChild("ts").startAt(desde).limitToLast(limite)));
+  // La publicación anterior al rango, por si la primera respuesta de una persona contesta a un informe de antes.
+  let publicacion = null;
+  if (crudos.length && crudos[0][1].autor?.id !== ROBOT_ID) {
+    const previos = enOrden(await leerConPlazo(ref.orderByChild("ts").endAt(desde - 1).limitToLast(30)));
+    for (const [id, m] of previos) if (m.autor?.id === ROBOT_ID) publicacion = id;
+  }
+  const mensajes = [];
+  for (const [id, m] of crudos) {
+    if (m.sistema) continue;
+    const robot = m.autor?.id === ROBOT_ID;
+    if (robot) publicacion = id;
+    const o = partesChile(m.ts || 0);
+    const item = { id, robot, autor: m.autor?.nombre || "?", autorId: m.autor?.id || null, texto: String(m.texto || ""), fecha: `${o.year}-${o.month}-${o.day}`, hora: `${o.hour}:${o.minute}`, ts: m.ts || 0 };
+    if (!robot) item.publicacion = publicacion;
+    const adjunto = m.imagen ? "imagen" : m.audio ? "audio" : m.archivo ? "archivo" : null;
+    if (adjunto) { item.adjunto = adjunto; if (m.archivo?.nombre) item.archivo = String(m.archivo.nombre); }
+    mensajes.push(item);
+  }
+  return { status: 200, body: { ok: true, grupo: chat.nombre || cfg.chat, desde: isoChile(desde), hasta: isoChile(ahora), cantidad: mensajes.length, mensajes } };
+}
+
 exports.chatPublicar = onRequest(
   { region: "us-central1", timeoutSeconds: 15, memory: "128MiB", maxInstances: 2 },
   async (req, res) => {
-    if (req.method !== "POST") return res.status(405).json({ error: "solo POST, con cabecera X-Clave y cuerpo JSON {\"texto\": \"…\"}" });
+    res.set("Cache-Control", "no-store");
+    const ruta = String(req.path || "/").replace(/\/+$/, "") || "/";
     try {
+      if (ruta === "/leer") {
+        if (req.method !== "GET" && req.method !== "POST") return res.status(405).json({ error: "GET /leer?desde=… (o POST con JSON {desde}), con cabecera X-Clave" });
+        const params = { ...(req.query || {}), ...(req.body && typeof req.body === "object" ? req.body : {}) };
+        const r = await leerComoRobot(admin.database(), params, claveDe(req));
+        console.log(r.status === 200 ? "leído" : "rechazado", r.status, r.status === 200 ? r.body.cantidad + " mensajes desde " + r.body.desde : r.body.error);
+        return res.status(r.status).json(r.body);
+      }
+      if (req.method !== "POST") return res.status(405).json({ error: "solo POST, con cabecera X-Clave y cuerpo JSON {\"texto\": \"…\"}; para leer, GET /leer?desde=…" });
       const r = await publicarComoRobot(admin.database(), req.body, claveDe(req));
       console.log(r.status === 200 ? "publicado" : "rechazado", r.status, r.body.id || r.body.error);
       res.status(r.status).json(r.body);
     } catch (e) {
-      console.error("chatPublicar", e);
-      res.status(500).json({ error: "no se pudo publicar: " + e.message });
+      console.error("chatPublicar", ruta, e);
+      res.status(500).json({ error: "no se pudo " + (ruta === "/leer" ? "leer" : "publicar") + ": " + e.message });
     }
   });
 // Para la prueba local (prueba-chat-robot.js en Data TAGO/.claude/sandbox): sin Firebase de verdad.
-exports._robot = { publicarComoRobot, claveDe, textoDe, ROBOT_TOPE, ROBOT_PAUSA };
+exports._robot = { publicarComoRobot, leerComoRobot, fechaDesde, isoChile, claveDe, textoDe, ROBOT_TOPE, ROBOT_PAUSA };
