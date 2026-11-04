@@ -92,6 +92,12 @@ Firestore).
     queda reintentando y la llamada muere por tiempo), y el servicio en Cloud Run debe tener «Permitir el
     acceso público» marcado a mano. Al editar roles en IAM, agregar sin reemplazar: el 03-11-2026 se perdió
     el de Cloud Build y las compilaciones fallaron hasta volver a ponerlo (y esperar unos minutos).
+    Memoria (04-11-2026): `chatPublicar` y `shopifyWebhook` van con 256 MiB. Con 128 MiB pasaban el límite al
+    arrancar (129–151 MiB) y Cloud Run las mataba: el chat del robot y los webhooks de Shopify respondieron
+    500/503 toda la mañana. `./revisar` (sharp) se carga solo dentro de `revisarArchivo`, nunca arriba del
+    archivo, porque las tres funciones comparten `index.js`. Si el registro dice «Memory limit … exceeded»,
+    subir la memoria en el código y desplegar; editarla solo en la consola de Cloud Run falla cuando Firebase
+    ya borró la imagen vieja («image … not found»).
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
 - `tago_tareas*` — módulo de tareas internas. `tago_tareas_estados/<id>` puede

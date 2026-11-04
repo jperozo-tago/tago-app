@@ -24,7 +24,7 @@ const RELOJ_URL = defineSecret("RELOJ_URL");
 const TEMAS = { "orders/paid": "pedido", "orders/cancelled": "cancelado", "refunds/create": "reembolso" };
 
 exports.shopifyWebhook = onRequest(
-  { region: "us-central1", secrets: [SECRETO_SHOPIFY, RELOJ_URL], timeoutSeconds: 10, memory: "128MiB", maxInstances: 3 },
+  { region: "us-central1", secrets: [SECRETO_SHOPIFY, RELOJ_URL], timeoutSeconds: 10, memory: "256MiB", maxInstances: 3 },
   async (req, res) => {
     if (req.method !== "POST") return res.status(405).send("solo POST");
     const cuerpo = req.rawBody || Buffer.alloc(0);
@@ -66,7 +66,11 @@ exports.shopifyWebhook = onRequest(
 // GET /vista que devuelve el diseño con esas zonas en magenta, para mandárselo al cliente. El enlace
 // va firmado con la misma clave, así que solo abre archivos que pasaron por esta revisión.
 const REVISAR_CLAVE = defineSecret("REVISAR_CLAVE");
-const { revisar, descargar, vistaMarcada } = require("./revisar");
+// ./revisar carga sharp (libvips, decenas de MB). Se carga solo cuando revisarArchivo lo usa: todas las funciones
+// comparten este archivo, y cargarlo arriba hacía que chatPublicar y shopifyWebhook pasaran los 128 MiB al
+// arrancar y Cloud Run las matara (04-11-2026: el chat del robot y los webhooks de Shopify respondían 500/503).
+let modRevisar = null;
+const rev = () => (modRevisar ??= require("./revisar"));
 const numero = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return n > 0 ? n : 0; };
 const VAMBE = "https://vambe-bkt.s3.us-east-1.amazonaws.com/";
 const firmar = (ruta) => crypto.createHmac("sha256", REVISAR_CLAVE.value()).update(ruta).digest("hex").slice(0, 20);
@@ -81,7 +85,7 @@ exports.revisarArchivo = onRequest(
         return res.status(403).send("enlace inválido");
       }
       try {
-        const img = await vistaMarcada(await descargar(VAMBE + ruta));
+        const img = await rev().vistaMarcada(await rev().descargar(VAMBE + ruta));
         return res.set("Content-Type", "image/jpeg").set("Cache-Control", "private, max-age=86400").send(img);
       } catch (e) {
         console.warn("no se pudo generar la vista", e.message, ruta.slice(-60));
@@ -103,7 +107,7 @@ exports.revisarArchivo = onRequest(
     const ancho = numero(c.ancho_cm), alto = numero(c.alto_cm);
     const uno = async (url) => {
       try {
-        const r = { archivo_revisado: url, ...(await revisar(url, ancho, alto)) };
+        const r = { archivo_revisado: url, ...(await rev().revisar(url, ancho, alto)) };
         if (r.zonas_semitransparentes && url.startsWith(VAMBE)) {
           const ruta = url.slice(VAMBE.length);
           r.vista_marcada = `https://${req.get("host")}/vista?a=${ruta.split("/").map(encodeURIComponent).join("/")}&f=${firmar(ruta)}`;
@@ -254,7 +258,7 @@ async function leerComoRobot(db, params, clave, ahora = Date.now()) {
 }
 
 exports.chatPublicar = onRequest(
-  { region: "us-central1", timeoutSeconds: 15, memory: "128MiB", maxInstances: 2 },
+  { region: "us-central1", timeoutSeconds: 15, memory: "256MiB", maxInstances: 2 },
   async (req, res) => {
     res.set("Cache-Control", "no-store");
     const ruta = String(req.path || "/").replace(/\/+$/, "") || "/";
