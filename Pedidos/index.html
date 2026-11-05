@@ -1135,7 +1135,7 @@
       --amber-c:#0B1447; --amber-bg:rgba(11,20,71,.10);    --amber-bd:rgba(11,20,71,.3);      /* Enviado a Impresión: Azul Oscuro */
       --green-c:#49CEAB; --green-bg:rgba(73,206,171,.18);  --green-bd:rgba(73,206,171,.5);    /* Listo: Verde Tago */
       --violet-c:#545B7E;--violet-bg:rgba(84,91,126,.12);  --violet-bd:rgba(84,91,126,.35);   /* Entregado: gris azulado del sistema */
-      --maq-c:#0E7C86;   --maq-bg:rgba(14,124,134,.12);    --maq-bd:rgba(14,124,134,.35);     /* Maquilado (solo productos personalizados): petróleo */
+      --maq-c:#0E7C86;   --maq-bg:rgba(14,124,134,.12);    --maq-bd:rgba(14,124,134,.35);     /* Maquilado: petróleo */
     }
     .badge-pedidos_shopify{background:var(--shop-c);color:#fff;border-color:var(--shop-c)}
     .badge-recibido{background:var(--grey-c);color:#fff;border-color:var(--grey-c)}
@@ -1767,7 +1767,7 @@
           <button class="filter-tab" onclick="setFilter('recibido',this)" title="Por revisar"><span class="dot" style="background:var(--grey-c)"></span>Por revisar <span class="tab-count" id="c-recibido">0</span></button>
           <button class="filter-tab" onclick="setFilter('enviado_produccion',this)" title="Enviado a Producción"><span class="dot" style="background:var(--blue-c)"></span>Enviado a Producción <span class="tab-count" id="c-enviado_produccion">0</span></button>
           <button class="filter-tab" onclick="setFilter('en_produccion',this)" title="Enviado a Impresión"><span class="dot" style="background:var(--amber-c)"></span>Enviado a Impresión <span class="tab-count" id="c-en_produccion">0</span></button>
-          <button class="filter-tab" onclick="setFilter('maquilado',this)" title="Maquilado (productos personalizados)"><span class="dot" style="background:var(--maq-c)"></span>Maquilado <span class="tab-count" id="c-maquilado">0</span></button>
+          <button class="filter-tab" onclick="setFilter('maquilado',this)" title="Maquilado"><span class="dot" style="background:var(--maq-c)"></span>Maquilado <span class="tab-count" id="c-maquilado">0</span></button>
           <button class="filter-tab" onclick="setFilter('listo',this)" title="Listos"><span class="dot" style="background:var(--green-c)"></span>Listos <span class="tab-count" id="c-listo">0</span></button>
           <button class="filter-tab" onclick="setFilter('entregado',this)" title="Entregados"><span class="dot" style="background:var(--violet-c)"></span>Entregados <span class="tab-count" id="c-entregado">0</span></button>
         </div>
@@ -2253,7 +2253,7 @@ const ST={
   recibido:           {label:"Por revisar",          next:"enviado_produccion",nextLabel:"→ Enviar a Prod."},
   enviado_produccion: {label:"Enviado a Producción", next:"en_produccion",    nextLabel:"→ Iniciar"},
   en_produccion:      {label:"Enviado a Impresión",  next:"listo",            nextLabel:"→ Marcar Listo"}, // en productos personalizados el siguiente es Maquilado (sigEstado)
-  maquilado:          {label:"Maquilado",            next:"listo",            nextLabel:"→ Marcar Listo"}, // 02-11-2026 (José): solo productos personalizados, entre Impresión y Listo; al entrar se asigna a Ignacio
+  maquilado:          {label:"Maquilado",            next:"listo",            nextLabel:"→ Marcar Listo"}, // 02-11-2026 (José): entre Impresión y Listo; al entrar se asigna a Ignacio
   listo:              {label:"Listo ✓",              next:"entregado",        nextLabel:"→ Entregar"},
   entregado:          {label:"Entregado",            next:null,               nextLabel:null},
 };
@@ -2287,12 +2287,14 @@ const getUnit=t=>UNIT[t]||"unidades";
 // Licencia aprobada por Andreina (2026-09-10): cada tipo de producto lleva un color propio para reconocerlo rápido.
 const TIPO_COLOR={"DTF Textil":"#4063F9","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV":"#1C7A63","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor":"#C026D3","DTF Flúor (Lámina prediseñada)":"#D946EF","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#D4537E","Otro":"#858AA3"};
 const tipoColor=t=>TIPO_COLOR[t]||"var(--grey-c)";
-// Maquilado (02-11-2026, José): estado extra solo para productos personalizados (por tipo de producto, no por categoría manual).
+// Maquilado (02-11-2026, José): estado entre Impresión y Listo. Desde el 05-11-2026 se puede elegir en cualquier pedido, también en los
+// ya creados: hay impresiones que van a maquila (estampar un jockey, una polera). Solo en los personalizados es el paso natural: «→ siguiente»
+// lleva ahí (usaMaquila, por tipo de producto); en las impresiones sigue llevando a Listo y a maquila se pasa desde el estado.
 // Al entrar a Maquilado el pedido pasa a ser responsabilidad de Ignacio.
 const RESPONSABLE_MAQUILA="Ignacio Paredes", ID_MAQUILA="IP";
 const usaMaquila=j=>!!j&&CATEGORIAS_PRODUCTO.find(c=>c.key==="personalizados").tipos.includes(j.tipoDtf);
 const sigEstado=j=>(j&&j.estado==="en_produccion"&&usaMaquila(j))?{next:"maquilado",nextLabel:"→ A maquila"}:(ST[j&&j.estado]||{});
-const estadosPara=j=>ORDEN_ESTADOS.filter(k=>k!=="maquilado"||usaMaquila(j)||(j&&j.estado==="maquilado"));
+const estadosPara=()=>ORDEN_ESTADOS;
 const verGrupoMaquila=(catKey,n)=>n>0||catKey==="personalizados"||catKey==="todos";
 const ES_STICKER=t=>t==="Stickers UV";
 const ES_ACC=t=>["Insignias / Parches","Pines","Medallas","Imanes","Llaveros"].includes(t);
@@ -2314,7 +2316,7 @@ const ES_DE_MIGUEL=t=>/^DTF (Textil|UV|Flúor)/.test(t||"")||t==="Stickers UV";
 const conReglasResp=j=>!!j&&(j.createdAt?new Date(j.createdAt).getTime()>=RESP_REGLAS_DESDE:(fichaNuevo&&j===fichaDraft));
 function responsablesManual(j){ const r=String((j&&j.responsable)||"").trim(); if(conReglasResp(j)&&j.origen==="shopify"&&r==="Allyson") return []; return r.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean); }
 function responsablesAuto(j){ const out=[]; if(!conReglasResp(j)) return out;
-  if(ES_DE_MIGUEL(j.tipoDtf)) out.push("Miguel Gonzalez"); else if(j.estado==="pedidos_shopify"||j.estado==="recibido") out.push("Allyson");
+  if(ES_DE_MIGUEL(j.tipoDtf)){ if(j.estado!=="maquilado") out.push("Miguel Gonzalez"); } else if(j.estado==="pedidos_shopify"||j.estado==="recibido") out.push("Allyson"); // en maquila el pedido es de Ignacio
   if(categoriaDePedido(j)==="personalizados") out.push("José Perozo");
   return out; }
 function responsablesDe(j){ return [...new Set([...responsablesManual(j),...responsablesAuto(j)])]; }
@@ -4366,7 +4368,7 @@ function moverEstado(id,nuevoEstado){
   const upd={estado:nuevoEstado,updatedAt:now,updatedBy:{id:currentUser.id,nombre:currentUser.nombre}};
   const pos=ORDEN_ESTADOS.indexOf(nuevoEstado);
   const idx=Math.max(0,pos-1); // etapa para los hitos: «Pedidos Shopify» y «Por revisar» son la 0, antes de producción
-  const H={prod:1,imp:2,maq:3,lista:4,entrega:5}; // etapas (idx) de cada hito; «maquilado» (3) solo lo usan los productos personalizados
+  const H={prod:1,imp:2,maq:3,lista:4,entrega:5}; // etapas (idx) de cada hito
   const yo={id:currentUser.id,nombre:currentUser.nombre};
   // Estos hitos se asignan SOLO la primera vez que el pedido alcanza (o supera) esa etapa
   if(idx>=H.prod&&!j.enviadoProdAt){ upd.enviadoProdAt=now; upd.enviadoProdBy=yo; }
@@ -4550,7 +4552,6 @@ function renderKanban(entries){
   const board=document.getElementById("kanban-board"); if(!board)return;
   board.innerHTML=STAT_DEFS.map(s=>{
     const items=entries.filter(([,j])=>j.estado===s.key).sort(([,a],[,b])=>cmpJobs(a,b));
-    if(s.key==="maquilado"&&!verGrupoMaquila(categoriaSeleccionada,items.length))return "";
     return`<div class="kcol" style="border-top:3px solid ${s.color}" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="onKanbanDrop(event,'${s.key}')">
       <div class="kcol-head"><span class="dot" style="background:${s.color}"></span>${s.label}<span class="n">${items.length}</span></div>
       ${items.map(([id,j])=>renderKcard(id,j)).join("")}
