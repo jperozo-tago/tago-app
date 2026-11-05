@@ -342,18 +342,24 @@ categoría personalizada, restringido a `j.perozo@tago.cl` en
 `database.rules.json`.
 
 **Estados de un pedido:** Pedidos Shopify → Por revisar → Enviado a Producción →
-Enviado a Impresión → [Maquilado] → Listo → Entregado (ver objeto `ST` en el JS).
-**Maquilado** (`maquilado`, desde el 02-11-2026, José) va entre Impresión y Listo. Desde el
-05-11-2026 los menús de estado lo ofrecen en todos los pedidos, nuevos y ya creados
-(`estadosPara`): hay impresiones que van a maquila, por ejemplo a estampar un jockey o una polera.
-Solo en los personalizados (por tipo: Insignias / Parches, Pines, Medallas, Imanes, Llaveros, Kit
-Corporativo; `usaMaquila(j)`) «→ siguiente» desde Impresión lleva a Maquilado (`sigEstado(j)`);
-en las impresiones sigue llevando a Listo y a maquila se pasa desde el estado o arrastrando en el
-Tablero, cuya columna ya se ve siempre.
-Al entrar a Maquilado (`moverEstado`, el modal antiguo y `crearDesdeFicha`) el
+Enviado a Impresión → [Enviado a Maquila → Maquilando] → Listo → Entregado (ver objeto `ST` en el JS).
+**Maquila** (desde el 02-11-2026, José) va entre Impresión y Listo y son dos estados (05-11-2026):
+**Enviado a Maquila** (clave `maquilado`, que se llamó «Maquilado» hasta esa fecha: es la cola de
+Ignacio; la clave no cambió, así que lo que ya estaba ahí quedó en la cola sin tocar datos) y
+**Maquilando** (`maquilando`: lo que tiene en las manos; él lo marca con «→ Empezar» y queda
+`maquilandoAt`/`maquilandoBy`). Así se distingue la espera (`maquiladoAt` → `maquilandoAt`) del
+trabajo real (`maquilandoAt` → `listaAt`). Puede haber varios en Maquilando a la vez, sin límite.
+Los menús de estado los ofrecen en todos los pedidos, nuevos y ya creados (`estadosPara`): hay
+impresiones que van a maquila, por ejemplo a estampar un jockey o una polera. Solo en los
+personalizados (por tipo: Insignias / Parches, Pines, Medallas, Imanes, Llaveros, Kit Corporativo;
+`usaMaquila(j)`) «→ siguiente» desde Impresión lleva a la cola (`sigEstado(j)`); en las impresiones
+sigue llevando a Listo y a maquila se pasa desde el estado o arrastrando en el Tablero, cuyas
+columnas ya se ven siempre (el Tablero crece en columnas, `.kanban` no fija cuántas).
+Al entrar a maquila desde otro estado (`moverEstado`, el modal antiguo y `crearDesdeFicha`,
+`ES_MAQUILA`) el
 `responsable` pasa a «Ignacio Paredes» (`RESPONSABLE_MAQUILA`), queda en el historial y
 le llega una notificación de asignación; se guarda el hito `maquiladoAt`/`maquiladoBy`
-(solo al entrar de verdad, saltárselo no lo inventa; al retroceder se borra). El grupo,
+(cada hito solo al entrar de verdad, saltárselo no lo inventa; al retroceder se borra). El grupo,
 la columna del Tablero y la pestaña usan el color `--maq-c` (petróleo); en la Lista de
 Impresiones el grupo se oculta si está vacío (`verGrupoMaquila`). Estadísticas no separa
 todavía la etapa de maquila: «Enviado a Impresión» mide de `impresionAt` a `listaAt`. «Pedidos
@@ -404,8 +410,9 @@ está en Pedidos Shopify o Por revisar; todo lo de Productos Personalizados (`ca
 → José. En esos pedidos nuevos el «Allyson» que deja el robot de Shopify en `responsable` cuenta
 como la regla, no como elección a mano. Los de regla salen en la ficha marcados «AUTO» y no se
 quitan a mano. `responsablesDe(j)` (manual + regla) y `esResponsable(j,nombre)` los usan «Míos»
-y Carga; `j.responsable` en crudo solo va a Klaviyo. Maquilado sigue reemplazando `responsable`
-por Ignacio, y mientras está ahí la regla no suma a Miguel en los DTF y Stickers UV. El Centro de Operaciones repite las mismas reglas (`responsablesDe` en su capa de
+y Carga; `j.responsable` en crudo solo va a Klaviyo. Entrar a maquila sigue reemplazando
+`responsable` por Ignacio, y mientras esté en maquila la regla no suma a Miguel en los DTF y Stickers
+UV. El Centro de Operaciones repite las mismas reglas (`responsablesDe` en su capa de
 datos): si se cambian aquí, cambiarlas allá.
 
 **Categorías:** cada pedido tiene una categoría efectiva
@@ -569,7 +576,7 @@ en tiempo real. Un solo archivo, como las demás apps, publicado en `/operacione
   imprime (la que ocupa el pedido en «Enviado a Impresión»): DTF Textil y Flúor → Impresora DTF
   Textil, DTF UV → Impresora DTF UV, Stickers UV → Mimaki UCJV300 (todas de Miguel); pines,
   medallas, llaveros, imanes e impresión directa → Mimaki UJF-6042; insignias y parches → ORIC
-  (cama plana); Kit Corporativo y todo lo que está en Maquilado → mesa de Ignacio; Pendón →
+  (cama plana); Kit Corporativo y todo lo que está en Maquilando → mesa de Ignacio; Pendón →
   pre-prensa. Los personalizados (`CORTA_EN_CO2`) se cortan después en el Láser CO2; como no hay
   estado de corte, el láser solo dice qué se corta y la ficha muestra el recorrido (`rutaMaq`).
   Cada máquina de `ZONAS` lleva `hace` (lo que se produce ahí, visible en la tarjeta libre). Si
@@ -597,10 +604,13 @@ en tiempo real. Un solo archivo, como las demás apps, publicado en `/operacione
   listas / entregadas, tarde / a tiempo con el gráfico de 6 semanas) con una línea de contexto
   (`kxFila`, `ctx*`). Los cálculos salen de `kpiSets()`, el mismo que usa `renderHero`. Tocar un
   pedido abre su ficha con «‹ Volver a la lista»; con datos en vivo la lista abierta se repinta.
+- **Maquila:** Ignacio figura «Trabajando» solo con algo en Maquilando (mesa, línea de tiempo desde
+  `maquilandoAt`, «Ahora» e indicador «En máquina»). Enviado a Maquila es su cola: «Le sigue», «En su
+  cola» y «N por maquilar» en la mesa; no aparece en la cola de los demás responsables.
 - **Números:** se muestra el «# Pedido» (`numDe`/`refHtml`: lo que escribe ventas o el número de
   Shopify), nunca el id TG-xxxx; si no tiene, el cliente. Metros con máximo 2 decimales (`m2`).
 - **Actividad:** se arma con los hitos de hoy de cada pedido (`createdAt`, `enviadoProdAt`,
-  `impresionAt`, `maquiladoAt`, `listaAt`, `entregadoAt` y sus `…By`), no con el historial.
+  `impresionAt`, `maquiladoAt`, `maquilandoAt`, `listaAt`, `entregadoAt` y sus `…By`), no con el historial.
 - **% a tiempo:** entregados con `entregadoAt` (o `aviso.entregadoAt`) en la semana, a tiempo si
   el día de entrega ≤ `fechaLimite`. Seis semanas, de lunes a domingo.
 - Se edita directo en `Operaciones/index.html` (nació de los mockups «Sala de control» y
