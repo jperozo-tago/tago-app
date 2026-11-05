@@ -71,7 +71,7 @@ const REVISAR_CLAVE = defineSecret("REVISAR_CLAVE");
 // arrancar y Cloud Run las matara (04-11-2026: el chat del robot y los webhooks de Shopify respondían 500/503).
 let modRevisar = null;
 const rev = () => (modRevisar ??= require("./revisar"));
-// Estado de un pedido para el mismo bot (05-11-2026): POST /estado-pedido con {"numero": "#8584" o "TG-0142", "telefono": <macro de Vambe>} y la misma
+// Estado de un pedido para el mismo bot (05-11-2026): POST /estado-pedido con {"numero": "#8584", "correo", "telefono": <macro de Vambe>} y la misma
 // X-Clave. Detalle en estado.js; no devuelve datos personales. tago_pedidos se lee entero (no tiene índice) y se
 // guarda un minuto en memoria para no bajarlo en cada pregunta.
 let modEstado = null;

@@ -100,13 +100,17 @@ Firestore).
     ya borró la imagen vieja («image … not found»).
 - Estado del pedido para el bot de Vambe (05-11-2026, Andreina): la función `revisarArchivo` atiende
   también `POST /estado-pedido` (misma cabecera `X-Clave` que la revisión de archivos, secreto
-  `REVISAR_CLAVE`) con `{"numero": "#8584" | "TG-0142", "correo": "...", "telefono": "<macro contact.phone de Vambe>"}`.
-  Busca en `tago_pedidos` por código TG, por `numeroShopify` (o `importado.numero`) y, si no hay número
-  (compras por WhatsApp), por correo en `correo` o `envio.correo` y luego por teléfono en `telefono` o
-  `envio.tel` (últimos 8 dígitos); en esas dos búsquedas los entregados hace más de 30 días no cuentan. Si
-  el teléfono no encuentra nada, la respuesta le dice al bot que pida el correo. Devuelve una parte por pedido TG con `producto`, `entrega`, `etapa`
-  (recibido, en_produccion, listo_para_retiro, listo_para_despacho, entregado, despachado, cancelado) y
-  un `texto` para el cliente. **Nunca** devuelve nombre, dirección, teléfono, correo ni montos (lógica en
+  `REVISAR_CLAVE`) con `{"numero": "#8584", "correo": "...", "telefono": "<macro contact.phone de Vambe>"}`.
+  Busca en `tago_pedidos` por `numeroShopify` (o `importado.numero`) y, si no hay número (compras por
+  WhatsApp), por correo en `correo` o `envio.correo` y luego por teléfono en `telefono` o `envio.tel`
+  (últimos 8 dígitos); en esas dos búsquedas los entregados hace más de 30 días no cuentan. Si el teléfono
+  no encuentra nada, la respuesta le dice al bot que pida el correo; si el correo tampoco, que pase el caso a
+  una vendedora («Mover a Asistencia Humana»). **El código TG-xxxx no se busca ni se devuelve**: no se le
+  manda al cliente y lo confundiría (Andreina). Devuelve una parte por pedido con `producto`, `entrega`
+  (retiro en Providencia, despacho en Santiago para OTS, despacho por Bluexpress/Chilexpress), `etapa`
+  (recibido, en_produccion, listo_para_retiro, listo_para_despacho, entregado, despachado,
+  revisar_con_vendedora si Shopify lo marcó cancelado o reembolsado) y un `texto` escrito para el cliente.
+  **Nunca** devuelve nombre, dirección, teléfono, correo ni montos (lógica en
   `deploy/functions/estado.js`; prueba local en Data TAGO/.claude/sandbox/prueba-estado-pedido.js).
   `tago_pedidos` no tiene índice por `pedido`: se lee entero y se guarda 1 minuto en memoria. Se despliega con
   `firebase deploy --only functions:tago:revisarArchivo` desde `deploy/`.
