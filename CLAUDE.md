@@ -100,8 +100,10 @@ Firestore).
     ya borró la imagen vieja («image … not found»).
 - Estado del pedido para el bot de Vambe (05-11-2026, Andreina): la función `revisarArchivo` atiende
   también `POST /estado-pedido` (misma cabecera `X-Clave` que la revisión de archivos, secreto
-  `REVISAR_CLAVE`) con `{"numero": "#8584"}`. Busca en `tago_pedidos` por `numeroShopify` (o
-  `importado.numero`) y devuelve una parte por pedido TG con `producto`, `entrega`, `etapa`
+  `REVISAR_CLAVE`) con `{"numero": "#8584" | "TG-0142", "telefono": "<macro contact.phone de Vambe>"}`.
+  Busca en `tago_pedidos` por código TG, por `numeroShopify` (o `importado.numero`) y, si no hay número
+  (compras por WhatsApp), por teléfono en `telefono` o `envio.tel` (últimos 8 dígitos; entregados hace más
+  de 30 días no cuentan). Devuelve una parte por pedido TG con `producto`, `entrega`, `etapa`
   (recibido, en_produccion, listo_para_retiro, listo_para_despacho, entregado, despachado, cancelado) y
   un `texto` para el cliente. **Nunca** devuelve nombre, dirección, teléfono, correo ni montos (lógica en
   `deploy/functions/estado.js`; prueba local en Data TAGO/.claude/sandbox/prueba-estado-pedido.js).

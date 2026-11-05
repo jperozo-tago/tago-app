@@ -71,7 +71,7 @@ const REVISAR_CLAVE = defineSecret("REVISAR_CLAVE");
 // arrancar y Cloud Run las matara (04-11-2026: el chat del robot y los webhooks de Shopify respondían 500/503).
 let modRevisar = null;
 const rev = () => (modRevisar ??= require("./revisar"));
-// Estado de un pedido para el mismo bot (05-11-2026): POST /estado-pedido con {"numero": "#8584"} y la misma
+// Estado de un pedido para el mismo bot (05-11-2026): POST /estado-pedido con {"numero": "#8584" o "TG-0142", "telefono": <macro de Vambe>} y la misma
 // X-Clave. Detalle en estado.js; no devuelve datos personales. tago_pedidos se lee entero (no tiene índice) y se
 // guarda un minuto en memoria para no bajarlo en cada pregunta.
 let modEstado = null;
@@ -112,8 +112,8 @@ exports.revisarArchivo = onRequest(
     }
     if (req.path === "/estado-pedido") {
       try {
-        const r = est().estadoDePedido(await pedidosEnCache(admin.database()), (req.body || {}).numero);
-        console.log("estado de pedido", { numero: r.numero || null, encontrado: r.encontrado, partes: (r.partes || []).length });
+        const r = est().estadoDePedido(await pedidosEnCache(admin.database()), req.body || {});
+        console.log("estado de pedido", { numero: r.numero || null, por: r.buscado_por || "numero", encontrado: r.encontrado, partes: (r.partes || []).length });
         return res.status(200).json(r);
       } catch (e) {
         console.error("no se pudo consultar el estado del pedido", e.message);
