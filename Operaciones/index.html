@@ -842,7 +842,7 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
     const t=j.tipoDtf||"", r=String(j.responsable||"").trim(), reglas=!!j.createdAt&&new Date(j.createdAt).getTime()>=RESP_REGLAS_DESDE;
     const man=(reglas&&j.origen==="shopify"&&r==="Allyson")?[]:r.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean), auto=[];
     if(!reglas) return [...new Set(man)];
-    if(/^DTF (Textil|UV|Flúor)/.test(t)||t==="Stickers UV") auto.push("Miguel Gonzalez"); else if(estado==="pedidos_shopify"||estado==="recibido") auto.push("Allyson");
+    if(/^DTF (Textil|UV|Flúor)/.test(t)||t==="Stickers UV"){ if(estado!=="maquilado") auto.push("Miguel Gonzalez"); } else if(estado==="pedidos_shopify"||estado==="recibido") auto.push("Allyson");
     if((j.categoria||(PERSONALIZADOS.has(t)?"personalizados":""))==="personalizados") auto.push("José Perozo");
     return [...new Set([...man,...auto])];
   }
@@ -977,7 +977,7 @@ const ZONAS=[
 // Máquina donde se imprime cada tipo (es la que ocupa el pedido en «Enviado a Impresión»); los personalizados después se cortan en el Láser CO2
 const MAQ_DE_TIPO=t=>{t=t||"";if(/^DTF (Textil|Flúor)/.test(t))return "dtf";if(/^DTF UV/.test(t))return "dtfuv";if(t==="Stickers UV")return "ucjv";return {"Medallas":"ujf","Pines":"ujf","Imanes":"ujf","Llaveros":"ujf","Insignias / Parches":"oric","Kit Corporativo":"mesa","Pendón Roller":"pc"}[t]};
 const CORTA_EN_CO2=new Set(["Insignias / Parches","Medallas","Pines","Imanes","Llaveros"]);
-const rutaMaq=j=>{const m=ZONAS.flatMap(z=>z.maq).find(x=>x.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)));return m?m.n+(CORTA_EN_CO2.has(j.tipoDtf)?" → Láser CO2 (corte)":""):"—"};
+const rutaMaq=j=>{const m=ZONAS.flatMap(z=>z.maq).find(x=>x.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)));return m?m.n+(CORTA_EN_CO2.has(j.tipoDtf)?" → Láser CO2 (corte)":"")+(j.maquiladoAt&&m.id!=="mesa"?" → Estampado y armado":""):"—"};
 
 const jobs=DATA.jobs, tareas=DATA.tareas, feed=DATA.feed;
 const numDe=id=>String((jobs[id]&&jobs[id].pedido)||"").trim(); // «# Pedido» que escribe ventas o el n° de Shopify: los TG-xxxx no se muestran (José, 02-11-2026)
@@ -1084,7 +1084,7 @@ function abrirKpi(k,refrescar){
     body=ORDEN.map(e=>grupo(ST[e],s.cap.filter(x=>x[1].estado===e),j=>atrasado(j)?ctxAtr(j):null)).join("")||`<p class="empty">No hay nada en cola.</p>`; }
   else if(k==="run"){ eb="En máquina"; h=`${s.run.length} ${s.run.length===1?"trabajo":"trabajos"}`; L=s.run;
     lead="Lo que está en Enviado a Impresión o en maquila ahora mismo, por máquina.";
-    const m=new Map(); s.run.forEach(x=>{const n=rutaMaq(x[1]);m.set(n,[...(m.get(n)||[]),x])});
+    const m=new Map(); s.run.forEach(x=>{const n=x[1].estado==="maquilado"?"Estampado y armado (maquila)":rutaMaq(x[1]);m.set(n,[...(m.get(n)||[]),x])});
     body=[...m].map(([n,l])=>grupo(n,l,ctxMaq)).join("")||`<p class="empty">No hay nada en máquina.</p>`; }
   else if(k==="bloq"){ eb="Esperando por ti"; h=`${s.chain.length} ${s.chain.length===1?"cosa":"cosas"}`;
     lead="Lo tuyo que frena a otros: pedidos tuyos que no dejan salir a uno ya listo, tareas que detienen una tirada y pedidos tuyos atrasados.";
