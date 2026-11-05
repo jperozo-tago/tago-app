@@ -18,7 +18,7 @@
   --ink:#EEF0FF; --ink-2:#A9B0D6; --ink-3:#6F78A8;
   --teal:#49CEAB; --teal-2:#7FE3C8; --azul:#4063F9; --azul-2:#7D93FF; --lavanda:#8F9BFF;
   --bad:#FF6B5E; --bad-bg:rgba(255,107,94,.14); --warn:#F5B246; --warn-bg:rgba(245,178,70,.14); --good:#49CEAB; --good-bg:rgba(73,206,171,.14);
-  --st-shop:#5A63C4; --st-rev:#8F9BFF; --st-prod:#4063F9; --st-imp:#C9D0FF; --st-listo:#49CEAB; --st-ent:#6F78A8; --st-maq:#2FB3BE;
+  --st-shop:#5A63C4; --st-rev:#8F9BFF; --st-prod:#4063F9; --st-imp:#C9D0FF; --st-listo:#49CEAB; --st-ent:#6F78A8; --st-maq:#2FB3BE; --st-maqn:#8CE8F0;
   --f-display:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-body:'Open Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --r:16px;
@@ -405,6 +405,8 @@ body.tv .wrap{max-width:none}
 .v1 .p-enviado_produccion{background:var(--st-prod);color:var(--st-prod-fg)}
 .v1 .p-en_produccion{background:var(--st-imp);color:var(--st-imp-fg)}
 .v1 .p-listo{background:var(--st-listo);color:var(--st-listo-fg)}
+.v1 .p-maquilado{background:var(--st-maq);color:var(--st-listo-fg)}
+.v1 .p-maquilando{background:var(--st-maqn);color:var(--st-listo-fg)}
 .v1 .p-entregado{background:var(--st-ent);color:var(--st-ent-fg)}
 .v1 .p-tarea{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
 .v1 .type{font-family:var(--f-display);font-weight:600;font-size:11px;border-radius:6px;padding:1px 7px;white-space:nowrap;color:var(--tc);background:color-mix(in srgb,var(--tc) 13%,transparent)}
@@ -785,7 +787,7 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
   const ymd=d=>{const o={};new Intl.DateTimeFormat("en-CA",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d).forEach(x=>o[x.type]=x.value);return `${o.year}-${o.month}-${o.day}`};
   const hoy=()=>ymd(new Date());
   const addD=(y,n)=>{const d=new Date(y+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
-  const ESTADOS=["pedidos_shopify","recibido","enviado_produccion","en_produccion","maquilado","listo","entregado"];
+  const ESTADOS=["pedidos_shopify","recibido","enviado_produccion","en_produccion","maquilado","maquilando","listo","entregado"];
   const EQUIPO_IDS=["JP","MG","IP","AL"];
   const idDe=x=>x&&typeof x==="object"?(x.id||null):(x||null);
   const nombreCorto=x=>{const n=x&&typeof x==="object"?(x.nombre||x.id||""):String(x||"");return n.split(" ")[0]||"Alguien"};
@@ -842,7 +844,7 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
     const t=j.tipoDtf||"", r=String(j.responsable||"").trim(), reglas=!!j.createdAt&&new Date(j.createdAt).getTime()>=RESP_REGLAS_DESDE;
     const man=(reglas&&j.origen==="shopify"&&r==="Allyson")?[]:r.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean), auto=[];
     if(!reglas) return [...new Set(man)];
-    if(/^DTF (Textil|UV|Flúor)/.test(t)||t==="Stickers UV"){ if(estado!=="maquilado") auto.push("Miguel Gonzalez"); } else if(estado==="pedidos_shopify"||estado==="recibido") auto.push("Allyson");
+    if(/^DTF (Textil|UV|Flúor)/.test(t)||t==="Stickers UV"){ if(estado!=="maquilado"&&estado!=="maquilando") auto.push("Miguel Gonzalez"); } else if(estado==="pedidos_shopify"||estado==="recibido") auto.push("Allyson");
     if((j.categoria||(PERSONALIZADOS.has(t)?"personalizados":""))==="personalizados") auto.push("José Perozo");
     return [...new Set([...man,...auto])];
   }
@@ -860,7 +862,7 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
         estado, tipoDtf:j.tipoDtf||"Otro", cliente:j.cliente||"", pedido:j.pedido||"",
         cantidad:+j.cantidad||0, tipoEntrega:j.tipoEntrega||"", fechaLimite:j.fechaLimite||"",
         personas:lista(j.personas),
-        impresionBy:idDe(j.impresionBy), listaBy:idDe(j.listaBy), enviadoProdBy:idDe(j.enviadoProdBy), maquiladoBy:idDe(j.maquiladoBy), entregadoBy:idDe(j.entregadoBy),
+        impresionBy:idDe(j.impresionBy), listaBy:idDe(j.listaBy), enviadoProdBy:idDe(j.enviadoProdBy), maquiladoBy:idDe(j.maquiladoBy), maquilandoBy:idDe(j.maquilandoBy), entregadoBy:idDe(j.entregadoBy),
         entregadoAt, entregaAprox:!j.entregadoAt&&!!entregadoAt,
         tambienCompro:hermanosDe(j,ids),
       };
@@ -889,7 +891,7 @@ window.guardarRutina=hitos=>{ const u=firebase.auth().currentUser, antes=DATA.ru
     }
     return out;
   }
-  const HITOS=[["createdAt","createdBy","creó"],["enviadoProdAt","enviadoProdBy","envió a producción"],["impresionAt","impresionBy","envió a impresión"],["maquiladoAt","maquiladoBy","pasó a maquila"],["listaAt","listaBy","marcó Listo"],["entregadoAt","entregadoBy","entregó"]];
+  const HITOS=[["createdAt","createdBy","creó"],["enviadoProdAt","enviadoProdBy","envió a producción"],["impresionAt","impresionBy","envió a impresión"],["maquiladoAt","maquiladoBy","envió a maquila"],["maquilandoAt","maquilandoBy","empezó a maquilar"],["listaAt","listaBy","marcó Listo"],["entregadoAt","entregadoBy","entregó"]];
   function armaFeed(){
     const H=hoy(), ev=[];
     for(const [id,j] of Object.entries(raw.pedidos||{})){
@@ -954,9 +956,9 @@ const dDiff=(a,b)=>Math.round((new Date(a+"T12:00:00Z")-new Date(b+"T12:00:00Z")
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
 
-const ST={pedidos_shopify:"Pedidos Shopify",recibido:"Por revisar",enviado_produccion:"Enviado a Producción",en_produccion:"Enviado a Impresión",maquilado:"Maquilado",listo:"Listo",entregado:"Entregado"};
+const ST={pedidos_shopify:"Pedidos Shopify",recibido:"Por revisar",enviado_produccion:"Enviado a Producción",en_produccion:"Enviado a Impresión",maquilado:"Enviado a Maquila",maquilando:"Maquilando",listo:"Listo",entregado:"Entregado"};
 const ORDEN=Object.keys(ST);
-const STC={pedidos_shopify:"var(--st-shop)",recibido:"var(--st-rev)",enviado_produccion:"var(--st-prod)",en_produccion:"var(--st-imp)",maquilado:"var(--st-maq)",listo:"var(--st-listo)",entregado:"var(--st-ent)"};
+const STC={pedidos_shopify:"var(--st-shop)",recibido:"var(--st-rev)",enviado_produccion:"var(--st-prod)",en_produccion:"var(--st-imp)",maquilado:"var(--st-maq)",maquilando:"var(--st-maqn)",listo:"var(--st-listo)",entregado:"var(--st-ent)"};
 const TIPO_COLOR={"DTF Textil":"#4063F9","DTF UV":"#1C7A63","DTF Flúor":"#C026D3","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor (Lámina prediseñada)":"#D946EF","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#5A63C4","Kit Corporativo":"#0E7C86","Impresión 3D":"#9A6B00"};
 const UNIT=t=>t.startsWith("DTF")?"m":"u";
 const ENTREGA={Retiro:"Retiro en tienda",OTS:"OTS (RM)",Bluexpress:"Bluexpress",Chilexpress:"Chilexpress"};
@@ -977,7 +979,7 @@ const ZONAS=[
 // Máquina donde se imprime cada tipo (es la que ocupa el pedido en «Enviado a Impresión»); los personalizados después se cortan en el Láser CO2
 const MAQ_DE_TIPO=t=>{t=t||"";if(/^DTF (Textil|Flúor)/.test(t))return "dtf";if(/^DTF UV/.test(t))return "dtfuv";if(t==="Stickers UV")return "ucjv";return {"Medallas":"ujf","Pines":"ujf","Imanes":"ujf","Llaveros":"ujf","Insignias / Parches":"oric","Kit Corporativo":"mesa","Pendón Roller":"pc"}[t]};
 const CORTA_EN_CO2=new Set(["Insignias / Parches","Medallas","Pines","Imanes","Llaveros"]);
-const rutaMaq=j=>{const m=ZONAS.flatMap(z=>z.maq).find(x=>x.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)));return m?m.n+(CORTA_EN_CO2.has(j.tipoDtf)?" → Láser CO2 (corte)":"")+(j.maquiladoAt&&m.id!=="mesa"?" → Estampado y armado":""):"—"};
+const rutaMaq=j=>{const m=ZONAS.flatMap(z=>z.maq).find(x=>x.id===(j.maquina||MAQ_DE_TIPO(j.tipoDtf)));return m?m.n+(CORTA_EN_CO2.has(j.tipoDtf)?" → Láser CO2 (corte)":"")+((j.maquiladoAt||j.maquilandoAt)&&m.id!=="mesa"?" → Estampado y armado":""):"—"};
 
 const jobs=DATA.jobs, tareas=DATA.tareas, feed=DATA.feed;
 const numDe=id=>String((jobs[id]&&jobs[id].pedido)||"").trim(); // «# Pedido» que escribe ventas o el n° de Shopify: los TG-xxxx no se muestran (José, 02-11-2026)
@@ -1030,7 +1032,7 @@ function kpiSets(){
   const lun=lunesHoy(), dom=addD(lun,6);
   const semana=Object.entries(jobs).filter(([,j])=>{if(j.estado!=="entregado"||!j.entregadoAt||!j.fechaLimite)return false;const e=ymdCL(j.entregadoAt);return e>=lun&&e<=dom});
   return {ab,hoyL,lun,dom,semana,listosHoy:hoyL.filter(([,j])=>["listo","entregado"].includes(j.estado)),
-    atr:ab.filter(([,j])=>atrasado(j)),run:ab.filter(([,j])=>j.estado==="en_produccion"||j.estado==="maquilado"),
+    atr:ab.filter(([,j])=>atrasado(j)),run:ab.filter(([,j])=>j.estado==="en_produccion"||j.estado==="maquilando"),
     cap:ab.filter(([,j])=>j.estado!=="listo"),chain:chainItems()};
 }
 const porFecha=(a,b)=>(a[1].fechaLimite||"9999")<(b[1].fechaLimite||"9999")?-1:(a[1].fechaLimite||"9999")>(b[1].fechaLimite||"9999")?1:0;
@@ -1059,9 +1061,9 @@ function kxFila([id,j],ctx){
     ${c?`<span class="ctx ${c.cls||""}">${c.t}</span>`:""}</button>`;
 }
 const ctxAtr=j=>({cls:"bad",t:`Atrasado ${-dDiff(j.fechaLimite,HOY)} ${-dDiff(j.fechaLimite,HOY)===1?"día":"días"}${(j.responsables||[]).length?" · a cargo de "+esc(j.responsables.map(n=>n.split(" ")[0]).join(", ")):""}`});
-const ctxMaq=j=>{const t=desdeDe(j);return {t:`${j.estado==="maquilado"?"En maquila":"Imprimiéndose"}${t?` desde las ${hhmm(t)} (hace ${el(t)})`:""}`}};
+const ctxMaq=j=>{const t=desdeDe(j);return {t:`${j.estado==="maquilando"?"Maquilando":"Imprimiéndose"}${t?` desde las ${hhmm(t)} (hace ${el(t)})`:""}`}};
 const ctxEnt=j=>{const e=ymdCL(j.entregadoAt),dd=dDiff(e,j.fechaLimite);return {cls:dd>0?"bad":"ok",t:`Entregado el ${fDM(e)} a las ${hhmm(j.entregadoAt)} · ${dd>0?`${dd} ${dd===1?"día":"días"} tarde`:dd<0?`${-dd} ${dd===-1?"día":"días"} antes`:"justo a tiempo"}`}};
-const ctxHoy=j=>j.estado==="entregado"?{cls:"ok",t:`Entregado a las ${hhmm(j.entregadoAt)}`}:j.estado==="listo"?{cls:"ok",t:`Listo${j.listaAt?" desde las "+hhmm(j.listaAt):""} · falta ${j.tipoEntrega==="Retiro"?"que lo retiren":"despacharlo"}`}:atrasado(j)?ctxAtr(j):{t:`Le falta: ${ORDEN.slice(ORDEN.indexOf(j.estado)+1,ORDEN.indexOf("listo")+1).filter(e=>e!=="maquilado").map(e=>ST[e]).join(" → ")}`};
+const ctxHoy=j=>j.estado==="entregado"?{cls:"ok",t:`Entregado a las ${hhmm(j.entregadoAt)}`}:j.estado==="listo"?{cls:"ok",t:`Listo${j.listaAt?" desde las "+hhmm(j.listaAt):""} · falta ${j.tipoEntrega==="Retiro"?"que lo retiren":"despacharlo"}`}:atrasado(j)?ctxAtr(j):{t:`Le falta: ${ORDEN.slice(ORDEN.indexOf(j.estado)+1,ORDEN.indexOf("listo")+1).filter(e=>(e!=="maquilado"&&e!=="maquilando")||j.estado==="maquilado").map(e=>ST[e]).join(" → ")}`};
 const grupo=(t,L,ctx,vacio)=>L.length?`<div class="lgrp"><h4>${t}<b>${L.length}</b></h4>${L.sort(porFecha).map(x=>kxFila(x,ctx)).join("")}</div>`:(vacio?`<div class="lgrp"><h4>${t}<b>0</b></h4><p class="empty">${vacio}</p></div>`:"");
 let ultimaKpi=null;
 function abrirKpi(k,refrescar){
@@ -1083,8 +1085,8 @@ function abrirKpi(k,refrescar){
     lead="Todo lo abierto que todavía no está Listo, agrupado por la etapa en que va.";
     body=ORDEN.map(e=>grupo(ST[e],s.cap.filter(x=>x[1].estado===e),j=>atrasado(j)?ctxAtr(j):null)).join("")||`<p class="empty">No hay nada en cola.</p>`; }
   else if(k==="run"){ eb="En máquina"; h=`${s.run.length} ${s.run.length===1?"trabajo":"trabajos"}`; L=s.run;
-    lead="Lo que está en Enviado a Impresión o en maquila ahora mismo, por máquina.";
-    const m=new Map(); s.run.forEach(x=>{const n=x[1].estado==="maquilado"?"Estampado y armado (maquila)":rutaMaq(x[1]);m.set(n,[...(m.get(n)||[]),x])});
+    lead="Lo que está en Enviado a Impresión o Maquilando ahora mismo, por máquina. Lo que espera en la cola de maquila no cuenta.";
+    const m=new Map(); s.run.forEach(x=>{const n=x[1].estado==="maquilando"?"Estampado y armado (maquila)":rutaMaq(x[1]);m.set(n,[...(m.get(n)||[]),x])});
     body=[...m].map(([n,l])=>grupo(n,l,ctxMaq)).join("")||`<p class="empty">No hay nada en máquina.</p>`; }
   else if(k==="bloq"){ eb="Esperando por ti"; h=`${s.chain.length} ${s.chain.length===1?"cosa":"cosas"}`;
     lead="Lo tuyo que frena a otros: pedidos tuyos que no dejan salir a uno ya listo, tareas que detienen una tirada y pedidos tuyos atrasados.";
@@ -1101,32 +1103,33 @@ function abrirKpi(k,refrescar){
 }
 
 /* ── Mapa del taller ── */
-const desdeDe=j=>(j.estado==="maquilado"?(j.maquiladoAt||j.impresionAt):j.impresionAt)||j.updatedAt||j.createdAt;
-function enMaquina(mid){return open().filter(([,j])=>(j.estado==="en_produccion"&&(j.maquina||MAQ_DE_TIPO(j.tipoDtf))===mid)||(mid==="mesa"&&j.estado==="maquilado")).sort((a,b)=>new Date(desdeDe(b[1])||0)-new Date(desdeDe(a[1])||0))}
+const desdeDe=j=>(j.estado==="maquilando"?(j.maquilandoAt||j.maquiladoAt||j.impresionAt):j.impresionAt)||j.updatedAt||j.createdAt;
+function enMaquina(mid){return open().filter(([,j])=>(j.estado==="en_produccion"&&(j.maquina||MAQ_DE_TIPO(j.tipoDtf))===mid)||(mid==="mesa"&&j.estado==="maquilando")).sort((a,b)=>new Date(desdeDe(b[1])||0)-new Date(desdeDe(a[1])||0))}
 function renderFloor(){
   $("floor").innerHTML=ZONAS.map(z=>{
     const p=P[z.owner];
     const mios=open().filter(([,j])=>esDeZona(j,z.owner));
     const atr=mios.filter(([,j])=>atrasado(j)).length;
     const tCurso=Object.values(tareas).find(t=>t.a===z.owner&&t.estado==="en_curso");
-    const activo=mios.some(([,j])=>(j.estado==="en_produccion"&&j.impresionBy===z.owner)||(j.estado==="maquilado"&&z.owner==="IP"))||tCurso;
+    const activo=mios.some(([,j])=>(j.estado==="en_produccion"&&j.impresionBy===z.owner)||(j.estado==="maquilando"&&z.owner==="IP"))||tCurso;
     let sem={c:"good",l:"Trabajando",v:"var(--good)"};
     if(!activo)sem={c:"warn",l:"Sin nada en curso",v:"var(--warn)"};
     if(atr)sem={c:"bad",l:`${atr} atrasado${atr>1?"s":""}`,v:"var(--bad)"};
+    const porMaquilar=mios.filter(([,j])=>j.estado==="maquilado").sort((a,b)=>(a[1].fechaLimite||"9")<(b[1].fechaLimite||"9")?-1:1); // la cola de Ignacio: «Enviado a Maquila»
     const maqs=z.maq.map(m=>{
-      const jj=enMaquina(m.id);
+      const jj=enMaquina(m.id), colaMesa=m.id==="mesa"&&porMaquilar.length?`<span class="meta">${porMaquilar.length} por maquilar</span>`:"";
       if(z.owner==="AL"&&tCurso)return `<div class="mc run ${m.wide?"wide":""}" data-tarea="${Object.keys(tareas).find(k=>tareas[k]===tCurso)}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(tCurso.nombre)}</span><span class="meta">Pedido ${tCurso.pedidoId?refHtml(tCurso.pedidoId):"—"}</span><span class="tm"><span>${el(tCurso.ini)}</span></span></div>`;
-      if(!jj.length){const sig=mios.filter(([,j])=>MAQ_DE_TIPO(j.tipoDtf)===m.id&&ORDEN.indexOf(j.estado)<3).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1)[0];
-        return `<div class="mc ${m.wide?"wide":""}"><span class="mn">${m.n}<i></i></span>${m.hace?`<span class="hace">${m.hace}</span>`:""}<span class="idle">${sig?`Libre · sigue <b>${refHtml(sig[0])}</b>`:"Libre"}</span></div>`;}
-      const [id,j]=jj[0];const desde=desdeDe(j);const opId=j.estado==="maquilado"?"IP":j.impresionBy;const mins=((Date.now()-new Date(desde))/60000)||0;const pct=Math.min(95,mins/(j.desatendida?240:120)*100);
+      if(!jj.length){const sig=(m.id==="mesa"&&porMaquilar[0])||mios.filter(([,j])=>MAQ_DE_TIPO(j.tipoDtf)===m.id&&ORDEN.indexOf(j.estado)<3).sort((a,b)=>a[1].fechaLimite<b[1].fechaLimite?-1:1)[0];
+        return `<div class="mc ${m.wide?"wide":""}"><span class="mn">${m.n}<i></i></span>${m.hace?`<span class="hace">${m.hace}</span>`:""}${colaMesa}<span class="idle">${sig?`Libre · sigue <b>${refHtml(sig[0])}</b>`:"Libre"}</span></div>`;}
+      const [id,j]=jj[0];const desde=desdeDe(j);const opId=j.estado==="maquilando"?"IP":j.impresionBy;const mins=((Date.now()-new Date(desde))/60000)||0;const pct=Math.min(95,mins/(j.desatendida?240:120)*100);
       const solo=colacion&&!j.desatendida;
-      return `<div class="mc run ${solo?"alone":""} ${m.wide?"wide":""}" data-job="${id}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(j.cliente)}</span><span class="meta">${numDe(id)?numHtml(id)+" · ":""}${tp(j.tipoDtf)} ${cant(j)}</span><span class="tm"><span>${el(desde)}</span><span class="bar"><b style="width:${pct}%"></b></span></span>${solo?`<span class="meta" style="color:var(--bad);font-weight:600">¿Quién queda a cargo?</span>`:j.desatendida?`<span class="meta">Corre sola · revisar al volver</span>`:""}${jj.length>1?`<span class="meta">+${jj.length-1} más en esta máquina</span>`:""}<span class="op" style="background:${P[opId]?.c||"#545B7E"}">${esc(opId||"?")}</span></div>`;
+      return `<div class="mc run ${solo?"alone":""} ${m.wide?"wide":""}" data-job="${id}"><span class="mn">${m.n}<i></i></span><span class="job">${esc(j.cliente)}</span><span class="meta">${numDe(id)?numHtml(id)+" · ":""}${tp(j.tipoDtf)} ${cant(j)}</span><span class="tm"><span>${el(desde)}</span><span class="bar"><b style="width:${pct}%"></b></span></span>${solo?`<span class="meta" style="color:var(--bad);font-weight:600">¿Quién queda a cargo?</span>`:j.desatendida?`<span class="meta">Corre sola · revisar al volver</span>`:""}${jj.length>1?`<span class="meta">+${jj.length-1} más en esta máquina</span>`:""}${colaMesa}<span class="op" style="background:${P[opId]?.c||"#545B7E"}">${esc(opId||"?")}</span></div>`;
     }).join("");
-    const cola=[...mios.filter(([,j])=>!["en_produccion","maquilado","listo"].includes(j.estado)).map(([k,j])=>({k,t:`${numDe(k)?`<em>${numHtml(k)}</em>`:""}${esc(j.cliente||"(sin cliente)")}${(j.estado==="pedidos_shopify"||j.estado==="recibido")&&(j.resps||[]).includes("AL")?(z.owner!=="AL"?' <small class="esp">⏳ espera a Allyson</small>':((j.resps||[]).some(x=>x!=="AL")?' <small class="esp">→ luego '+esc((j.resps||[]).filter(x=>x!=="AL").map(x=>P[x]?P[x].n:x).join(", "))+'</small>':"")):""}`,f:j.fechaLimite,e:j.estado,job:1})),
+    const cola=[...mios.filter(([,j])=>!["en_produccion","maquilando","listo"].includes(j.estado)&&(j.estado!=="maquilado"||z.owner==="IP")).map(([k,j])=>({k,t:`${numDe(k)?`<em>${numHtml(k)}</em>`:""}${esc(j.cliente||"(sin cliente)")}${(j.estado==="pedidos_shopify"||j.estado==="recibido")&&(j.resps||[]).includes("AL")?(z.owner!=="AL"?' <small class="esp">⏳ espera a Allyson</small>':((j.resps||[]).some(x=>x!=="AL")?' <small class="esp">→ luego '+esc((j.resps||[]).filter(x=>x!=="AL").map(x=>P[x]?P[x].n:x).join(", "))+'</small>':"")):""}`,f:j.fechaLimite,e:j.estado,job:1})),
       ...Object.entries(tareas).filter(([,t])=>t.a===z.owner&&t.estado==="pendiente").map(([k,t])=>({k,t:`☐ ${esc(t.nombre)}`,f:t.f,e:""}))]
       .sort((a,b)=>(a.f||"9")<(b.f||"9")?-1:(a.f||"9")>(b.f||"9")?1:0).slice(0,3);
     const metros=mios.filter(([,j])=>UNIT(j.tipoDtf)==="m"&&ORDEN.indexOf(j.estado)<4).reduce((s,[,j])=>s+j.cantidad,0);
-    const foot=z.owner==="MG"?`<span>DTF por imprimir</span><b>${m2(metros)} m</b>`:z.owner==="AL"?`<span>Bandeja Shopify</span><b>${mios.filter(([,j])=>j.estado==="pedidos_shopify").length} por revisar</b>`:`<span>En su cola</span><b>${mios.filter(([,j])=>ORDEN.indexOf(j.estado)<3).length} pedidos · ${Object.values(tareas).filter(t=>t.a===z.owner&&t.estado==="pendiente").length} tareas</b>`;
+    const foot=z.owner==="MG"?`<span>DTF por imprimir</span><b>${m2(metros)} m</b>`:z.owner==="AL"?`<span>Bandeja Shopify</span><b>${mios.filter(([,j])=>j.estado==="pedidos_shopify").length} por revisar</b>`:`<span>En su cola</span><b>${mios.filter(([,j])=>ORDEN.indexOf(j.estado)<3||(z.owner==="IP"&&j.estado==="maquilado")).length} pedidos · ${Object.values(tareas).filter(t=>t.a===z.owner&&t.estado==="pendiente").length} tareas</b>`;
     return `<article class="zone" id="z-${z.owner}"><div class="zone-h"><span class="av" style="--pc:${p.c};--sem:${sem.v}">${p.id}</span><div class="who"><b>${p.n}</b><span>${z.nombre}</span></div><span class="sem ${sem.c}">${sem.l}</span></div><div class="machines">${maqs}</div><div class="next"><span class="eyebrow">Le sigue</span>${cola.map(c=>{const d=due(c.f,c.e);return `<a href="#" ${c.job?`data-job="${c.k}"`:`data-tarea="${c.k}"`}><span>${c.t}</span><span class="due ${d.c}">${d.l}</span></a>`}).join("")||'<span class="empty">Nada en cola</span>'}</div><div class="zone-f">${foot}</div></article>`;
   }).join("");
 }
@@ -1145,7 +1148,7 @@ function renderGantt(){
     Object.entries(jobs).forEach(([id,j])=>{
       const deHoy=t=>t&&cl(new Date(t)).ymd===HOY;
       if(j.impresionBy===p.id&&deHoy(j.impresionAt)){const a=minOf(j.impresionAt),fin=deHoy(j.maquiladoAt)?j.maquiladoAt:(deHoy(j.listaAt)?j.listaAt:null);const b=fin?minOf(fin):(j.estado==="en_produccion"?now:a+10);bl.push({a,b,cur:j.estado==="en_produccion",job:id,t:j.cliente,s:[numDe(id),cant(j)].filter(Boolean).join(" · "),c:TIPO_COLOR[j.tipoDtf]})}
-      if(p.id==="IP"&&deHoy(j.maquiladoAt)){const a=minOf(j.maquiladoAt),b=deHoy(j.listaAt)?minOf(j.listaAt):(j.estado==="maquilado"?now:a+10);bl.push({a,b,cur:j.estado==="maquilado",job:id,t:j.cliente,s:"Maquila"+(numDe(id)?" · "+numDe(id):""),c:"#0E7C86"})}
+      if(p.id==="IP"&&deHoy(j.maquilandoAt)){const a=minOf(j.maquilandoAt),b=deHoy(j.listaAt)?minOf(j.listaAt):(j.estado==="maquilando"?now:a+10);bl.push({a,b,cur:j.estado==="maquilando",job:id,t:j.cliente,s:"Maquila"+(numDe(id)?" · "+numDe(id):""),c:"#0E7C86"})}
     });
     Object.entries(tareas).forEach(([k,t])=>{if(t.a===p.id&&t.ini&&cl(new Date(t.ini)).ymd===HOY){const a=minOf(t.ini),b=t.fin?minOf(t.fin):now;bl.push({a,b,cur:t.estado==="en_curso",tarea:k,t:t.nombre,s:"Tarea",task:1})}});
     bl.sort((u,v)=>u.a-v.a);
@@ -1249,10 +1252,10 @@ const hhmm=iso=>{const p=partsCL(new Date(iso));return String(p.h).padStart(2,"0
 const DIAS=["dom","lun","mar","mié","jue","vie","sáb"];
 
 /* ───────── Constantes del tracker (copiadas de Pedidos/index.html) ───────── */
-const ST={pedidos_shopify:"Pedidos Shopify",recibido:"Por revisar",enviado_produccion:"Enviado a Producción",en_produccion:"Enviado a Impresión",maquilado:"Maquilado",listo:"Listo",entregado:"Entregado"};
-const ORDEN=["pedidos_shopify","recibido","enviado_produccion","en_produccion","maquilado","listo","entregado"];
+const ST={pedidos_shopify:"Pedidos Shopify",recibido:"Por revisar",enviado_produccion:"Enviado a Producción",en_produccion:"Enviado a Impresión",maquilado:"Enviado a Maquila",maquilando:"Maquilando",listo:"Listo",entregado:"Entregado"};
+const ORDEN=["pedidos_shopify","recibido","enviado_produccion","en_produccion","maquilado","maquilando","listo","entregado"];
 const PERSONALIZADOS=["Insignias / Parches","Pines","Medallas","Imanes","Llaveros","Kit Corporativo"];
-const ST_VAR={pedidos_shopify:"--st-shop",recibido:"--st-rev",enviado_produccion:"--st-prod",en_produccion:"--st-imp",maquilado:"--st-maq",listo:"--st-listo",entregado:"--st-ent"};
+const ST_VAR={pedidos_shopify:"--st-shop",recibido:"--st-rev",enviado_produccion:"--st-prod",en_produccion:"--st-imp",maquilado:"--st-maq",maquilando:"--st-maqn",listo:"--st-listo",entregado:"--st-ent"};
 const TIPO_COLOR={"DTF Textil":"#4063F9","DTF UV":"#1C7A63","DTF Flúor":"#C026D3","DTF Textil (Lámina prediseñada)":"#6F8CFF","DTF UV (Lámina prediseñada)":"#2DA88C","DTF Flúor (Lámina prediseñada)":"#D946EF","Stickers UV":"#D4870A","Pendón Roller":"#6B5BD6","Insignias / Parches":"#8B5E34","Pines":"#EA580C","Medallas":"#B8860B","Imanes":"#6B7BB8","Llaveros":"#0B1447","Kit Corporativo":"#0E7C86"};
 const UNIT=t=>t&&t.startsWith("DTF")?"m":"u";
 const ENTREGA={Retiro:"Retiro en tienda",OTS:"OTS (RM)",Bluexpress:"Bluexpress",Chilexpress:"Chilexpress"};
@@ -1357,9 +1360,9 @@ function itemsDe(pid){
   return [...js,...ts];
 }
 function ahoraDe(pid){
-  const enCurso=abiertos().filter(([,j])=>(j.estado==="en_produccion"&&(j.impresionBy===pid||(!j.impresionBy&&esDe(j,pid))))||(j.estado==="maquilado"&&esDe(j,pid)))
-    .sort((a,b)=>new Date(b[1].impresionAt)-new Date(a[1].impresionAt));
-  if(enCurso.length)return {kind:"job",id:enCurso[0][0],j:enCurso[0][1],desde:(enCurso[0][1].estado==="maquilado"?(enCurso[0][1].maquiladoAt||enCurso[0][1].impresionAt):enCurso[0][1].impresionAt)||enCurso[0][1].updatedAt||enCurso[0][1].createdAt};
+  const enCurso=abiertos().filter(([,j])=>(j.estado==="en_produccion"&&(j.impresionBy===pid||(!j.impresionBy&&esDe(j,pid))))||(j.estado==="maquilando"&&esDe(j,pid)))
+    .sort((a,b)=>new Date(b[1].maquilandoAt||b[1].impresionAt)-new Date(a[1].maquilandoAt||a[1].impresionAt));
+  if(enCurso.length)return {kind:"job",id:enCurso[0][0],j:enCurso[0][1],desde:(enCurso[0][1].estado==="maquilando"?(enCurso[0][1].maquilandoAt||enCurso[0][1].maquiladoAt||enCurso[0][1].impresionAt):enCurso[0][1].impresionAt)||enCurso[0][1].updatedAt||enCurso[0][1].createdAt};
   const t=Object.entries(tareas).find(([,t])=>t.asignados.includes(pid)&&t.estado==="en_curso");
   if(t)return {kind:"tarea",id:t[0],t:t[1],desde:t[1].startedAt||t[1].ini};
   return null;
@@ -1533,7 +1536,7 @@ function openJob(id){
   if(her.length)leg.push("SALE JUNTO CON "+her.map(refHtml).join(", "));
   const legPlain=[j.pedido,j.cliente,j.tipoEntrega?(j.tipoEntrega==="Retiro"?"RETIRO":"ENVÍO "+j.tipoEntrega.toUpperCase()):"",her.length?"SALE JUNTO CON "+her.map(h=>numDe(h)||jobs[h].cliente).join(", "):""].filter(Boolean).join(" · ");
   const pos=ORDEN.indexOf(j.estado);
-  const hit={enviado_produccion:j.enviadoProdAt,en_produccion:j.impresionAt,maquilado:j.maquiladoAt,listo:j.listaAt,entregado:j.entregadoAt};
+  const hit={enviado_produccion:j.enviadoProdAt,en_produccion:j.impresionAt,maquilado:j.maquiladoAt,maquilando:j.maquilandoAt,listo:j.listaAt,entregado:j.entregadoAt};
   $("dr-title").innerHTML=`<span class="eyebrow">${j.pedido?esc(j.pedido):"Sin n° de pedido"}${j.origen==="shopify"?" · Shopify":""}</span><h3>${esc(j.cliente)||'<span style="color:var(--bad)">Sin cliente</span>'}</h3><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${stPill(j.estado)}${typePill(j.tipoDtf)}${(()=>{const d=due(j.fechaLimite,j.estado);return `<span class="due ${d.c}">${d.l}</span>`})()}</div>`;
   $("dr-body").innerHTML=`
     <div class="legend-box"><div class="eyebrow"><span>Leyenda para el archivo</span><span style="color:${miss.length?"var(--bad)":"var(--good)"}">${miss.length?"Incompleta":"Completa"}</span></div><div class="legend-txt">${leg.join(" · ")}</div>${miss.length?"":`<button type="button" id="a-copy-leg">Copiar leyenda</button>`}</div>
@@ -1545,7 +1548,7 @@ function openJob(id){
       <dt>Boleta / factura</dt><dd>${j.documento==="SI"?"Emitida":j.documento==="NA"?"No aplica":"No emitida"}</dd>
       <dt>Vinculados</dt><dd>${her.length?her.map(h=>`<a href="#" data-job="${h}" style="color:var(--azul)">${refHtml(h)}</a> · ${jobs[h].tipoDtf} · ${ST[jobs[h].estado]}`).join("<br>"):"—"}</dd>
     </dl>
-    <div><div class="eyebrow" style="margin-bottom:6px">Recorrido</div><div class="steps">${ORDEN.slice(1).filter(e=>e!=="maquilado"||PERSONALIZADOS.includes(j.tipoDtf)||j.maquiladoAt).map(e=>{const idx=ORDEN.indexOf(e);const cls=idx<pos?"done":idx===pos?"cur":"";return `<div class="stp ${cls}"><i></i><span>${ST[e]}</span><span>${hit[e]?hhmm(hit[e]):""}</span></div>`}).join("")}</div></div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Recorrido</div><div class="steps">${ORDEN.slice(1).filter(e=>(e!=="maquilado"&&e!=="maquilando")||PERSONALIZADOS.includes(j.tipoDtf)||j.maquiladoAt||j.maquilandoAt).map(e=>{const idx=ORDEN.indexOf(e);const cls=idx<pos?"done":idx===pos?"cur":"";return `<div class="stp ${cls}"><i></i><span>${ST[e]}</span><span>${hit[e]?hhmm(hit[e]):""}</span></div>`}).join("")}</div></div>
     <p class="foot" style="text-align:left"><a href="/pedidos/" style="color:var(--azul)">Abrir Pedidos →</a> para editar este pedido. Esta vista solo lee.</p>`;
   const cb=$("copy-leg");if(cb)cb.onclick=()=>{try{navigator.clipboard.writeText(legPlain).then(()=>toast("Leyenda copiada"),()=>toast(legPlain))}catch(e){toast(legPlain)}};
   openDrawer();
