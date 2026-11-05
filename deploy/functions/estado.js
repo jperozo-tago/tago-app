@@ -38,6 +38,12 @@ const correoDe = (v) => {
   return m ? m[0].toLowerCase() : null;
 };
 
+// Milisegundos de una fecha guardada como número o como texto ISO; null si no hay.
+const momento = (v) => {
+  const n = typeof v === "number" ? v : Date.parse(v ?? "");
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
 const fechaChile = (v) => {
   if (!v) return null;
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) { const [a, m, d] = v.slice(0, 10).split("-"); return `${d}-${m}-${a}`; }
@@ -99,7 +105,13 @@ const responder = (lista, extra) => {
 function estadoDePedido(pedidos, consulta, ahora = Date.now()) {
   const c = consulta && typeof consulta === "object" ? consulta : { numero: consulta };
   const todos = Object.entries(pedidos || {}).filter(([, j]) => j && typeof j === "object");
-  const recientes = todos.filter(([, j]) => !(j.estado === "entregado" && j.entregadoAt && ahora - j.entregadoAt > VENTANA));
+  // entregadoAt existe recién desde el 03-11-2026: a los entregados sin esa fecha (1.369 al 05-11) se les mira
+  // updatedAt, y sin ninguna fecha no cuentan (si no, un cliente recurrente vería todos sus pedidos antiguos).
+  const recientes = todos.filter(([, j]) => {
+    if (j.estado !== "entregado") return true;
+    const t = momento(j.entregadoAt) ?? momento(j.updatedAt);
+    return t !== null && ahora - t <= VENTANA;
+  });
   // Si el bot puso el correo en «numero», se usa como correo (y no se lee un número dentro de él).
   const correo = correoDe(c.correo) || correoDe(c.numero);
   const numero = correoDe(c.numero) ? null : numeroDe(c.numero);

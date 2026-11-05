@@ -103,7 +103,7 @@ Firestore).
   `REVISAR_CLAVE`) con `{"numero": "#8584", "correo": "...", "telefono": "<macro contact.phone de Vambe>"}`.
   Busca en `tago_pedidos` por `numeroShopify` (o `importado.numero`) y, si no hay número (compras por
   WhatsApp), por correo en `correo` o `envio.correo` y luego por teléfono en `telefono` o `envio.tel`
-  (últimos 8 dígitos); en esas dos búsquedas los entregados hace más de 30 días no cuentan. Si el teléfono
+  (últimos 8 dígitos); en esas dos búsquedas los entregados hace más de 30 días no cuentan (por `entregadoAt`, que existe desde el 03-11-2026, o si falta por `updatedAt`; un entregado sin ninguna fecha no cuenta). Si el teléfono
   no encuentra nada, la respuesta le dice al bot que pida el correo; si el correo tampoco, que pase el caso a
   una vendedora («Mover a Asistencia Humana»). **El código TG-xxxx no se busca ni se devuelve**: no se le
   manda al cliente y lo confundiría (Andreina). Devuelve una parte por pedido con `producto`, `entrega`
