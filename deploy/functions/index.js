@@ -71,6 +71,18 @@ const REVISAR_CLAVE = defineSecret("REVISAR_CLAVE");
 // arrancar y Cloud Run las matara (04-11-2026: el chat del robot y los webhooks de Shopify respondían 500/503).
 let modRevisar = null;
 const rev = () => (modRevisar ??= require("./revisar"));
+// Estado de un pedido para el mismo bot (05-11-2026): POST /estado-pedido con {"numero": "#8584"} y la misma
+// X-Clave. Detalle en estado.js; no devuelve datos personales. tago_pedidos se lee entero (no tiene índice) y se
+// guarda un minuto en memoria para no bajarlo en cada pregunta.
+let modEstado = null;
+const est = () => (modEstado ??= require("./estado"));
+let cachePedidos = { ts: 0, val: null };
+const pedidosEnCache = async (db) => {
+  if (cachePedidos.val && Date.now() - cachePedidos.ts < 60 * 1000) return cachePedidos.val;
+  const val = (await leerConPlazo(db.ref("tago_pedidos"), 15000)).val() || {};
+  cachePedidos = { ts: Date.now(), val };
+  return val;
+};
 const numero = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return n > 0 ? n : 0; };
 const VAMBE = "https://vambe-bkt.s3.us-east-1.amazonaws.com/";
 const firmar = (ruta) => crypto.createHmac("sha256", REVISAR_CLAVE.value()).update(ruta).digest("hex").slice(0, 20);
@@ -97,6 +109,16 @@ exports.revisarArchivo = onRequest(
     const esperada = REVISAR_CLAVE.value();
     if (clave.length !== esperada.length || !crypto.timingSafeEqual(Buffer.from(clave), Buffer.from(esperada))) {
       return res.status(401).json({ error: "clave inválida" });
+    }
+    if (req.path === "/estado-pedido") {
+      try {
+        const r = est().estadoDePedido(await pedidosEnCache(admin.database()), (req.body || {}).numero);
+        console.log("estado de pedido", { numero: r.numero || null, encontrado: r.encontrado, partes: (r.partes || []).length });
+        return res.status(200).json(r);
+      } catch (e) {
+        console.error("no se pudo consultar el estado del pedido", e.message);
+        return res.status(503).json({ encontrado: false, motivo: "error", mensaje: "No se pudo consultar el estado en este momento. Pasa el caso a una ejecutiva." });
+      }
     }
     const c = req.body || {};
     // El asistente a veces copia el enlace con el «[url: …]» de Vambe alrededor: se toma solo el enlace.

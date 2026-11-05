@@ -98,6 +98,15 @@ Firestore).
     archivo, porque las tres funciones comparten `index.js`. Si el registro dice «Memory limit … exceeded»,
     subir la memoria en el código y desplegar; editarla solo en la consola de Cloud Run falla cuando Firebase
     ya borró la imagen vieja («image … not found»).
+- Estado del pedido para el bot de Vambe (05-11-2026, Andreina): la función `revisarArchivo` atiende
+  también `POST /estado-pedido` (misma cabecera `X-Clave` que la revisión de archivos, secreto
+  `REVISAR_CLAVE`) con `{"numero": "#8584"}`. Busca en `tago_pedidos` por `numeroShopify` (o
+  `importado.numero`) y devuelve una parte por pedido TG con `producto`, `entrega`, `etapa`
+  (recibido, en_produccion, listo_para_retiro, listo_para_despacho, entregado, despachado, cancelado) y
+  un `texto` para el cliente. **Nunca** devuelve nombre, dirección, teléfono, correo ni montos (lógica en
+  `deploy/functions/estado.js`; prueba local en Data TAGO/.claude/sandbox/prueba-estado-pedido.js).
+  `tago_pedidos` no tiene índice por `pedido`: se lee entero y se guarda 1 minuto en memoria. Se despliega con
+  `firebase deploy --only functions:tago:revisarArchivo` desde `deploy/`.
 - `tago_pedido_comentarios` / `tago_pedido_historial` — actividad por pedido
 - `tago_notificaciones` — notificaciones por usuario
 - `tago_tareas*` — módulo de tareas internas. `tago_tareas_estados/<id>` puede
