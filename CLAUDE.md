@@ -343,15 +343,18 @@ categoría personalizada, restringido a `j.perozo@tago.cl` en
 
 **Estados de un pedido:** Pedidos Shopify → Por revisar → Enviado a Producción →
 Enviado a Impresión → [Maquilado] → Listo → Entregado (ver objeto `ST` en el JS).
-**Maquilado** (`maquilado`, desde el 02-11-2026, José) existe solo para los productos
-personalizados (por tipo: Insignias / Parches, Pines, Medallas, Imanes, Llaveros, Kit
-Corporativo; `usaMaquila(j)`): en ellos «→ siguiente» desde Impresión lleva a Maquilado
-(`sigEstado(j)`), y los menús de estado solo lo ofrecen a esos tipos (`estadosPara(j)`).
+**Maquilado** (`maquilado`, desde el 02-11-2026, José) va entre Impresión y Listo. Desde el
+05-11-2026 los menús de estado lo ofrecen en todos los pedidos, nuevos y ya creados
+(`estadosPara`): hay impresiones que van a maquila, por ejemplo a estampar un jockey o una polera.
+Solo en los personalizados (por tipo: Insignias / Parches, Pines, Medallas, Imanes, Llaveros, Kit
+Corporativo; `usaMaquila(j)`) «→ siguiente» desde Impresión lleva a Maquilado (`sigEstado(j)`);
+en las impresiones sigue llevando a Listo y a maquila se pasa desde el estado o arrastrando en el
+Tablero, cuya columna ya se ve siempre.
 Al entrar a Maquilado (`moverEstado`, el modal antiguo y `crearDesdeFicha`) el
 `responsable` pasa a «Ignacio Paredes» (`RESPONSABLE_MAQUILA`), queda en el historial y
 le llega una notificación de asignación; se guarda el hito `maquiladoAt`/`maquiladoBy`
 (solo al entrar de verdad, saltárselo no lo inventa; al retroceder se borra). El grupo,
-la columna del Tablero y la pestaña usan el color `--maq-c` (petróleo); en las vistas de
+la columna del Tablero y la pestaña usan el color `--maq-c` (petróleo); en la Lista de
 Impresiones el grupo se oculta si está vacío (`verGrupoMaquila`). Estadísticas no separa
 todavía la etapa de maquila: «Enviado a Impresión» mide de `impresionAt` a `listaAt`. «Pedidos
 Shopify» (`pedidos_shopify`, desde el 01-oct-2026) es la bandeja de entrada de los
@@ -402,7 +405,7 @@ está en Pedidos Shopify o Por revisar; todo lo de Productos Personalizados (`ca
 como la regla, no como elección a mano. Los de regla salen en la ficha marcados «AUTO» y no se
 quitan a mano. `responsablesDe(j)` (manual + regla) y `esResponsable(j,nombre)` los usan «Míos»
 y Carga; `j.responsable` en crudo solo va a Klaviyo. Maquilado sigue reemplazando `responsable`
-por Ignacio. El Centro de Operaciones repite las mismas reglas (`responsablesDe` en su capa de
+por Ignacio, y mientras está ahí la regla no suma a Miguel en los DTF y Stickers UV. El Centro de Operaciones repite las mismas reglas (`responsablesDe` en su capa de
 datos): si se cambian aquí, cambiarlas allá.
 
 **Categorías:** cada pedido tiene una categoría efectiva
