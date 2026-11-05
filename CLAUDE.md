@@ -108,7 +108,7 @@ Firestore).
   una vendedora («Mover a Asistencia Humana»). **El código TG-xxxx no se busca ni se devuelve**: no se le
   manda al cliente y lo confundiría (Andreina). Devuelve una parte por pedido con `producto`, `entrega`
   (retiro en Providencia, despacho en Santiago para OTS, despacho por Bluexpress/Chilexpress), `etapa`
-  (recibido, en_produccion, listo_para_retiro, listo_para_despacho, entregado, despachado,
+  (recibido, en_produccion —incluye Enviado a Maquila y Maquilando—, listo_para_retiro, listo_para_despacho, entregado, despachado,
   revisar_con_vendedora si Shopify lo marcó cancelado o reembolsado) y un `texto` escrito para el cliente.
   **Nunca** devuelve nombre, dirección, teléfono, correo ni montos (lógica en
   `deploy/functions/estado.js`; prueba local en Data TAGO/.claude/sandbox/prueba-estado-pedido.js).

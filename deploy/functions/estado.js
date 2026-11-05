@@ -19,7 +19,9 @@ const ETAPAS = {
   recibido:           { etapa: "recibido",      texto: "Recibimos tu pedido y lo estamos revisando para enviarlo a producción." },
   enviado_produccion: { etapa: "en_produccion", texto: "Tu pedido está en producción." },
   en_produccion:      { etapa: "en_produccion", texto: "Tu pedido está en producción." },
+  // Maquila (José, 05-11-2026): «Enviado a Maquila» (clave maquilado) y «Maquilando».
   maquilado:          { etapa: "en_produccion", texto: "Tu pedido está en la última etapa de producción." },
+  maquilando:         { etapa: "en_produccion", texto: "Tu pedido está en la última etapa de producción." },
 };
 
 // Igual que numeroShopify() de Pedidos: 4 a 6 dígitos sueltos, con o sin «#».
